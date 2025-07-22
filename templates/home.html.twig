@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{% block title %}PC Store{% endblock %}</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+</head>
+<body class="bg-gray-100">
+    <!-- Navbar -->
+    <nav class="fixed top-0 left-0 right-0 bg-indigo-100 shadow-lg z-50">
+        <div class="container mx-auto px-4">
+            <div class="flex items-center justify-between h-16">
+                <!-- Logo -->
+                <a href="/" class="flex items-center">
+                    <img src="https://cdn-icons-png.flaticon.com/512/7656/7656399.png" class="h-8 w-auto" alt="Logo" />
+                </a>
+
+                <!-- Navigation Links -->
+                <div class="hidden md:flex space-x-8">
+                    <a href="{{ path('app_homepage') }}" class="text-gray-700 hover:text-indigo-600">Home</a>
+                    
+                </div>
+
+                <!-- Right Icons -->
+                <div class="flex items-center space-x-4">
+                    <a href="/registration" class="text-gray-700 hover:text-indigo-600">
+                        <i class="fas fa-user-plus text-xl"></i>
+                    </a>
+                    <a href="/login" class="text-gray-700 hover:text-indigo-600">
+                        <i class="fas fa-sign-in-alt text-xl"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Spacing for fixed navbar -->
+    <div class="h-16"></div>
+
+    {% block body %}
+    <!-- Main Content -->
+    <main class="bg-gray-100 py-8">
+        <div class="container mx-auto px-4">
+            <!-- Category Filter Bar -->
+            <div class="bg-gray-700 rounded-lg shadow-md p-4 mb-8">
+                <div class="flex flex-wrap items-center justify-between">
+                    <!-- Brand Dropdown -->
+                    <div class="relative group">
+                        <button class="text-white hover:text-gray-200 px-4 py-2">
+                            Brands <i class="fas fa-chevron-down ml-2"></i>
+                        </button>
+                        <div class="hidden group-hover:block absolute z-10 bg-white shadow-lg rounded-md mt-1 w-48">
+                            <a href="/" class="block px-4 py-2 hover:bg-gray-100">All</a>
+                            <a href="/product/brand/1" class="block px-4 py-2 hover:bg-gray-100">Brand 1</a>
+                            <a href="/product/brand/2" class="block px-4 py-2 hover:bg-gray-100">Brand 2</a>
+                        </div>
+                    </div>
+
+                    <!-- Categories -->
+                    <div class="flex space-x-4">
+                        <a href="/" class="text-white hover:text-gray-200">All</a>
+                        <a href="/product/category/1" class="text-white hover:text-gray-200">Category 1</a>
+                        <a href="/product/category/2" class="text-white hover:text-gray-200">Category 2</a>
+                    </div>
+
+                    <!-- Search -->
+                    {# <form action="{{ path('searchByName') }}" class="flex">
+                        <input type="search" name="name" placeholder="Search" 
+                               class="px-4 py-2 rounded-l-md focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                        <button type="submit" class="bg-indigo-600 text-white px-4 py-2 rounded-r-md hover:bg-indigo-700">
+                            <i class="fas fa-search"></i>
+                        </button>
+                    </form> #}
+                </div>
+            </div>
+
+            <!-- Products Grid -->
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                {% for p in products %}
+                <div class="bg-white rounded-lg shadow-md overflow-hidden">
+                    <div class="relative group">
+                        <img src="{{ asset('uploads/' ~ p.image) }}" 
+                             class="w-full h-64 object-cover transition-transform duration-300 group-hover:scale-105" 
+                             alt="{{ p.name }}">
+                    </div>
+                    <div class="p-4">
+                        <a href="{{ path('product_read', {'id': p.id}) }}" 
+                           class="text-lg font-medium text-gray-800 hover:text-indigo-600">
+                            {{ p.name }}
+                        </a>
+                        <p class="mt-2 text-xl font-bold text-indigo-600">${{ p.priceExport }}</p>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </main>
+    {% endblock %}
+
+    <!-- Footer -->
+    <footer class="bg-gray-700 text-white">
+        <div class="container mx-auto px-4 py-8">
+            <!-- Social Media -->
+            <div class="flex justify-center space-x-6 mb-8">
+                <a href="#" class="hover:text-indigo-400"><i class="fab fa-facebook-f"></i></a>
+                <a href="#" class="hover:text-indigo-400"><i class="fab fa-twitter"></i></a>
+                <a href="#" class="hover:text-indigo-400"><i class="fab fa-instagram"></i></a>
+                <a href="#" class="hover:text-indigo-400"><i class="fab fa-youtube"></i></a>
+                <a href="https://github.com/SellCarToy/toy-repo" class="hover:text-indigo-400">
+                    <i class="fab fa-github"></i>
+                </a>
+            </div>
+
+            <!-- Footer Content -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">
+                <div>
+                    <h3 class="text-lg font-semibold mb-4">PC Store</h3>
+                    <p class="text-gray-300">Your one-stop shop for all PC components and accessories.</p>
+                </div>
+                <div>
+                    <h3 class="text-lg font-semibold mb-4">About Us</h3>
+                    <p class="text-gray-300">Established in 2023, we provide quality PC components at competitive prices.</p>
+                </div>
+                <div>
+                    <h3 class="text-lg font-semibold mb-4">Contact</h3>
+                    <p class="text-gray-300">123 Tech Street, Digital City, PC 123456</p>
+                </div>
+            </div>
+
+            <!-- Copyright -->
+            <div class="text-center pt-8 border-t border-gray-600">
+                <p class="text-gray-400">© {{ "now"|date("Y") }} PC Store. All rights reserved.</p>
+            </div>
+        </div>
+    </footer>
+</body>
+</html>
+
