@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full bg-gray-50">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Dashboard{% endblock %}</title>
+    
+    {# Tailwind CSS #}
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+
+<body class="h-full">
+    <div class="min-h-full">
+        <!-- Sidebar -->
+        <div class="fixed inset-y-0 left-0 w-64 bg-indigo-700">
+            <!-- Logo -->
+            <div class="flex h-16 items-center justify-center">
+                <a href="{{ path('app_homepage') }}" class="flex items-center">
+                    <img src="https://cdn-icons-png.flaticon.com/512/7656/7656399.png" 
+                         class="h-12 w-auto" 
+                         alt="Logo">
+                </a>
+            </div>
+
+            <!-- Navigation -->
+            <nav class="mt-5 px-2">
+                <div class="space-y-1">
+                    <h2 class="px-3 text-lg font-semibold text-white mb-4">Menu</h2>
+                    
+                    <!-- Menu Items -->
+                    <a href="{{ path('app_product_index') }}" 
+                       class="group flex items-center px-2 py-2 text-white hover:bg-indigo-600 rounded-md">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="mr-3 h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+                        </svg>
+                        Products
+                    </a>
+
+                    <a href="{{ path('app_category_index') }}" 
+                       class="group flex items-center px-2 py-2 text-white hover:bg-indigo-600 rounded-md">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="mr-3 h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16" />
+                        </svg>
+                        Categories
+                    </a>
+
+                    <a href="{{ path('app_brand_index') }}" 
+                       class="group flex items-center px-2 py-2 text-white hover:bg-indigo-600 rounded-md">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="mr-3 h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                        </svg>
+                        Brands
+                    </a>
+                </div>
+            </nav>
+        </div>
+
+        <!-- Main Content -->
+        <div class="pl-64 flex flex-col min-h-screen">
+            <!-- Header -->
+            <header class="bg-white shadow">
+                <div class="max-w-7xl mx-auto py-4 px-4 sm:px-6 lg:px-8">
+                    <h1 class="text-2xl font-bold text-gray-900">
+                        {% block header %}Dashboard{% endblock %}
+                    </h1>
+                </div>
+            </header>
+
+            <!-- Main Content Area -->
+            <main class="flex-1 py-6 px-4 sm:px-6 lg:px-8 bg-gray-100">
+                {% block body %}{% endblock %}
+            </main>
+
+            <!-- Footer -->
+            <footer class="bg-white shadow">
+                <div class="max-w-7xl mx-auto py-4 px-4 sm:px-6 lg:px-8">
+                    <p class="text-center text-sm text-gray-500">
+                        © {{ "now"|date("Y") }} PC Store. All rights reserved.
+                    </p>
+                </div>
+            </footer>
+        </div>
+    </div>
+</body>
+</html>
