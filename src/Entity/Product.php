@@ -17,14 +17,20 @@ class Product
     #[ORM\Column(length: 255)]
     private ?string $name = null;
 
-    #[ORM\Column]
-    private ?float $price = null;
+    #[ORM\Column(type: Types::FLOAT)]
+    private ?float $priceImport = null;
+
+    #[ORM\Column(type: Types::FLOAT)]
+    private ?float $priceExport = null;
 
     #[ORM\Column(type: Types::DATE_MUTABLE)]
     private ?\DateTime $created = null;
 
     #[ORM\Column(length: 255, nullable: true)]
     private ?string $image = null;
+
+    #[ORM\Column]
+    private ?int $Quantity = null;
 
     public function getId(): ?int
     {
@@ -43,15 +49,25 @@ class Product
         return $this;
     }
 
-    public function getPrice(): ?float
+    public function getPriceImport(): ?float
     {
-        return $this->price;
+        return $this->priceImport;
     }
 
-    public function setPrice(float $price): static
+    public function setPriceImport(float $priceImport): self
     {
-        $this->price = $price;
+        $this->priceImport = $priceImport;
+        return $this;
+    }
 
+    public function getPriceExport(): ?float
+    {
+        return $this->priceExport;
+    }
+
+    public function setPriceExport(float $priceExport): self
+    {
+        $this->priceExport = $priceExport;
         return $this;
     }
 
@@ -78,4 +94,17 @@ class Product
 
         return $this;
     }
+
+    public function getQuantity(): ?int
+    {
+        return $this->Quantity;
+    }
+
+    public function setQuantity(int $Quantity): static
+    {
+        $this->Quantity = $Quantity;
+
+        return $this;
+    }
+    
 }
