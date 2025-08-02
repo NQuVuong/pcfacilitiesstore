@@ -3,18 +3,19 @@
 {% block title %}Hello HomepageController!{% endblock %}
 
 {% block body %}
-<style>
-    .example-wrapper { margin: 1em auto; max-width: 800px; width: 95%; font: 18px/1.5 sans-serif; }
-    .example-wrapper code { background: #F5F5F5; padding: 2px 6px; }
-</style>
+    <div class="example-wrapper mx-auto max-w-3xl p-4">
+        <h1 class="text-2xl font-bold mb-4">Hello {{ controller_name }}! ✅</h1>
 
-<div class="example-wrapper">
-    <h1>Hello {{ controller_name }}! ✅</h1>
+        <p>This friendly message is coming from:</p>
+        <ul class="list-disc ml-5 mt-2">
+            <li>Your controller at <code>D:/COMP1682/pcstore/src/Controller/HomepageController.php</code></li>
+            <li>Your template at <code>D:/COMP1682/pcstore/templates/homepage/index.html.twig</code></li>
+        </ul>
 
-    This friendly message is coming from:
-    <ul>
-        <li>Your controller at <code>D:/COMP1682/pcstore/src/Controller/HomepageController.php</code></li>
-        <li>Your template at <code>D:/COMP1682/pcstore/templates/homepage/index.html.twig</code></li>
-    </ul>
-</div>
+        {% if app.user %}
+            <p class="mt-4 text-sm text-gray-900 dark:text-white">
+                You are logged in as {{ app.user.userIdentifier }}, <a href="{{ path('app_logout') }}" class="text-blue-600 hover:underline dark:text-blue-500">Logout</a>
+            </p>
+        {% endif %}
+    </div>
 {% endblock %}
