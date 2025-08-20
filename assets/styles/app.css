@@ -1,7 +1,5 @@
 @import "tailwindcss";
-@import "flowbite/src/themes/default";
-@source "../node_modules/flowbite";
-@plugin "flowbite/plugin";
+@plugin "daisyui";
 @source not "../../public";
 body {
     background-color: lightgray;

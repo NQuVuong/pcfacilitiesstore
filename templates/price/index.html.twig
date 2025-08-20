@@ -1,0 +1,37 @@
+{% extends 'admin.html.twig' %}
+{% block title %}Set Export Prices{% endblock %}
+{% block body %}
+<div class="px-4 sm:px-6 lg:px-8">
+  <h1 class="text-xl font-semibold mb-4">Đặt/Chỉnh giá xuất</h1>
+  <table class="min-w-full divide-y divide-gray-300 bg-white rounded-lg overflow-hidden">
+    <thead class="bg-gray-50">
+      <tr>
+        <th class="px-4 py-3 text-left text-sm font-semibold text-gray-900">ID</th>
+        <th class="px-4 py-3 text-left text-sm font-semibold text-gray-900">Name</th>
+        <th class="px-4 py-3 text-left text-sm font-semibold text-gray-900">Import (gốc)</th>
+        <th class="px-4 py-3 text-left text-sm font-semibold text-gray-900">Export (hiện tại)</th>
+        <th class="px-4 py-3 text-left text-sm font-semibold text-gray-900">Action</th>
+      </tr>
+    </thead>
+    <tbody class="divide-y divide-gray-200">
+      {% for p in products %}
+      <tr class="hover:bg-gray-50">
+        <td class="px-4 py-3 text-sm text-gray-500">{{ p.id }}</td>
+        <td class="px-4 py-3 text-sm text-gray-900">{{ p.name }}</td>
+        <td class="px-4 py-3 text-sm text-gray-900">
+          ${{ p.originalImportPrice ?? '—' }}
+        </td>
+        <td class="px-4 py-3 text-sm text-gray-900">
+          {% set exp = p.currentExportPrice %}
+          {{ exp is not null ? ('$'~exp) : 'Chưa đặt' }}
+        </td>
+        <td class="px-4 py-3 text-sm">
+          <a class="text-indigo-600 hover:text-indigo-800"
+             href="{{ path('price_set', {'id': p.id}) }}">Set / Update</a>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

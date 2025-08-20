@@ -1,0 +1,52 @@
+{% extends 'admin.html.twig' %}
+{% block title %}Set Export Price{% endblock %}
+
+{% block body %}
+  <div class="max-w-2xl mx-auto mt-6">
+    <div class="bg-white rounded-lg shadow p-6">
+      <h2 class="text-lg font-semibold text-gray-900 mb-4">
+        Đặt giá xuất cho: <span class="font-bold">{{ product.name }}</span>
+      </h2>
+
+      <div class="mb-5">
+        <label class="block mb-2 text-sm font-medium text-gray-900">Import Price (gốc)</label>
+        <input
+          type="text"
+          value="{{ product.originalImportPrice is not null ? product.originalImportPrice : '—' }}"
+          class="bg-gray-100 border border-gray-300 text-gray-500 text-sm rounded-lg block w-full p-2.5 cursor-not-allowed"
+          disabled
+        />
+        <p class="mt-1 text-xs text-gray-500">Giá nhập ban đầu, không thay đổi.</p>
+      </div>
+
+      {{ form_start(form) }}
+        <div class="mb-5">
+          <label class="block mb-2 text-sm font-medium text-gray-900">Export Price</label>
+          {{ form_widget(form.exportPrice, {
+            attr: {
+              class: 'bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5',
+              placeholder: 'Enter export price'
+            }
+          }) }}
+          {{ form_errors(form.exportPrice) }}
+        </div>
+
+        <div class="flex gap-2">
+          {{ form_widget(form.save, {
+            attr: {
+              class: 'text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center'
+            }
+          }) }}
+          <button type="reset"
+                  class="text-gray-700 bg-gray-200 hover:bg-gray-300 focus:ring-4 focus:outline-none focus:ring-gray-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center">
+            Reset
+          </button>
+          <a href="{{ path('price_index') }}"
+             class="text-gray-700 bg-gray-100 hover:bg-gray-200 border border-gray-300 focus:ring-4 focus:outline-none focus:ring-gray-200 font-medium rounded-lg text-sm px-5 py-2.5 text-center">
+            Cancel
+          </a>
+        </div>
+      {{ form_end(form) }}
+    </div>
+  </div>
+{% endblock %}

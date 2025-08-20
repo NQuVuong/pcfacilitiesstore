@@ -1,26 +1,41 @@
 {% extends 'base.html.twig' %}
 
 {% block body %}
-    <!-- Main Content -->
     <main class="flex-grow bg-gray-100 py-8">
         <div class="container mx-auto px-4">
-            
-
-            <!-- Products Grid -->
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                 {% for p in products %}
-                <div class="bg-white rounded-lg shadow-md overflow-hidden">
-                    <div class="relative group">
-                        <img src="{{ asset('uploads/' ~ p.image) }}" 
-                             class="w-full h-64 object-cover transition-transform duration-300 group-hover:scale-105" 
-                             alt="{{ p.name }}">
-                    </div>
-                    <div class="p-4">
-                        <a href="{{ path('product_detail', {'id': p.id}) }}" 
-                           class="text-lg font-medium text-gray-800 hover:text-indigo-600">
-                            {{ p.name }}
-                        </a>
-                        <p class="mt-2 text-xl font-bold text-indigo-600">${{ p.priceExport }}</p>
+                <div class="card bg-base-100 shadow-sm w-full">
+                    <figure class="h-64">
+                        <img 
+                            src="{{ asset('uploads/' ~ p.image) }}" 
+                            alt="{{ p.name }}" 
+                            class="object-cover w-full h-full"
+                        />
+                    </figure>
+                    <div class="card-body">
+                        <h2 class="card-title">
+                            <a href="{{ path('product_detail', {'id': p.id}) }}" class="hover:text-indigo-600">
+                                {{ p.name }}
+                            </a>
+                        </h2>
+
+                        {# Lấy bản ghi Price mới nhất (nhờ OrderBy DESC ở Product::$prices) #}
+                        {% set latest = p.prices|first %}
+
+                        <p class="text-xl font-bold text-indigo-600">
+                          {% if latest and latest.exportPrice is not null %}
+                            ${{ latest.exportPrice }}
+                          {% else %}
+                            <span class="text-gray-400 italic">Chưa đặt</span>
+                          {% endif %}
+                        </p>
+
+                        <div class="card-actions justify-end">
+                            <a href="{{ path('product_detail', {'id': p.id}) }}" class="btn btn-primary">
+                                Buy Now
+                            </a>
+                        </div>
                     </div>
                 </div>
                 {% endfor %}
