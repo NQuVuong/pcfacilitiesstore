@@ -6,8 +6,12 @@ use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
 use App\Entity\Product;
+use App\Entity\Price;
 use App\Form\ProductType;
 use App\Repository\ProductRepository;
+use Doctrine\ORM\EntityManagerInterface;
+use Symfony\Component\HttpFoundation\File\UploadedFile;
+use Symfony\Component\HttpFoundation\File\Exception\FileException;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\String\Slugger\SluggerInterface;
 
@@ -15,10 +19,12 @@ use Symfony\Component\String\Slugger\SluggerInterface;
 class ProductController extends AbstractController
 {
     private ProductRepository $repo;
+    private EntityManagerInterface $em;
 
-    public function __construct(ProductRepository $repo)
+    public function __construct(ProductRepository $repo, EntityManagerInterface $em)
     {
         $this->repo = $repo;
+        $this->em   = $em;
     }
 
     #[Route('/', name: 'app_product_index')]
@@ -49,12 +55,32 @@ class ProductController extends AbstractController
             if ($p->getCreated() === null) {
                 $p->setCreated(new \DateTime());
             }
+
+            /** @var UploadedFile|null $imgFile */
             $imgFile = $form->get('file')->getData();
-            if ($imgFile) {
+            if ($imgFile instanceof UploadedFile) {
                 $newFilename = $this->uploadImage($imgFile, $slugger);
                 $p->setImage($newFilename);
+            } else {
+                $p->setImage($form->get('image')->getData());
             }
-            $this->repo->add($p, true); // Changed from save to add
+
+            // Lưu Product trước để có ID
+            $this->repo->add($p, true);
+
+            // === TẠO BẢN GHI PRICE ĐẦU TIÊN (NHẬP TỪ importPrice) ===
+            if ($form->has('importPrice')) {
+                $importPrice = $form->get('importPrice')->getData();
+                if ($importPrice !== null && $importPrice !== '') {
+                    $price = new Price();
+                    $price->setProduct($p);
+                    $price->setImportPrice((float)$importPrice);
+                    $price->setExportPrice(null); // admin sẽ set sau
+                    $this->em->persist($price);
+                    $this->em->flush();
+                }
+            }
+
             return $this->redirectToRoute('app_product_index', [], Response::HTTP_SEE_OTHER);
         }
         return $this->render("product/form.html.twig", [
@@ -65,26 +91,37 @@ class ProductController extends AbstractController
     #[Route('/edit/{id}', name: 'product_edit', requirements: ['id' => '\d+'])]
     public function editAction(Request $req, Product $p, SluggerInterface $slugger): Response
     {
-        $form = $this->createForm(ProductType::class, $p);   
+        $form = $this->createForm(ProductType::class, $p);
         $form->handleRequest($req);
+        $form = $this->createForm(ProductType::class, $p, [
+            'is_edit' => true, // ⬅️ ẩn field importPrice trên form edit
+        ]);
         if ($form->isSubmitted() && $form->isValid()) {
             if ($p->getCreated() === null) {
                 $p->setCreated(new \DateTime());
             }
+
+            /** @var UploadedFile|null $imgFile */
             $imgFile = $form->get('file')->getData();
-            if ($imgFile) {
+            if ($imgFile instanceof UploadedFile) {
                 $newFilename = $this->uploadImage($imgFile, $slugger);
                 $p->setImage($newFilename);
+            } else {
+                $p->setImage($form->get('image')->getData());
             }
-            $this->repo->add($p, true); // Changed from save to add
+
+            // Chỉ cập nhật Product, KHÔNG tạo Price mới ở màn edit
+            $this->repo->add($p, true);
+
             return $this->redirectToRoute('app_product_index', [], Response::HTTP_SEE_OTHER);
         }
         return $this->render("product/form.html.twig", [
             'form' => $form->createView()
         ]);
+        
     }
 
-    public function uploadImage($imgFile, SluggerInterface $slugger): ?string
+    public function uploadImage(UploadedFile $imgFile, SluggerInterface $slugger): ?string
     {
         $originalFilename = pathinfo($imgFile->getClientOriginalName(), PATHINFO_FILENAME);
         $safeFilename = $slugger->slug($originalFilename);
@@ -95,7 +132,8 @@ class ProductController extends AbstractController
                 $newFilename
             );
         } catch (FileException $e) {
-            echo $e;
+            // Có thể đổi sang addFlash + redirect nếu muốn UX tốt hơn
+            throw $e;
         }
         return $newFilename;
     }
@@ -110,25 +148,7 @@ class ProductController extends AbstractController
     #[Route('/new', name: 'product_new')]
     public function new(Request $request, SluggerInterface $slugger): Response
     {
-        $p = new Product();
-        $form = $this->createForm(ProductType::class, $p);
-
-        $form->handleRequest($request);
-        if ($form->isSubmitted() && $form->isValid()) {
-            if ($p->getCreated() === null) {
-                $p->setCreated(new \DateTime());
-            }
-            $imgFile = $form->get('file')->getData();
-            if ($imgFile) {
-                $newFilename = $this->uploadImage($imgFile, $slugger);
-                $p->setImage($newFilename);
-            }
-            $this->repo->add($p, true);
-            return $this->redirectToRoute('app_product_index', [], Response::HTTP_SEE_OTHER);
-        }
-
-        return $this->render("product/form.html.twig", [
-            'form' => $form->createView()
-        ]);
+        // giữ behavior giống /add cho tiện
+        return $this->createAction($request, $slugger);
     }
 }

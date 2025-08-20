@@ -1,58 +1,77 @@
 {% extends "home.html.twig" %}
+
 {% block title %}
-    Detail of product {{p.id}}
+  Detail of product {{ p.id }}
 {% endblock %}
+
 {% block body %}
-<section class="h-100 h-custom" style="background-color: #6e76e6;">
-  <div class="container py-5 h-100">
-    <div class="row d-flex justify-content-center align-items-center h-100">
-      <div class="col-12">
-        <div class="card card-registration card-registration-2" style="border-radius: 15px;">
-          <div class="card-body p-0">
-            <div class="row g-0">
-              
-            <div class="col-lg-5 p-5">
-                    <div class="image_selected ms-3">
-                    {% set img = p.image %}
-                        <img src="{{asset('uploads/'~img)}}"
-                        class="w-100" />
-                    </div>
-                </div>
-                <div class="col-lg-7 p-5">
-                    <div class="product_description">
-                        <div class="product_name">{{p.name}}</div>
-                        
-                        <div> <span class="product_price">Cost: {{p.priceExport}}<span>&#0036;</span> </div>
-                        
-                        <div>  
-                            <span class="product_info">Date: {{p.created|date("m/d/Y")}}<span><br> 
-                            <span class="product_info">In Stock: {{p.quantity}}<span> </div>
-                        
-                        <hr class="singleline">
-                        <div class="order_info d-flex flex-row">
-                            <form action="#">
-                        </div>
-                        <div class="row">
-                            <form action="#" method="get">
-                            <div class="col-lg-3 mb-4" style="margin-left: 13px;">
-                                <div class="form-group">
-                                    <label for="qty_label">Quantity:</label>
-                                    <input type="number" id="quantity_input" class="form-control" name="quantity_input" value="1" >     
-                                </div>
-                            </div>
-                            <a href="/"><button type="button" class="btn btn-outline-primary">Back</button></a>
-                            {# <div class="col-lg-9"> <button type="submit" class="btn btn-primary shop-button">Add to Cart</button>  #}
-                            <!-- <button type="button" class="btn btn-success shop-button">Buy Now</button> -->
-                            </div>
-                            </form>
-                        </div>
-                    </div>
-                </div>
+<main class="bg-base-200 py-8">
+  <div class="container mx-auto px-4">
+    <!-- Breadcrumbs -->
+    <div class="breadcrumbs text-sm mb-4">
+      <ul>
+        <li><a href="{{ path('app_product_index') }}">Home</a></li>
+        <li>{{ p.name }}</li>
+      </ul>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+      <!-- Left: Image -->
+      <div class="lg:col-span-5">
+        <div class="card bg-base-100 shadow-xl">
+          <figure class="aspect-[4/3]">
+            <img
+              src="{{ p.image ? asset('uploads/' ~ p.image) : asset('uploads/placeholder.png') }}"
+              alt="{{ p.name }}"
+              class="object-cover w-full h-full"
+            />
+          </figure>
+        </div>
+      </div>
+
+      <!-- Right: Info -->
+      <div class="lg:col-span-7">
+        <div class="card bg-base-100 shadow-xl">
+          <div class="card-body">
+            <h1 class="card-title text-3xl">{{ p.name }}</h1>
+
+            {# Lấy bản ghi Price mới nhất (nhờ OrderBy DESC ở Product::$prices) #}
+            {% set latest = p.prices|first %}
+
+            <p class="text-2xl font-bold text-primary">
+              {% if latest and latest.exportPrice is not null %}
+                {{ latest.exportPrice|number_format(0, '.', ',') }}
+              {% else %}
+                <span class="text-gray-400 italic">Chưa đặt</span>
+              {% endif %}
+            </p>
+
+            <div class="space-x-2 mt-2">
+              <span class="badge badge-outline">
+                Ngày thêm: {{ p.created ? p.created|date("m/d/Y") : '—' }}
+              </span>
+              <span class="badge {{ p.quantity > 0 ? 'badge-success' : 'badge-error' }}">
+                {{ p.quantity > 0 ? ('Còn hàng: ' ~ p.quantity) : 'Hết hàng' }}
+              </span>
+            </div>
+
+            <div class="divider"></div>
+
+            <div class="form-control w-40">
+              <label class="label"><span class="label-text">Số lượng</span></label>
+              <input type="number" id="quantity_input" name="quantity_input" value="1" min="1"
+                     class="input input-bordered" />
+            </div>
+
+            <div class="card-actions mt-6">
+              <a href="{{ path('app_product_index') }}" class="btn btn-outline">Quay lại</a>
+              <a href="{{ path('product_detail', {'id': p.id}) }}" class="btn btn-primary">Buy Now</a>
             </div>
           </div>
         </div>
       </div>
+      <!-- /Right -->
     </div>
   </div>
-</section>
+</main>
 {% endblock %}

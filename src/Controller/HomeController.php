@@ -15,9 +15,8 @@ class HomeController extends AbstractController
    {
       $this->repo = $repo;
    }
-    /**
-     * @Route("/", name="homepage")
-     */
+    
+    #[Route(path: '/', name: 'homepage')]
     public function indexPageAction(): Response
     {
         $products = $this->repo->findAll();
@@ -25,9 +24,8 @@ class HomeController extends AbstractController
             'products'=>$products
         ]);
     }
-     /**
-     * @Route("/admin", name="adminPage")
-     */
+
+    #[Route(path: '/admin', name: 'app_admin')]
     public function adminPageAction(): Response{
         return $this->render('admin.html.twig', [
             
