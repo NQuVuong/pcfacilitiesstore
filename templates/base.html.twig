@@ -4,12 +4,6 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>{% block title %}PC Store{% endblock %}</title>
-    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 128 128%22><text y=%221.2em%22 font-size=%2296%22>⚫️</text><text y=%221.3em%22 x=%220.2em%22 font-size=%2276%22 fill=%22%23fff%22>sf</text></svg>">
-  
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://cdn.jsdelivr.net/npm/daisyui@5" rel="stylesheet" type="text/css" />
-    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
-    <link href="https://cdn.jsdelivr.net/npm/daisyui@5/themes.css" rel="stylesheet" type="text/css" />
     {% block stylesheets %}
         {{ encore_entry_link_tags('app') }}
     {% endblock %}
@@ -31,6 +25,27 @@
         <input type="text" name="q" value="{{ app.request.get('q') }}" placeholder="Search products..." class="input input-bordered w-48 md:w-64" />
       </form>
       {% if app.user %}
+      {# --- CART ICON (Lucide) --- #}
+      {% set _raw = app.session.get('cart', {}) %}
+      {% set _count = 0 %}
+      {% for q in _raw %}{% set _count = _count + q %}{% endfor %}
+
+      <div class="indicator mr-1">
+        <a href="{{ path('app_cart_index') }}" class="btn btn-ghost btn-circle" aria-label="Cart">
+          {# Lucide: shopping-cart #}
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+              stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="9" cy="21" r="1"></circle>
+            <circle cx="20" cy="21" r="1"></circle>
+            <path d="M1 1h4l2.68 12.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path>
+          </svg>
+        </a>
+        {% if _count > 0 %}
+          <span class="indicator-item badge badge-primary badge-sm">{{ _count }}</span>
+        {% endif %}
+      </div>
+
+      {# --- AVATAR DROPDOWN --- #}
         <div class="dropdown dropdown-end">
           <div tabindex="0" role="button" class="btn btn-ghost btn-circle avatar">
             <div class="w-10 rounded-full">
@@ -39,6 +54,7 @@
           </div>
           <ul tabindex="0" class="menu menu-sm dropdown-content bg-base-100 rounded-box z-[60] mt-3 w-56 p-2 shadow">
             <li class="menu-title px-4">{{ app.user.userIdentifier }}</li>
+            <li><a href="{{ path('app_orders_index') }}">My Orders</a></li>
             <li><a href="#">Profile</a></li>
             <li><a href="{{ path('app_admin') }}">Dashboard</a></li>
             <li class="mt-2">

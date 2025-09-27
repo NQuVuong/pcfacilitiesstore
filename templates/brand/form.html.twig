@@ -1,0 +1,15 @@
+{% extends 'admin.html.twig' %}
+{% block title %}{{ title|default('Add / Edit Brand') }}{% endblock %}
+{% block body %}
+<div class="max-w-xl mx-auto mt-6">
+  <div class="bg-white rounded-lg shadow p-6">
+    {{ form_start(form) }}
+      <div class="mb-5">
+        <label class="block mb-2 text-sm font-medium text-gray-900">Brand Name</label>
+        {{ form_widget(form.name) }}
+      </div>
+      {{ form_widget(form.save) }}
+    {{ form_end(form) }}
+  </div>
+</div>
+{% endblock %}

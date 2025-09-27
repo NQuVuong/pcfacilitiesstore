@@ -1,45 +1,55 @@
 {% extends 'base.html.twig' %}
 
 {% block body %}
-    <main class="flex-grow bg-gray-100 py-8">
-        <div class="container mx-auto px-4">
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                {% for p in products %}
-                <div class="card bg-base-100 shadow-sm w-full">
-                    <figure class="h-64">
-                        <img 
-                            src="{{ asset('uploads/' ~ p.image) }}" 
-                            alt="{{ p.name }}" 
-                            class="object-cover w-full h-full"
-                        />
-                    </figure>
-                    <div class="card-body">
-                        <h2 class="card-title">
-                            <a href="{{ path('product_detail', {'id': p.id}) }}" class="hover:text-indigo-600">
-                                {{ p.name }}
-                            </a>
-                        </h2>
+  <main class="flex-grow bg-gray-100 py-8">
+    <div class="container mx-auto px-4">
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        {% for p in products %}
+          <div class="card bg-base-100 shadow-sm w-full">
+            <figure class="h-64">
+              <img
+                src="{{ asset('uploads/' ~ p.image) }}"
+                alt="{{ p.name }}"
+                class="object-cover w-full h-full"
+              />
+            </figure>
 
-                        {# Lấy bản ghi Price mới nhất (nhờ OrderBy DESC ở Product::$prices) #}
-                        {% set latest = p.prices|first %}
+            <div class="card-body">
+              <h2 class="card-title">
+                <a href="{{ path('product_detail', {'id': p.id}) }}" class="hover:text-indigo-600">
+                  {{ p.name }}
+                </a>
+              </h2>
 
-                        <p class="text-xl font-bold text-indigo-600">
-                          {% if latest and latest.exportPrice is not null %}
-                            ${{ latest.exportPrice }}
-                          {% else %}
-                            <span class="text-gray-400 italic">Chưa đặt</span>
-                          {% endif %}
-                        </p>
+              {# Lấy bản ghi Price mới nhất (nhờ OrderBy DESC ở Product::$prices) #}
+              {% set latest = p.prices|first %}
+              {% set hasPrice = latest is not null and latest.exportPrice is not null %}
+              {% set canBuy = hasPrice and p.quantity > 0 %}
 
-                        <div class="card-actions justify-end">
-                            <a href="{{ path('product_detail', {'id': p.id}) }}" class="btn btn-primary">
-                                Buy Now
-                            </a>
-                        </div>
-                    </div>
-                </div>
-                {% endfor %}
+              <p class="text-xl font-bold {{ hasPrice ? 'text-indigo-600' : 'text-gray-400 italic' }}">
+                {% if hasPrice %}
+                  ${{ latest.exportPrice }}
+                {% else %}
+                  Chưa đặt
+                {% endif %}
+              </p>
+
+              <div class="card-actions mt-2">
+                {% if canBuy %}
+                  <form action="{{ path('app_cart_add', {id: p.id}) }}" method="post" class="w-full">
+                    <input type="hidden" name="qty" value="1">
+                    <button class="btn btn-neutral w-full">Thêm vào giỏ</button>
+                  </form>
+                {% else %}
+                  <button class="btn btn-disabled w-full" disabled>
+                    {% if not hasPrice %}Chưa có giá{% elseif p.quantity <= 0 %}Hết hàng{% endif %}
+                  </button>
+                {% endif %}
+              </div>
             </div>
-        </div>
-    </main>
+          </div>
+        {% endfor %}
+      </div>
+    </div>
+  </main>
 {% endblock %}

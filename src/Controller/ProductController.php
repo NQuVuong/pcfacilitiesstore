@@ -48,7 +48,7 @@ class ProductController extends AbstractController
     public function createAction(Request $req, SluggerInterface $slugger): Response
     {
         $p = new Product();
-        $form = $this->createForm(ProductType::class, $p);
+        $form = $this->createForm(\App\Form\ProductType::class, $p);
 
         $form->handleRequest($req);
         if ($form->isSubmitted() && $form->isValid()) {
@@ -91,11 +91,11 @@ class ProductController extends AbstractController
     #[Route('/edit/{id}', name: 'product_edit', requirements: ['id' => '\d+'])]
     public function editAction(Request $req, Product $p, SluggerInterface $slugger): Response
     {
-        $form = $this->createForm(ProductType::class, $p);
-        $form->handleRequest($req);
         $form = $this->createForm(ProductType::class, $p, [
-            'is_edit' => true, // ⬅️ ẩn field importPrice trên form edit
-        ]);
+        'is_edit' => true, // truyền option để ẩn importPrice
+    ]);
+
+        $form->handleRequest($req);
         if ($form->isSubmitted() && $form->isValid()) {
             if ($p->getCreated() === null) {
                 $p->setCreated(new \DateTime());
@@ -138,10 +138,15 @@ class ProductController extends AbstractController
         return $newFilename;
     }
 
-    #[Route('/delete/{id}', name: 'product_delete', requirements: ['id' => '\d+'])]
+    #[Route('/delete/{id}', name: 'product_delete', requirements: ['id' => '\d+'], methods: ['POST'])]
     public function deleteAction(Request $request, Product $p): Response
     {
-        $this->repo->remove($p, true);
+        if ($this->isCsrfTokenValid('delete_product_'.$p->getId(), $request->request->get('_token'))) {
+            $this->repo->remove($p, true);
+            $this->addFlash('success', 'Đã xóa product thành công.');
+        } else {
+            $this->addFlash('error', 'Token không hợp lệ. Không thể xóa.');
+        }
         return $this->redirectToRoute('app_product_index', [], Response::HTTP_SEE_OTHER);
     }
 

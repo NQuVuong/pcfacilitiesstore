@@ -1,0 +1,69 @@
+{% extends 'base.html.twig' %}
+{% block title %}Checkout{% endblock %}
+
+{% block body %}
+<div class="max-w-6xl mx-auto mt-6 grid grid-cols-1 lg:grid-cols-12 gap-6">
+
+  {# Left: Order summary #}
+  <div class="lg:col-span-7">
+    <div class="bg-white rounded-lg shadow overflow-x-auto">
+      <table class="min-w-full">
+        <thead class="bg-gray-50">
+          <tr class="text-left text-sm text-gray-600">
+            <th class="px-6 py-3">Product</th>
+            <th class="px-6 py-3">Price</th>
+            <th class="px-6 py-3">Qty</th>
+            <th class="px-6 py-3">Subtotal</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-100">
+          {% for it in items %}
+            <tr class="text-sm">
+              <td class="px-6 py-4">{{ it.p.name }}</td>
+              <td class="px-6 py-4">${{ it.unit|number_format(2,'.',',') }}</td>
+              <td class="px-6 py-4">{{ it.qty }}</td>
+              <td class="px-6 py-4 font-medium">${{ it.line|number_format(2,'.',',') }}</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    <div class="mt-4 text-right text-xl">
+      <span class="text-gray-600">Total:</span>
+      <span class="font-semibold">${{ total|number_format(2,'.',',') }}</span>
+    </div>
+  </div>
+
+  {# Right: Checkout form #}
+  <div class="lg:col-span-5">
+    <div class="bg-white rounded-lg shadow p-6">
+      <h2 class="text-lg font-semibold mb-4">Billing & Shipping</h2>
+
+      {{ form_start(form) }}
+        <div class="grid grid-cols-1 gap-4">
+          {{ form_row(form.customerName, {'row_attr': {'class': 'form-control'}}) }}
+          {{ form_row(form.customerEmail, {'row_attr': {'class': 'form-control'}}) }}
+          {{ form_row(form.customerPhone, {'row_attr': {'class': 'form-control'}}) }}
+          {{ form_row(form.shippingAddress, {'row_attr': {'class': 'form-control'}}) }}
+
+          <div>
+            <label class="block text-sm font-medium mb-1">Payment</label>
+            {{ form_widget(form.paymentMethod) }}
+            {{ form_errors(form.paymentMethod) }}
+          </div>
+
+          {{ form_row(form.note) }}
+          <div class="mt-2">
+            {{ form_row(form.agree) }}
+          </div>
+
+          <button class="btn btn-primary w-full mt-2">Place order</button>
+        </div>
+      {{ form_end(form) }}
+
+      <a href="{{ path('app_cart_index') }}" class="btn btn-ghost w-full mt-3">Back to cart</a>
+    </div>
+  </div>
+</div>
+{% endblock %}

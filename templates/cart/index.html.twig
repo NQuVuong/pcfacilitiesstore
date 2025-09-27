@@ -1,0 +1,57 @@
+{% extends 'base.html.twig' %}
+{% block title %}Cart{% endblock %}
+
+{% block body %}
+<div class="max-w-5xl mx-auto mt-6">
+  <form action="{{ path('app_cart_checkout_start') }}" method="post">
+    <div class="bg-white rounded-lg shadow overflow-x-auto">
+      <table class="min-w-full">
+        <thead class="bg-gray-50">
+          <tr class="text-left text-sm text-gray-600">
+            <th class="px-6 py-3"></th>
+            <th class="px-6 py-3">Product</th>
+            <th class="px-6 py-3">Price</th>
+            <th class="px-6 py-3">Qty</th>
+            <th class="px-6 py-3">Subtotal</th>
+            <th class="px-6 py-3"></th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-100">
+          {% for r in rows %}
+            <tr class="text-sm">
+              <td class="px-6 py-4">
+                <input type="checkbox" name="selected[]" value="{{ r.p.id }}" class="checkbox">
+              </td>
+              <td class="px-6 py-4">{{ r.p.name }}</td>
+              <td class="px-6 py-4">${{ r.unit|number_format(2,'.',',') }}</td>
+              <td class="px-6 py-4">
+                <form action="{{ path('app_cart_update', {id: r.p.id}) }}" method="post">
+                  <input type="number" name="qty" value="{{ r.qty }}" min="1" class="input input-bordered w-20">
+                </form>
+              </td>
+              <td class="px-6 py-4 font-medium">${{ r.line|number_format(2,'.',',') }}</td>
+              <td class="px-6 py-4">
+                <form action="{{ path('app_cart_remove', {id: r.p.id}) }}" method="post">
+                  <button class="btn btn-ghost btn-sm">Remove</button>
+                </form>
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    <div class="mt-4 flex items-center justify-between">
+      <div class="text-xl">
+        Total: <b>${{ total|number_format(2,'.',',') }}</b>
+      </div>
+      <div class="flex gap-2">
+        <form action="{{ path('app_cart_clear') }}" method="post">
+          <button class="btn btn-outline">Clear</button>
+        </form>
+        <button class="btn btn-primary">Checkout</button>
+      </div>
+    </div>
+  </form>
+</div>
+{% endblock %}

@@ -1,0 +1,41 @@
+{% extends 'base.html.twig' %}
+{% block title %}Order #{{ order.id }}{% endblock %}
+{% block body %}
+<div class="max-w-5xl mx-auto mt-6 space-y-4">
+  <div class="bg-white rounded-lg shadow p-6">
+    <div class="flex items-center justify-between">
+      <h1 class="text-xl font-semibold">Order #{{ order.id }}</h1>
+      <div class="text-gray-600">{{ order.createdAt|date('Y-m-d H:i') }}</div>
+    </div>
+    <div class="mt-1 text-gray-600">Status: <b>{{ order.status }}</b></div>
+    <div class="mt-1 text-gray-600">Total: <b>${{ order.total }}</b></div>
+  </div>
+
+  <div class="bg-white rounded-lg shadow overflow-x-auto">
+    <table class="min-w-full">
+      <thead class="bg-gray-50">
+        <tr class="text-left text-sm text-gray-600">
+          <th class="px-6 py-3">Product</th>
+          <th class="px-6 py-3">Price</th>
+          <th class="px-6 py-3">Qty</th>
+          <th class="px-6 py-3">Subtotal</th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-gray-100">
+        {% for it in order.items %}
+          <tr class="text-sm">
+            <td class="px-6 py-4">{{ it.productName }}</td>
+            <td class="px-6 py-4">${{ it.unitPrice }}</td>
+            <td class="px-6 py-4">{{ it.quantity }}</td>
+            <td class="px-6 py-4 font-medium">${{ it.lineTotal }}</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <div>
+    <a href="{{ path('app_orders_index') }}" class="text-gray-700 hover:underline">← Back to orders</a>
+  </div>
+</div>
+{% endblock %}

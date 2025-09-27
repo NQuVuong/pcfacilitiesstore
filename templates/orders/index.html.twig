@@ -1,0 +1,37 @@
+{% extends 'base.html.twig' %}
+{% block title %}My Orders{% endblock %}
+{% block body %}
+<div class="max-w-5xl mx-auto mt-6">
+  <h1 class="text-2xl font-semibold mb-4">My Orders</h1>
+  {% if orders is empty %}
+    <div class="bg-white rounded-lg shadow p-8 text-center text-gray-600">Chưa có đơn hàng.</div>
+  {% else %}
+    <div class="bg-white rounded-lg shadow overflow-x-auto">
+      <table class="min-w-full">
+        <thead class="bg-gray-50">
+          <tr class="text-left text-sm text-gray-600">
+            <th class="px-6 py-3">#</th>
+            <th class="px-6 py-3">Date</th>
+            <th class="px-6 py-3">Status</th>
+            <th class="px-6 py-3">Total</th>
+            <th class="px-6 py-3"></th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-100">
+          {% for o in orders %}
+            <tr class="text-sm">
+              <td class="px-6 py-4">#{{ o.id }}</td>
+              <td class="px-6 py-4">{{ o.createdAt|date('Y-m-d H:i') }}</td>
+              <td class="px-6 py-4">{{ o.status }}</td>
+              <td class="px-6 py-4 font-medium">${{ o.total }}</td>
+              <td class="px-6 py-4">
+                <a href="{{ path('app_orders_show', {id: o.id}) }}" class="text-indigo-600 hover:underline">View</a>
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  {% endif %}
+</div>
+{% endblock %}
