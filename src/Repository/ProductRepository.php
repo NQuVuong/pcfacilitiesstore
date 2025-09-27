@@ -58,6 +58,17 @@ class ProductRepository extends ServiceEntityRepository
        ;
    }
 
+   public function findByCategoryId(int $id): array
+{
+    return $this->createQueryBuilder('p')
+        ->leftJoin('p.category', 'c')->addSelect('c')
+        ->andWhere('c.id = :id')
+        ->setParameter('id', $id)
+        ->orderBy('p.id', 'DESC')
+        ->getQuery()
+        ->getResult();
+}
+
    public function findProByBrand($value): array
    {
     // SELECT p.id,c.id,p.name,p.image,p.price_export 
@@ -65,7 +76,7 @@ class ProductRepository extends ServiceEntityRepository
     // WHERE p.procat_id=b.id AND b.id=1
        return $this->createQueryBuilder('p')
            ->select('p.id,p.name,p.image,p.priceExport') 
-           ->innerJoin('p.probrand','b')
+           ->innerJoin('p.brand','b')
            ->Where('b.id = :val')
            ->setParameter('val', $value)
            ->getQuery()
@@ -86,6 +97,7 @@ class ProductRepository extends ServiceEntityRepository
            ->getArrayResult()
        ;
    }
+   
     //    /**
     //     * @return Product[] Returns an array of Product objects
     //     */

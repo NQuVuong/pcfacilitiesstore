@@ -1,118 +1,141 @@
+{# templates/admin.html.twig #}
 <!DOCTYPE html>
 <html lang="en" data-theme="light" class="h-full">
 <head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}Admin Dashboard - PC Store{% endblock %}</title>
-    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 128 128%22><text y=%221.2em%22 font-size=%2296%22>⚫️</text><text y=%221.3em%22 x=%220.2em%22 font-size=%2276%22 fill=%22%23fff%22>sf</text></svg>">
-    <link href="https://cdn.jsdelivr.net/npm/daisyui@5/dist/full.min.css" rel="stylesheet" type="text/css" />
-    <script src="https://cdn.tailwindcss.com"></script>
-    {% block stylesheets %}
-        {{ encore_entry_link_tags('app') }}
-    {% endblock %}
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}Admin Dashboard - PC Store{% endblock %}</title>
+
+  {{ encore_entry_link_tags('app') }}
+  {% block stylesheets %}{% endblock %}
 </head>
 <body class="flex h-screen bg-gray-100">
-    <!-- Sidebar -->
-    <div class="fixed inset-y-0 left-0 w-64 bg-white shadow-lg z-50">
-        <div class="flex items-center justify-center h-16 border-b">
-            <a href="{{ path('app_homepage') }}" class="flex items-center gap-2">
-                <img src="https://cdn-icons-png.flaticon.com/512/7656/7656399.png" class="h-8 w-auto" alt="PC Store Logo">
-                <span class="text-lg font-bold text-gray-800">PC Store</span>
-            </a>
-        </div>
-        <nav class="mt-6 px-2">
-            <a href="{{ path('app_product_index') }}" 
-               class="flex items-center px-4 py-2 text-gray-700 hover:bg-gray-200 {% if app.request.attributes.get('_route') == 'app_product_index' %}bg-blue-100 text-blue-600{% endif %}">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
-                </svg>
-                Products
-            </a>
-            <a href="#" 
-               class="flex items-center px-4 py-2 text-gray-700 hover:bg-gray-200 {% if app.request.attributes.get('_route') == 'app_category_index' %}bg-blue-100 text-blue-600{% endif %}">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16" />
-                </svg>
-                Categories
-            </a>
-            <a href="#" 
-               class="flex items-center px-4 py-2 text-gray-700 hover:bg-gray-200 {% if app.request.attributes.get('_route') == 'app_brand_index' %}bg-blue-100 text-blue-600{% endif %}">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-                </svg>
-                Brands
-            </a>
-            <a href="{{ path('price_index') }}" 
-                class="flex items-center px-4 py-2 text-gray-700 hover:bg-gray-200 {% if app.request.attributes.get('_route') starts with 'price_' %}bg-blue-100 text-blue-600{% endif %}">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4-1.79-4-4-4zm0 10c-3.31 0-6-2.69-6-6s2.69-6 6-6 6 2.69 6 6-2.69 6-6 6z"/>
-                    </svg>
-                    Set Prices
-            </a>
-        </nav>
+  <!-- Sidebar -->
+  <aside class="fixed inset-y-0 left-0 w-64 bg-white shadow-lg z-50">
+    <div class="flex items-center justify-center h-16 border-b">
+      <a href="{{ path('app_homepage') }}" class="flex items-center gap-2 select-none">
+        <img src="https://cdn-icons-png.flaticon.com/512/7656/7656399.png" class="h-8 w-auto" alt="PC Store Logo">
+        <span class="text-lg font-bold text-gray-800">PC Store</span>
+      </a>
     </div>
+    <nav class="mt-6 px-2 space-y-1">
+      <a href="{{ path('app_product_index') }}"
+         class="flex items-center px-4 py-2 rounded-md text-gray-700 hover:bg-gray-200
+         {% if app.request.attributes.get('_route') == 'app_product_index' %}bg-blue-100 text-blue-600{% endif %}">
+        <i data-lucide="box" class="h-5 w-5 mr-2"></i>
+        Products
+      </a>
+      <a href="{{ path('category_index') }}"
+         class="flex items-center px-4 py-2 rounded-md text-gray-700 hover:bg-gray-200
+         {% if app.request.attributes.get('_route') == 'category_index' %}bg-blue-100 text-blue-600{% endif %}">
+        <i data-lucide="list" class="h-5 w-5 mr-2"></i>
+        Categories
+      </a>
+      <a href="{{ path('brand_index') }}" class="flex items-center px-4 py-2 rounded-md text-gray-700 hover:bg-gray-200">
+        <i data-lucide="layers" class="h-5 w-5 mr-2"></i>
+        Brands
+      </a>
+      <a href="{{ path('price_index') }}"
+         class="flex items-center px-4 py-2 rounded-md text-gray-700 hover:bg-gray-200
+         {% if app.request.attributes.get('_route') starts with 'price_' %}bg-blue-100 text-blue-600{% endif %}">
+        <i data-lucide="dollar-sign" class="h-5 w-5 mr-2"></i>
+        Set Prices
+      </a>
+    </nav>
+  </aside>
 
+  <!-- Main -->
+  <div class="flex-1 flex flex-col ml-64">
     <!-- Navbar -->
-    <div class="flex-1 flex flex-col ml-64">
-        <header class="bg-white shadow-md p-4 flex justify-between items-center">
-            <div class="flex items-center">
-                <input type="text" placeholder="Search here..." class="input input-bordered w-64 mr-4">
-                <button class="btn btn-ghost btn-circle">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                    </svg>
-                </button>
-            </div>
-            <div class="navbar-end">
-      {% if app.user %}
-        <div class="dropdown dropdown-end">
-          <!-- trigger -->
-          <button class="btn btn-ghost h-12 min-h-0 px-2 normal-case">
-            <div class="avatar mr-3">
-              <div class="w-9 rounded-full ring ring-base-300 ring-offset-base-100 ring-offset-1">
-                <img src="https://img.daisyui.com/images/stock/photo-1534528741775-53994a69daeb.webp" alt="User avatar">
-              </div>
-            </div>
-            <span class="hidden sm:inline max-w-[180px] truncate text-sm font-medium">
-              {{ app.user.userIdentifier }}
-            </span>
-            <svg xmlns="http://www.w3.org/2000/svg" class="ml-2 h-4 w-4 opacity-70" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m6 9 6 6 6-6"/>
-            </svg>
-          </button>
+    <header class="bg-white shadow-md p-4 flex justify-between items-center">
+      <div class="flex items-center">
+        <input type="text" placeholder="Search here..." class="input input-bordered w-64 mr-4">
+        <button class="btn btn-ghost btn-circle">
+          <i data-lucide="search" class="h-5 w-5"></i>
+        </button>
+      </div>
+      <div class="flex items-center gap-3 select-none">
+        {% if app.user %}
+          <div class="w-9 h-9 rounded-full overflow-hidden ring ring-primary/30 ring-offset-2 ring-offset-white">
+            <img src="https://img.daisyui.com/images/stock/photo-1534528741775-53994a69daeb.webp" alt="User avatar"
+                 class="w-full h-full object-cover">
+          </div>
+          <span class="truncate max-w-[220px] text-sm font-medium text-gray-800">
+            {{ app.user.userIdentifier }}
+          </span>
+        {% else %}
+          <a href="{{ path('app_login') }}" class="btn btn-primary btn-sm">Login</a>
+        {% endif %}
+      </div>
+    </header>
 
-          <!-- menu -->
-          <ul tabindex="0" class="menu menu-sm dropdown-content bg-base-100 rounded-box z-[1] mt-2 w-52 p-2 shadow">
-            <li><a href="#">Profile</a></li>
-            <li>
-              <form method="post" action="{{ path('app_logout') }}">
-                <input type="hidden" name="_csrf_token" value="{{ csrf_token('logout') }}">
-                <button type="submit" class="text-error">Logout</button>
-              </form>
-            </li>
-          </ul>
-        </div>
-      {% else %}
-        <a href="{{ path('app_login') }}" class="btn btn-primary btn-sm">Login</a>
-      {% endif %}
+    <!-- Content -->
+    <main class="flex-1 p-6 overflow-y-auto">
+      <div class="container mx-auto">
+        {% block body %}{% endblock %}
+      </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-white p-4 text-center text-sm text-gray-500">
+      © {{ "now"|date("Y") }} PC Store. All rights reserved.
+    </footer>
+  </div>
+
+  {# ================== TOAST THUẦN TAILWIND (không phụ thuộc DaisyUI) ================== #}
+  {% set styleMap = {
+    'success': 'border-green-300 bg-green-50 text-green-800',
+    'error':   'border-rose-300  bg-rose-50  text-rose-800',
+    'warning': 'border-amber-300 bg-amber-50 text-amber-900',
+    'info':    'border-sky-300   bg-sky-50   text-sky-800'
+  } %}
+  {% set flashes_all = app.flashes(['success','error','warning','info']) %}
+  {% if flashes_all is not empty %}
+    <div id="toasts"
+         class="fixed z-[100] top-[80px] left-1/2 -translate-x-1/2 w-full max-w-md flex flex-col gap-2 px-4">
+      {% for type, messages in flashes_all %}
+        {% for message in messages %}
+          <div class="toast-item pointer-events-auto flex items-center justify-between gap-3 rounded-md border shadow
+                      px-4 py-3 backdrop-blur-sm
+                      {{ styleMap[type]|default('border-gray-300 bg-white text-gray-800') }}
+                      transition-all duration-300 ease-out opacity-0 translate-y-[-8px]">
+            <span class="block leading-snug break-words">{{ message|raw }}</span>
+            <button type="button"
+                    class="shrink-0 inline-flex items-center justify-center rounded p-1 text-current/70 hover:text-current"
+                    aria-label="Close">
+              ✕
+            </button>
+          </div>
+        {% endfor %}
+      {% endfor %}
     </div>
-        </header>
 
-        <!-- Main Content -->
-        <main class="flex-1 p-6 overflow-y-auto">
-            <div class="container mx-auto">
-                {% block body %}{% endblock %}
-            </div>
-        </main>
-
-        <!-- Footer -->
-        <footer class="bg-white p-4 text-center text-sm text-gray-500">
-            © {{ "now"|date("Y") }} PC Store. All rights reserved.
-        </footer>
-    </div>
-
-    {% block javascripts %}
-        {{ encore_entry_script_tags('app') }}
-    {% endblock %}
+    <script>
+      (function () {
+        const items = Array.from(document.querySelectorAll('#toasts .toast-item'));
+        items.forEach((el, idx) => {
+          // hiệu ứng vào
+          requestAnimationFrame(() => {
+            el.style.opacity = '1';
+            el.style.transform = 'translateY(0)';
+          });
+          // tự ẩn
+          const timer = setTimeout(() => close(el), 3500 + idx * 150);
+          // nút đóng
+          el.querySelector('button')?.addEventListener('click', () => {
+            clearTimeout(timer);
+            close(el);
+          });
+        });
+        function close(el){
+          el.style.opacity = '0';
+          el.style.transform = 'translateY(-8px)';
+          setTimeout(() => el.remove(), 200);
+        }
+      })();
+    </script>
+  {% endif %}
+  {% block javascripts %}{% endblock %}
+  {{ encore_entry_script_tags('app') }}
 </body>
 </html>

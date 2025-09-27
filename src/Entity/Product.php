@@ -1,7 +1,8 @@
 <?php
 
 namespace App\Entity;
-
+use App\Entity\Category;
+use App\Entity\Brand;
 use App\Repository\ProductRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
@@ -18,9 +19,16 @@ class Product
     #[ORM\Column(length: 255)]
     private ?string $name = null;
 
-    // Dùng type cũ 'date' (hợp với DBAL 2.x) và DateTimeInterface cho PHP type
     #[ORM\Column(type: 'date', nullable: true)]
     private ?\DateTimeInterface $created = null;
+
+    #[ORM\ManyToOne(inversedBy: 'products')]
+    #[ORM\JoinColumn(nullable: false)]
+    private ?Category $category = null;
+
+    #[ORM\ManyToOne(inversedBy: 'products')]
+    #[ORM\JoinColumn(nullable: false)]
+    private ?Brand $brand = null;
 
     #[ORM\Column(length: 255, nullable: true)]
     private ?string $image = null;
@@ -29,7 +37,7 @@ class Product
     private ?int $Quantity = null;
 
     #[ORM\OneToMany(mappedBy: 'product', targetEntity: Price::class, orphanRemoval: true)]
-    #[ORM\OrderBy(['createdAt' => 'DESC'])] // phần tử đầu là bản ghi mới nhất
+    #[ORM\OrderBy(['createdAt' => 'DESC'])] 
     private Collection $prices;
 
     public function __construct()
@@ -53,7 +61,25 @@ class Product
         return $this;
     }
 
-    // Đồng bộ kiểu với property: DateTimeInterface
+    public function getCategory(): ?Category 
+    { 
+        return $this->category; 
+    }
+    public function setCategory(?Category $category): static 
+    { 
+        $this->category = $category; 
+        return $this; 
+    }
+
+    public function getBrand(): ?Brand 
+    { 
+        return $this->brand; 
+    }
+    public function setBrand(?Brand $brand): static 
+    { 
+        $this->brand = $brand; 
+        return $this; 
+    }
     public function getCreated(): ?\DateTimeInterface
     {
         return $this->created;

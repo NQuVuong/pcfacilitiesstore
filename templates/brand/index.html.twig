@@ -1,0 +1,36 @@
+{% extends 'admin.html.twig' %}
+{% block title %}Brands{% endblock %}
+{% block body %}
+<div class="bg-white rounded-lg shadow p-6">
+  <div class="flex justify-between items-center mb-6">
+    <h1 class="text-xl font-semibold text-gray-900">Brands</h1>
+    <a href="{{ path('brand_new') }}" class="btn btn-primary">Add Brand</a>
+  </div>
+  <div class="overflow-x-auto">
+    <table class="min-w-full divide-y divide-gray-200">
+      <thead class="bg-gray-50">
+        <tr>
+          <th class="px-6 py-3 text-left text-sm font-semibold text-gray-900">ID</th>
+          <th class="px-6 py-3 text-left text-sm font-semibold text-gray-900">Name</th>
+          <th class="px-6 py-3 text-left text-sm font-semibold text-gray-900">Actions</th>
+        </tr>
+      </thead>
+      <tbody class="bg-white divide-y divide-gray-200">
+        {% for b in brands %}
+        <tr>
+          <td class="px-6 py-4 text-sm text-gray-500">{{ b.id }}</td>
+          <td class="px-6 py-4 text-sm text-gray-900">{{ b.name }}</td>
+          <td class="px-6 py-4 text-sm text-gray-500">
+            <a href="{{ path('brand_edit', {'id': b.id}) }}" class="text-indigo-600 hover:text-indigo-900">Edit</a>
+            <form method="post" action="{{ path('brand_delete', {'id': b.id}) }}" class="inline">
+              <input type="hidden" name="_token" value="{{ csrf_token('delete_brand_' ~ b.id) }}">
+              <button class="text-red-600 hover:text-red-900 ml-3" onclick="return confirm('Delete?')">Delete</button>
+            </form>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}
