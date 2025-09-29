@@ -38,8 +38,9 @@ class CheckoutType extends AbstractType
             ->add('paymentMethod', ChoiceType::class, [
                 'label' => 'Payment',
                 'choices' => [
-                    'Cash on delivery' => 'COD',
-                    'Bank transfer'    => 'BANK',
+                    'MoMo e-wallet'      => 'MOMO',
+                    'Cash on delivery'    => 'COD',
+                    'Bank transfer'       => 'BANK',
                 ],
                 'expanded' => true,
             ])

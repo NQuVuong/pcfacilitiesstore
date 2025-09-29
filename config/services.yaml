@@ -5,6 +5,10 @@
 # https://symfony.com/doc/current/best_practices.html#use-parameters-for-application-configuration
 parameters: 
     image_dir: '%kernel.project_dir%/public/uploads'
+    momo.partner_code: '%env(MOMO_PARTNER_CODE)%'
+    momo.access_key:   '%env(MOMO_ACCESS_KEY)%'
+    momo.secret_key:   '%env(MOMO_SECRET_KEY)%'
+    momo.endpoint:     '%env(MOMO_ENDPOINT)%'
 services:
     # default configuration for services in *this* file
     _defaults:
@@ -19,6 +23,12 @@ services:
             - '../src/DependencyInjection/'
             - '../src/Entity/'
             - '../src/Kernel.php'
+    App\Service\MomoService:
+        arguments:
+            $partnerCode: '%momo.partner_code%'
+            $accessKey:   '%momo.access_key%'
+            $secretKey:   '%momo.secret_key%'
+            $endpoint:    '%momo.endpoint%'
 
     # add more service definitions when explicit configuration is needed
     # please note that last definitions always *replace* previous ones

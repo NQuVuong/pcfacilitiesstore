@@ -97,29 +97,63 @@ class ProductRepository extends ServiceEntityRepository
            ->getArrayResult()
        ;
    }
-   
-    //    /**
-    //     * @return Product[] Returns an array of Product objects
-    //     */
-    //    public function findByExampleField($value): array
-    //    {
-    //        return $this->createQueryBuilder('p')
-    //            ->andWhere('p.exampleField = :val')
-    //            ->setParameter('val', $value)
-    //            ->orderBy('p.id', 'ASC')
-    //            ->setMaxResults(10)
-    //            ->getQuery()
-    //            ->getResult()
-    //        ;
-    //    }
+    /**
+     * Tìm sản phẩm có search, lọc category và sắp xếp.
+     *
+     * @param string|null $q         Từ khóa (tìm theo tên sp hoặc tên category)
+     * @param int|null    $categoryId ID category cần lọc
+     * @param string      $sort      newest|oldest|name_asc|name_desc|price_asc|price_desc|qty_asc|qty_desc
+     *
+     * @return Product[]
+     */
+    public function findCatalog(?string $q = null, ?int $categoryId = null, string $sort = 'newest'): array
+    {
+        $qb = $this->createQueryBuilder('p')
+            ->leftJoin('p.category', 'c')->addSelect('c')
+            // join bảng Price để phục vụ sort theo giá
+            ->leftJoin('p.prices', 'pr')
+            // dùng MAX(exportPrice) làm "giá hiện tại" để sắp xếp (đơn giản, đủ dùng)
+            ->addSelect('COALESCE(MAX(pr.exportPrice), 0) AS HIDDEN sortPrice')
+            ->groupBy('p.id');
 
-    //    public function findOneBySomeField($value): ?Product
-    //    {
-    //        return $this->createQueryBuilder('p')
-    //            ->andWhere('p.exampleField = :val')
-    //            ->setParameter('val', $value)
-    //            ->getQuery()
-    //            ->getOneOrNullResult()
-    //        ;
-    //    }
+        if ($q !== null && $q !== '') {
+            $q = mb_strtolower($q);
+            $qb->andWhere('LOWER(p.name) LIKE :q OR LOWER(c.name) LIKE :q')
+               ->setParameter('q', '%'.$q.'%');
+        }
+
+        if ($categoryId) {
+            $qb->andWhere('c.id = :cat')->setParameter('cat', (int)$categoryId);
+        }
+
+        switch ($sort) {
+            case 'oldest':
+                $qb->orderBy('p.created', 'ASC');
+                break;
+            case 'name_asc':
+                $qb->orderBy('p.name', 'ASC');
+                break;
+            case 'name_desc':
+                $qb->orderBy('p.name', 'DESC');
+                break;
+            case 'price_asc':
+                $qb->orderBy('sortPrice', 'ASC');
+                break;
+            case 'price_desc':
+                $qb->orderBy('sortPrice', 'DESC');
+                break;
+            case 'qty_asc':
+                $qb->orderBy('p.Quantity', 'ASC');
+                break;
+            case 'qty_desc':
+                $qb->orderBy('p.Quantity', 'DESC');
+                break;
+            case 'newest':
+            default:
+                $qb->orderBy('p.created', 'DESC');
+                break;
+        }
+
+        return $qb->getQuery()->getResult();
+    }
 }
