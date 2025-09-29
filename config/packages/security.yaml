@@ -38,6 +38,7 @@ security:
         target: app_homepage
 
   access_control:
+    - { path: ^/payment/momo/ipn$, roles: PUBLIC_ACCESS }
     - { path: ^/login$,    roles: PUBLIC_ACCESS }
     - { path: ^/register$, roles: PUBLIC_ACCESS }
     # - { path: ^/admin,     roles: ROLE_ADMIN }

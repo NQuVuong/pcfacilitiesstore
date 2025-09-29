@@ -2,34 +2,19 @@
 
 namespace App\Controller;
 
-use App\Repository\ProductRepository;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
 
-
 class HomeController extends AbstractController
 {
-    private ProductRepository $repo;
-    public function __construct(ProductRepository $repo)
-   {
-      $this->repo = $repo;
-   }
-    
-    #[Route(path: '/', name: 'homepage')]
-    public function indexPageAction(): Response
+    #[Route(path: '/home', name: 'homepage')]
+    public function indexPageAction(Request $request): Response
     {
-        $products = $this->repo->findAll();
-        return $this->render('home.html.twig', [
-            'products'=>$products
-        ]);
+        // Giữ query (?q=...&sort=...&cat=...) rồi chuyển về app_homepage
+        return $this->redirectToRoute('app_homepage', $request->query->all());
     }
 
-    #[Route(path: '/admin', name: 'app_admin')]
-    public function adminPageAction(): Response{
-        return $this->render('admin.html.twig', [
-            
-        ]);
-    }
 
 }

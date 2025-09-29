@@ -1,37 +1,86 @@
+{# templates/orders/index.html.twig #}
 {% extends 'base.html.twig' %}
 {% block title %}My Orders{% endblock %}
+
 {% block body %}
-<div class="max-w-5xl mx-auto mt-6">
-  <h1 class="text-2xl font-semibold mb-4">My Orders</h1>
-  {% if orders is empty %}
-    <div class="bg-white rounded-lg shadow p-8 text-center text-gray-600">Chưa có đơn hàng.</div>
-  {% else %}
-    <div class="bg-white rounded-lg shadow overflow-x-auto">
-      <table class="min-w-full">
-        <thead class="bg-gray-50">
-          <tr class="text-left text-sm text-gray-600">
-            <th class="px-6 py-3">#</th>
-            <th class="px-6 py-3">Date</th>
-            <th class="px-6 py-3">Status</th>
-            <th class="px-6 py-3">Total</th>
-            <th class="px-6 py-3"></th>
-          </tr>
-        </thead>
-        <tbody class="divide-y divide-gray-100">
-          {% for o in orders %}
-            <tr class="text-sm">
-              <td class="px-6 py-4">#{{ o.id }}</td>
-              <td class="px-6 py-4">{{ o.createdAt|date('Y-m-d H:i') }}</td>
-              <td class="px-6 py-4">{{ o.status }}</td>
-              <td class="px-6 py-4 font-medium">${{ o.total }}</td>
-              <td class="px-6 py-4">
-                <a href="{{ path('app_orders_show', {id: o.id}) }}" class="text-indigo-600 hover:underline">View</a>
-              </td>
-            </tr>
-          {% endfor %}
-        </tbody>
-      </table>
+<div class="container mx-auto max-w-6xl">
+  <div class="card bg-base-100 shadow">
+    <div class="card-body">
+      <h1 class="text-2xl font-semibold mb-4">My Orders</h1>
+
+      {# hiển thị flash nếu có #}
+      {% for label, messages in app.flashes %}
+        {% for m in messages %}
+          <div class="alert {{ label == 'success' ? 'alert-success' : (label == 'error' ? 'alert-error' : 'alert-info') }} mb-3">
+            {{ m }}
+          </div>
+        {% endfor %}
+      {% endfor %}
+
+      <div class="overflow-x-auto">
+  <table class="table align-middle w-full">
+    {# Cố định độ rộng cột để hàng nào cũng đều #}
+    <colgroup>
+      <col style="width:6rem">   {# # #}
+      <col style="width:14rem">  {# Date #}
+      <col style="width:10rem">  {# Status #}
+      <col style="width:10rem">  {# Total  #}
+      <col style="width:18rem">  {# Actions #}
+    </colgroup>
+
+    <thead class="whitespace-nowrap">
+      <tr>
+        <th>#</th>
+        <th>Date</th>
+        <th>Status</th>
+        <th class="text-right">Total</th>
+        <th class="text-right">Actions</th>
+      </tr>
+    </thead>
+
+    <tbody class="whitespace-nowrap">
+      {% for o in orders %}
+        <tr>
+          <td class="text-base-content/70">#{{ o.id }}</td>
+          <td>{{ o.createdAt|date('Y-m-d H:i') }}</td>
+          <td>
+            <span class="badge
+              {{ o.status == 'PAID' ? 'badge-success' :
+                 (o.status == 'PENDING' ? 'badge-warning' :
+                 (o.status == 'CANCELED' ? 'badge-ghost' : 'badge-neutral')) }}">
+              {{ o.status }}
+            </span>
+          </td>
+          <td class="text-right font-medium">${{ o.total }}</td>
+
+          <td class="text-right">
+            <div class="inline-flex items-center justify-end gap-2">
+              <a href="{{ path('app_orders_show', {id: o.id}) }}" class="link">View</a>
+
+              {% if o.status in ['NEW','PENDING'] %}
+                <a href="{{ path('app_orders_resume', {id: o.id}) }}"
+                   class="btn btn-sm btn-primary">Tiếp tục thanh toán</a>
+
+                <form method="post" class="inline"
+                      action="{{ path('app_orders_cancel', {id: o.id}) }}"
+                      onsubmit="return confirm('Huỷ đơn #{{ o.id }}?');">
+                  <input type="hidden" name="_token" value="{{ csrf_token('cancel_order_' ~ o.id) }}">
+                  <button type="submit" class="btn btn-sm btn-outline">Huỷ</button>
+                </form>
+              {% endif %}
+            </div>
+          </td>
+        </tr>
+      {% else %}
+        <tr>
+          <td colspan="5" class="text-center text-sm text-base-content/60">
+            Chưa có đơn hàng
+          </td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
     </div>
-  {% endif %}
+  </div>
 </div>
 {% endblock %}
