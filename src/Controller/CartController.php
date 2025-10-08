@@ -21,11 +21,10 @@ class CartController extends AbstractController
 {
     public function __construct(private CartService $cart) {}
 
-    // ====== LIST CART ======
     #[Route('', name: 'app_cart_index', methods: ['GET'])]
     public function index(ProductRepository $products): Response
     {
-        $raw   = $this->cart->raw(); // [productId => qty]
+        $raw   = $this->cart->raw();
         $rows  = [];
         $total = 0.0;
 
@@ -47,36 +46,33 @@ class CartController extends AbstractController
         ]);
     }
 
-    // ====== ADD / UPDATE / REMOVE / CLEAR ======
     #[Route('/add/{id}', name: 'app_cart_add', methods: ['POST'])]
     public function add(int $id, Request $req, ProductRepository $products): Response
     {
         $qty = max(1, (int)$req->request->get('qty', 1));
         $p = $products->find($id);
         if (!$p) {
-            $this->addFlash('error', 'Sản phẩm không tồn tại.');
+            $this->addFlash('shop.error', 'Sản phẩm không tồn tại.');
             return $this->redirectToRoute('app_homepage');
         }
 
-        // allowed = quantity - 1 (không cho mua nếu còn 1)
         $allowed = max(0, $p->getQuantity() - 1);
         if ($allowed <= 0) {
-            $this->addFlash('error', sprintf('"%s" đang đạt giới hạn. Chưa thể mua lúc này.', $p->getName()));
+            $this->addFlash('shop.error', sprintf('"%s" đang đạt giới hạn. Chưa thể mua lúc này.', $p->getName()));
             return $this->redirectToRoute('app_homepage');
         }
 
-        // Không cho tổng số lượng trong giỏ > allowed
-        $current = (int)$this->cart->get($id); // nếu chưa có trả 0
+        $current = (int)$this->cart->get($id);
         if ($current + $qty > $allowed) {
-            $newQty = $allowed; // chặn ở mức tối đa
+            $newQty = $allowed;
             $this->cart->set($id, $newQty);
             $this->addFlash(
-                'warning',
+                'shop.warning',
                 sprintf('"%s" chỉ còn %d suất có thể mua. Đã cập nhật số lượng trong giỏ.', $p->getName(), $allowed)
             );
         } else {
             $this->cart->add($id, $qty);
-            $this->addFlash('success', 'Đã thêm vào giỏ.');
+            $this->addFlash('shop.success', 'Đã thêm vào giỏ.');
         }
 
         return $this->redirectToRoute('app_cart_index');
@@ -88,20 +84,20 @@ class CartController extends AbstractController
         $qty = max(1, (int)$req->request->get('qty', 1));
         $p = $products->find($id);
         if (!$p) {
-            $this->addFlash('error', 'Sản phẩm không tồn tại.');
+            $this->addFlash('shop.error', 'Sản phẩm không tồn tại.');
             return $this->redirectToRoute('app_cart_index');
         }
 
         $allowed = max(0, $p->getQuantity() - 1);
         if ($allowed <= 0) {
             $this->cart->remove($id);
-            $this->addFlash('error', sprintf('"%s" đã đạt giới hạn, không thể mua.', $p->getName()));
+            $this->addFlash('shop.error', sprintf('"%s" đã đạt giới hạn, không thể mua.', $p->getName()));
             return $this->redirectToRoute('app_cart_index');
         }
 
         if ($qty > $allowed) {
             $qty = $allowed;
-            $this->addFlash('warning', sprintf('Tối đa mua được %d sản phẩm "%s".', $allowed, $p->getName()));
+            $this->addFlash('shop.warning', sprintf('Tối đa mua được %d sản phẩm "%s".', $allowed, $p->getName()));
         }
 
         $this->cart->set($id, $qty);
@@ -122,21 +118,19 @@ class CartController extends AbstractController
         return $this->redirectToRoute('app_cart_index');
     }
 
-    // ====== CHECKOUT (Bước 1: nhận sp được chọn từ giỏ) ======
     #[Route('/checkout', name: 'app_cart_checkout_start', methods: ['POST'])]
     #[IsGranted('ROLE_USER')]
     public function checkoutStart(Request $req): Response
     {
-        $selected = $req->request->all('selected'); // ["12","15",...]
+        $selected = $req->request->all('selected');
         if (empty($selected)) {
-            $this->addFlash('error', 'Bạn chưa chọn sản phẩm để mua.');
+            $this->addFlash('shop.error', 'Bạn chưa chọn sản phẩm để mua.');
             return $this->redirectToRoute('app_cart_index');
         }
         $req->getSession()->set('checkout_selected', array_map('intval', $selected));
         return $this->redirectToRoute('app_cart_checkout_confirm');
     }
 
-    // ====== CHECKOUT (Bước 2: form thanh toán + place order) ======
     #[Route('/checkout/confirm', name: 'app_cart_checkout_confirm', methods: ['GET','POST'])]
     #[IsGranted('ROLE_USER')]
     public function checkoutConfirm(
@@ -147,12 +141,11 @@ class CartController extends AbstractController
     ): Response {
         $selected = $req->getSession()->get('checkout_selected', []);
         if (!$selected) {
-            $this->addFlash('error', 'Phiên thanh toán không hợp lệ.');
+            $this->addFlash('shop.error', 'Phiên thanh toán không hợp lệ.');
             return $this->redirectToRoute('app_cart_index');
         }
 
-        // chuẩn bị danh sách item được chọn + KIỂM TRA LẠI TỒN KHO
-        $raw = $this->cart->raw(); // id=>qty
+        $raw = $this->cart->raw();
         $items = [];
         $total = 0.0;
 
@@ -164,11 +157,10 @@ class CartController extends AbstractController
 
             $qty = (int)$raw[$pid];
 
-            // Re-check rule: có thể mua = quantity - 1
             $allowed = max(0, $p->getQuantity() - 1);
             if ($qty <= 0 || $allowed <= 0 || $qty > $allowed) {
                 $this->addFlash(
-                    'error',
+                    'shop.error',
                     sprintf('Số lượng khả dụng của "%s" đã thay đổi. Vui lòng cập nhật giỏ hàng.', $p->getName())
                 );
                 return $this->redirectToRoute('app_cart_index');
@@ -181,15 +173,14 @@ class CartController extends AbstractController
         }
 
         if (!$items) {
-            $this->addFlash('error', 'Không có sản phẩm hợp lệ để đặt hàng.');
+            $this->addFlash('shop.error', 'Không có sản phẩm hợp lệ để đặt hàng.');
             return $this->redirectToRoute('app_cart_index');
         }
 
-        /** @var \App\Entity\User|null $user */
-        $user = $this->getUser();
+        $user = $this->getUser(); // UserInterface|null
         $defaults = [
-            'customerName'  => $user?->getEmail(),
-            'customerEmail' => $user?->getEmail(),
+            'customerName'  => $user?->getUserIdentifier(),  // ← thay vì getEmail()
+            'customerEmail' => $user?->getUserIdentifier(),  // ← thay vì getEmail()
         ];
 
         $form = $this->createForm(CheckoutType::class, $defaults);
@@ -198,7 +189,6 @@ class CartController extends AbstractController
         if ($form->isSubmitted() && $form->isValid()) {
             $data = $form->getData();
 
-            // tạo Order (PENDING)
             $order = new Order();
             $order->setUser($user);
             $order->setCustomerName($data['customerName'] ?? null);
@@ -224,22 +214,20 @@ class CartController extends AbstractController
             $em->persist($order);
             $em->flush();
 
-            // Nếu chọn MoMo: tạo payment & redirect (KHÔNG trừ tồn kho ở đây)
             if (($data['paymentMethod'] ?? 'COD') === 'MOMO') {
                 $returnUrl = $this->generateUrl('momo_return', [], UrlGeneratorInterface::ABSOLUTE_URL);
                 $ipnUrl    = $this->generateUrl('momo_ipn',    [], UrlGeneratorInterface::ABSOLUTE_URL);
 
                 $pay = $momo->createPayment($order, $returnUrl, $ipnUrl);
                 if (($pay['resultCode'] ?? -1) === 0 && !empty($pay['payUrl'])) {
-                    $req->getSession()->remove('checkout_selected'); // tránh double-submit
+                    $req->getSession()->remove('checkout_selected');
                     return $this->redirect($pay['payUrl']);
                 }
 
-                $this->addFlash('error', 'MoMo error: ' . ($pay['message'] ?? 'unknown'));
+                $this->addFlash('shop.error', 'MoMo error: ' . ($pay['message'] ?? 'unknown'));
                 return $this->redirectToRoute('app_orders_show', ['id' => $order->getId()]);
             }
 
-            // COD/BANK: hoàn tất tại chỗ -> TRỪ TỒN, DỌN GIỎ
             foreach ($items as $it) {
                 $p = $it['p'];
                 $p->setQuantity(max(0, $p->getQuantity() - $it['qty']));
@@ -248,11 +236,10 @@ class CartController extends AbstractController
 
             $req->getSession()->remove('checkout_selected');
 
-            // Đơn đã đặt thành công (chưa thanh toán online)
             $order->setStatus('NEW');
             $em->flush();
 
-            $this->addFlash('success', 'Đặt hàng thành công.');
+            $this->addFlash('shop.success', 'Đặt hàng thành công.');
             return $this->redirectToRoute('app_orders_show', ['id' => $order->getId()]);
         }
 

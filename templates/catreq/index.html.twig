@@ -1,0 +1,47 @@
+{% extends 'admin.html.twig' %}
+{% block title %}My Category Requests{% endblock %}
+
+{% block body %}
+<div class="bg-white rounded-lg shadow p-6">
+  <div class="flex justify-between items-center mb-6">
+    <h1 class="text-xl font-semibold text-gray-900">My Category Requests</h1>
+    <a href="{{ path('app_catreq_new') }}"
+       class="inline-flex items-center px-4 py-2 rounded-lg bg-indigo-600 text-white hover:bg-indigo-700">
+      New Request
+    </a>
+  </div>
+
+  <div class="overflow-x-auto">
+    <table class="min-w-full divide-y divide-gray-200">
+      <thead class="bg-gray-50">
+        <tr>
+          <th class="px-6 py-3 text-left text-sm font-semibold text-gray-900">ID</th>
+          <th class="px-6 py-3 text-left text-sm font-semibold text-gray-900">Name</th>
+          <th class="px-6 py-3 text-left text-sm font-semibold text-gray-900">Status</th>
+          <th class="px-6 py-3 text-left text-sm font-semibold text-gray-900">Created</th>
+        </tr>
+      </thead>
+      <tbody class="bg-white divide-y divide-gray-200">
+        {% for r in items %}
+          <tr class="hover:bg-gray-50">
+            <td class="px-6 py-3 text-sm text-gray-500">{{ r.id }}</td>
+            <td class="px-6 py-3 text-sm text-gray-900">{{ r.name }}</td>
+            <td class="px-6 py-3 text-sm">
+              <span class="badge {% if r.status == 'APPROVED' %}badge-success{% elseif r.status == 'REJECTED' %}badge-error{% else %}badge-ghost{% endif %}">
+                {{ r.status }}
+              </span>
+            </td>
+            <td class="px-6 py-3 text-sm text-gray-500">
+              {% if r.createdAt is defined and r.createdAt %}{{ r.createdAt|date('Y-m-d H:i') }}{% else %}-{% endif %}
+            </td>
+          </tr>
+        {% else %}
+          <tr>
+            <td class="px-6 py-4 text-sm text-gray-500" colspan="4">No requests yet.</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

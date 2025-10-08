@@ -9,18 +9,30 @@ class MomoService
         private string $partnerCode,
         private string $accessKey,
         private string $secretKey,
-        private string $endpoint
+        private string $endpoint // ví dụ: https://test-payment.momo.vn/v2/gateway/api/create
     ) {}
 
     public function createPayment(Order $order, string $redirectUrl, string $ipnUrl): array
     {
-        $amount = (string)(int)round((float)$order->getTotal()); // VND integer
-        $orderId   = 'PC-'.$order->getId().'-'.time();
-        $requestId = 'req-'.bin2hex(random_bytes(6));
-        $orderInfo = 'Thanh toan don hang #'.$order->getId();
-        $requestType = 'captureWallet';
-        $extraData = base64_encode(json_encode(['internalOrderId' => $order->getId()], JSON_UNESCAPED_UNICODE));
+        // Lưu ý: total của Order đang là VND -> ép về int và tối thiểu 2.000 VND
+        $amount = (int) round((float) $order->getTotal());
+        $amount = max(2000, $amount);
 
+        // orderId & requestId phải duy nhất
+        $orderId   = sprintf('PC-%d-%s', $order->getId(), (string) microtime(true));
+        $requestId = 'req-'.bin2hex(random_bytes(8));
+
+        // orderInfo chỉ ASCII để tránh sai chữ ký
+        $orderInfo = $this->ascii('Thanh toan don hang #'.$order->getId());
+
+        $requestType = 'captureWallet';
+
+        // Extra data lưu id nội bộ để đối soát ở return/IPN
+        $extraData = base64_encode(json_encode([
+            'internalOrderId' => $order->getId(),
+        ], JSON_UNESCAPED_UNICODE));
+
+        // Chuỗi ký HMAC (đúng thứ tự tham số MoMo yêu cầu)
         $rawHash = "accessKey={$this->accessKey}"
                  . "&amount={$amount}"
                  . "&extraData={$extraData}"
@@ -39,7 +51,7 @@ class MomoService
             'partnerName' => 'PC Store',
             'storeId'     => 'PC-Store',
             'requestId'   => $requestId,
-            'amount'      => $amount,
+            'amount'      => (string) $amount,
             'orderId'     => $orderId,
             'orderInfo'   => $orderInfo,
             'redirectUrl' => $redirectUrl,
@@ -47,24 +59,30 @@ class MomoService
             'lang'        => 'vi',
             'extraData'   => $extraData,
             'requestType' => $requestType,
+            // thời gian hết hạn QR (giây) – tránh đợi quá lâu sinh lỗi 9000
+            'orderExpire' => 600,
             'signature'   => $signature,
         ];
 
         $ch = curl_init($this->endpoint);
         curl_setopt_array($ch, [
-            CURLOPT_CUSTOMREQUEST => 'POST',
-            CURLOPT_POSTFIELDS    => json_encode($payload, JSON_UNESCAPED_UNICODE),
-            CURLOPT_RETURNTRANSFER=> true,
-            CURLOPT_HTTPHEADER    => ['Content-Type: application/json'],
-            CURLOPT_TIMEOUT       => 30,
+            CURLOPT_CUSTOMREQUEST   => 'POST',
+            CURLOPT_POSTFIELDS      => json_encode($payload, JSON_UNESCAPED_UNICODE),
+            CURLOPT_RETURNTRANSFER  => true,
+            CURLOPT_HTTPHEADER      => ['Content-Type: application/json'],
+            CURLOPT_CONNECTTIMEOUT  => 10,
+            CURLOPT_TIMEOUT         => 45,
         ]);
         $res = curl_exec($ch);
         if ($res === false) {
-            return ['resultCode' => -1, 'message' => curl_error($ch)];
+            $err = curl_error($ch);
+            curl_close($ch);
+            return ['resultCode' => -1, 'message' => 'cURL error: '.$err];
         }
         curl_close($ch);
 
-        return json_decode($res, true) ?: ['resultCode' => -1, 'message' => 'Invalid JSON'];
+        $data = json_decode($res, true);
+        return is_array($data) ? $data : ['resultCode' => -1, 'message' => 'Invalid JSON', 'raw' => $res];
     }
 
     public function verifyIpnSignature(array $data): bool
@@ -86,5 +104,13 @@ class MomoService
 
         $calc = hash_hmac('sha256', $raw, $this->secretKey);
         return hash_equals($calc, (string)($data['signature'] ?? ''));
+    }
+
+    /** Loại bỏ ký tự non-ASCII để an toàn chữ ký */
+    private function ascii(string $s): string
+    {
+        // iconv có thể không có trong một số môi trường; dùng preg_replace fallback
+        $s = @iconv('UTF-8', 'ASCII//TRANSLIT//IGNORE', $s) ?: $s;
+        return preg_replace('/[^\x20-\x7E]/', '', $s) ?? $s;
     }
 }

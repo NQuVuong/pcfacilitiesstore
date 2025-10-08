@@ -1,0 +1,20 @@
+{% extends 'admin.html.twig' %}
+{% block title %}{{ title|default('Supplier Form') }}{% endblock %}
+
+{% block body %}
+<div class="max-w-2xl mx-auto mt-6">
+  <div class="bg-white rounded-lg shadow p-6">
+    <h2 class="text-lg font-semibold text-gray-900 mb-4">
+      {{ title|default('Create / Edit Supplier') }}
+    </h2>
+
+    {{ form_start(form) }}
+      {{ form_widget(form) }}
+      <div class="mt-4 flex gap-2">
+        <button class="btn btn-primary" type="submit">Save</button>
+        <a class="btn" href="{{ path('app_supplier_index') }}">Cancel</a>
+      </div>
+    {{ form_end(form) }}
+  </div>
+</div>
+{% endblock %}

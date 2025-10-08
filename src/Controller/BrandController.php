@@ -10,8 +10,10 @@ use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
+use Symfony\Component\Security\Http\Attribute\IsGranted;
 
 #[Route('/admin/brands')]
+#[IsGranted('ROLE_STAFF')]
 class BrandController extends AbstractController
 {
     #[Route('/', name: 'brand_index')]
@@ -32,7 +34,7 @@ class BrandController extends AbstractController
         if ($form->isSubmitted() && $form->isValid()) {
             $em->persist($brand);
             $em->flush();
-            $this->addFlash('success', 'Brand created.');
+            $this->addFlash('admin.success', 'Brand created.');
             return $this->redirectToRoute('brand_index');
         }
 
@@ -50,7 +52,7 @@ class BrandController extends AbstractController
 
         if ($form->isSubmitted() && $form->isValid()) {
             $em->flush();
-            $this->addFlash('success', 'Brand updated.');
+            $this->addFlash('admin.success', 'Brand updated.');
             return $this->redirectToRoute('brand_index');
         }
 
@@ -66,9 +68,9 @@ class BrandController extends AbstractController
         if ($this->isCsrfTokenValid('delete_brand_'.$brand->getId(), $request->request->get('_token'))) {
             $em->remove($brand);
             $em->flush();
-            $this->addFlash('success', 'Brand deleted.');
+            $this->addFlash('admin.success', 'Brand deleted.');
         } else {
-            $this->addFlash('error', 'Invalid token.');
+            $this->addFlash('admin.error', 'Invalid token.');
         }
         return $this->redirectToRoute('brand_index');
     }

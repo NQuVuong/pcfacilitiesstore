@@ -11,8 +11,10 @@ use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\Attribute\Route;
+use Symfony\Component\Security\Http\Attribute\IsGranted;
 
 #[Route('/admin/price')]
+#[IsGranted('ROLE_STAFF')]
 class PriceController extends AbstractController
 {
     #[Route('/', name: 'price_index')]
@@ -24,10 +26,13 @@ class PriceController extends AbstractController
         ]);
     }
 
-    // Set giá xuất cho 1 sản phẩm (tạo bản ghi Price mới, giữ nguyên importPrice của lần đầu)
     #[Route('/set/{id}', name: 'price_set')]
-    public function set(int $id, ProductRepository $productRepo, Request $request, EntityManagerInterface $em): \Symfony\Component\HttpFoundation\Response
-    {
+    public function set(
+        int $id,
+        ProductRepository $productRepo,
+        Request $request,
+        EntityManagerInterface $em
+    ): \Symfony\Component\HttpFoundation\Response {
         $product = $productRepo->find($id);
         if (!$product) { throw $this->createNotFoundException(); }
 
@@ -35,20 +40,24 @@ class PriceController extends AbstractController
         $form->handleRequest($request);
 
         if ($form->isSubmitted() && $form->isValid()) {
-            $exportPrice = (float) $form->get('exportPrice')->getData();
+            $exportPrice = (int) $form->get('exportPrice')->getData();
+            if ($exportPrice < 2000) {
+                $this->addFlash('admin.error', 'Giá bán tối thiểu là 2.000 VND.');
+                return $this->redirectToRoute('price_set', ['id' => $product->getId()]);
+            }
 
-            // Lấy importPrice gốc (không cho sửa)
             $import = $product->getOriginalImportPrice();
             if ($import === null) {
-                $this->addFlash('error', 'Product chưa có import price.');
+                $this->addFlash('admin.error', 'Product chưa có import price.');
             } else {
                 $price = new Price();
                 $price->setProduct($product);
-                $price->setImportPrice($import);
-                $price->setExportPrice($exportPrice);
+                $price->setImportPrice((float)$import);
+                $price->setExportPrice((float)$exportPrice);
                 $em->persist($price);
                 $em->flush();
-                $this->addFlash('success', 'Đã cập nhật giá xuất.');
+
+                $this->addFlash('admin.success', 'Đã cập nhật giá bán: '.number_format($exportPrice, 0, '.', ',').' ₫');
             }
 
             return $this->redirectToRoute('price_index');
@@ -56,7 +65,7 @@ class PriceController extends AbstractController
 
         return $this->render('price/set.html.twig', [
             'product' => $product,
-            'form' => $form->createView(),
+            'form'    => $form->createView(),
         ]);
     }
 }

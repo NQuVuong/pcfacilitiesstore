@@ -1,5 +1,5 @@
 <?php
-// src/Controller/CategoryController.php
+
 namespace App\Controller;
 
 use App\Entity\Category;
@@ -10,8 +10,10 @@ use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
+use Symfony\Component\Security\Http\Attribute\IsGranted;
 
 #[Route('/admin/categories')]
+#[IsGranted('ROLE_ADMIN')]
 class CategoryController extends AbstractController
 {
     #[Route('/', name: 'category_index')]
@@ -23,7 +25,7 @@ class CategoryController extends AbstractController
     }
 
     #[Route('/new', name: 'category_new', methods: ['GET','POST'])]
-    public function new(Request $request, EntityManagerInterface $em): Response 
+    public function new(Request $request, EntityManagerInterface $em): Response
     {
         $cat = new Category();
         $form = $this->createForm(CategoryType::class, $cat);
@@ -32,18 +34,17 @@ class CategoryController extends AbstractController
         if ($form->isSubmitted() && $form->isValid()) {
             $em->persist($cat);
             $em->flush();
-            $this->addFlash('success', 'Category created.');
+            $this->addFlash('admin.success', 'Category created.');
             return $this->redirectToRoute('category_index');
         }
 
         return $this->render('category/form.html.twig', [
-            'form' => $form->createView(),
+            'form'  => $form->createView(),
             'title' => 'Add Category',
         ]);
     }
 
-
-    #[Route('/{id}/edit', name: 'category_edit')]
+    #[Route('/{id}/edit', name: 'category_edit', methods: ['GET','POST'])]
     public function edit(Category $cat, Request $request, EntityManagerInterface $em): Response
     {
         $form = $this->createForm(CategoryType::class, $cat);
@@ -51,11 +52,14 @@ class CategoryController extends AbstractController
 
         if ($form->isSubmitted() && $form->isValid()) {
             $em->flush();
-            $this->addFlash('success', 'Category updated.');
+            $this->addFlash('admin.success', 'Category updated.');
             return $this->redirectToRoute('category_index');
         }
 
-        return $this->render('category/form.html.twig', ['form' => $form->createView(), 'title' => 'Edit Category']);
+        return $this->render('category/form.html.twig', [
+            'form'  => $form->createView(),
+            'title' => 'Edit Category',
+        ]);
     }
 
     #[Route('/{id}/delete', name: 'category_delete', methods: ['POST'])]
@@ -64,9 +68,9 @@ class CategoryController extends AbstractController
         if ($this->isCsrfTokenValid('delete_cat_'.$cat->getId(), $request->request->get('_token'))) {
             $em->remove($cat);
             $em->flush();
-            $this->addFlash('success', 'Đã xóa category thành công.');
+            $this->addFlash('admin.success', 'Đã xóa category thành công.');
         } else {
-            $this->addFlash('error', 'Token không hợp lệ. Không thể xóa.');
+            $this->addFlash('admin.error', 'Token không hợp lệ. Không thể xóa.');
         }
         return $this->redirectToRoute('category_index');
     }

@@ -36,13 +36,11 @@ class PaymentMomoController extends AbstractController
             return new JsonResponse(['resultCode' => 2, 'message' => 'Order not found'], 404);
         }
 
-        // Idempotent: nếu đã PAID thì bỏ qua
         if ($order->getStatus() === 'PAID') {
             return new JsonResponse(['resultCode' => 0, 'message' => 'Already paid']);
         }
 
         if ((int)$data['resultCode'] === 0) {
-            // ✅ Trừ tồn kho tại IPN (điều kiện chuẩn nhất)
             foreach ($order->getItems() as $oi) {
                 $prod = $oi->getProduct();
                 if ($prod) {
@@ -54,7 +52,6 @@ class PaymentMomoController extends AbstractController
             $order->setPaidAt(new DateTimeImmutable());
             $order->setPaymentMethod('MOMO');
 
-            // Lưu transId nếu có và chưa lưu trước đó
             if (method_exists($order, 'setPaymentTxnId') && !empty($data['transId'])
                 && method_exists($order, 'getPaymentTxnId') && !$order->getPaymentTxnId()) {
                 $order->setPaymentTxnId((string)$data['transId']);
@@ -71,10 +68,9 @@ class PaymentMomoController extends AbstractController
     #[Route('/payment/momo/return', name: 'momo_return', methods: ['GET'])]
     public function returnPage(Request $req, OrderRepository $orders): Response
     {
-        // Có thể verify chữ ký cho return để chắc chắn
         $data = $req->query->all();
         if (!$this->momo->verifyIpnSignature($data)) {
-            $this->addFlash('error', 'MoMo: chữ ký không hợp lệ.');
+            $this->addFlash('shop.error', 'MoMo: chữ ký không hợp lệ.');
             return $this->redirectToRoute('app_orders_index');
         }
 
@@ -82,7 +78,7 @@ class PaymentMomoController extends AbstractController
         $internalId = (int)($extra['internalOrderId'] ?? 0);
         $order = $internalId ? $orders->find($internalId) : null;
         if (!$order) {
-            $this->addFlash('error', 'Không tìm thấy đơn hàng để cập nhật.');
+            $this->addFlash('shop.error', 'Không tìm thấy đơn hàng để cập nhật.');
             return $this->redirectToRoute('app_orders_index');
         }
 
@@ -90,7 +86,6 @@ class PaymentMomoController extends AbstractController
         $msg  = (string) ($data['message'] ?? '');
 
         if ($code === 0) {
-            // ✅ Dự phòng: nếu IPN chưa tới/không tới, trừ tồn và set PAID tại return (idempotent)
             if ($order->getStatus() !== 'PAID') {
                 foreach ($order->getItems() as $oi) {
                     $prod = $oi->getProduct();
@@ -104,7 +99,6 @@ class PaymentMomoController extends AbstractController
                 $this->em->flush();
             }
 
-            // 🧹 Dọn giỏ các item thuộc order
             $ids = [];
             foreach ($order->getItems() as $oi) {
                 $pid = $oi->getProduct()?->getId();
@@ -118,23 +112,21 @@ class PaymentMomoController extends AbstractController
                 }
             }
 
-            $this->addFlash('success', 'Thanh toán thành công.');
+            $this->addFlash('shop.success', 'Thanh toán thành công.');
         } elseif ($code === 1006 || stripos($msg, 'cancel') !== false) {
-            // Người dùng hủy trên app MoMo
             if ($order->getStatus() !== 'PAID') {
                 $order->setStatus('CANCELED');
                 $order->setPaidAt(null);
                 $this->em->flush();
             }
-            $this->addFlash('info', 'Bạn đã hủy thanh toán.');
+            $this->addFlash('shop.info', 'Bạn đã hủy thanh toán.');
         } else {
-            // Lỗi khác
             if ($order->getStatus() !== 'PAID') {
                 $order->setStatus('FAILED');
                 $order->setPaidAt(null);
                 $this->em->flush();
             }
-            $this->addFlash('error', 'Thanh toán thất bại: '.$msg);
+            $this->addFlash('shop.error', 'Thanh toán thất bại: '.$msg);
         }
 
         return $this->redirectToRoute('app_orders_show', ['id' => $order->getId()]);

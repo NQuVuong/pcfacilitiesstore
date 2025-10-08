@@ -41,8 +41,9 @@ security:
     - { path: ^/payment/momo/ipn$, roles: PUBLIC_ACCESS }
     - { path: ^/login$,    roles: PUBLIC_ACCESS }
     - { path: ^/register$, roles: PUBLIC_ACCESS }
-    # - { path: ^/admin,     roles: ROLE_ADMIN }
-    # - { path: ^/product,   roles: ROLE_USER }
+    - { path: ^/(product|brand|set-prices|supplier|staff), roles: [ROLE_STAFF, ROLE_ADMIN] }
+    - { path: ^/admin/users, roles: ROLE_ADMIN }
+    - { path: ^/admin/category-requests, roles: ROLE_ADMIN }
 
 when@test:
   security:

@@ -1,0 +1,34 @@
+{% extends 'admin.html.twig' %}
+{% block title %}Users{% endblock %}
+
+{% block body %}
+<div class="bg-white rounded-lg shadow p-6">
+  <div class="flex justify-between items-center mb-4">
+    <h1 class="text-lg font-semibold">Users</h1>
+    <a href="{{ path('admin_user_create_staff') }}" class="btn btn-primary btn-sm">+ New Staff</a>
+  </div>
+
+  <div class="overflow-x-auto">
+    <table class="table w-full">
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Email</th>
+          <th>Roles</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for u in users %}
+          <tr>
+            <td>{{ u.id }}</td>
+            <td>{{ u.email }}</td>
+            <td>{{ u.roles|join(', ') }}</td>
+          </tr>
+        {% else %}
+          <tr><td colspan="3" class="text-center text-gray-500">No users.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}
