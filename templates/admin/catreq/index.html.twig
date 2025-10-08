@@ -1,0 +1,67 @@
+{% extends 'admin.html.twig' %}
+{% block title %}Category Requests (Admin){% endblock %}
+
+{% block body %}
+<div class="bg-white rounded-lg shadow p-6">
+  <div class="flex justify-between items-center mb-6">
+    <h1 class="text-xl font-semibold text-gray-900">Category Requests (Admin)</h1>
+  </div>
+
+  <div class="overflow-x-auto">
+    <table class="min-w-full divide-y divide-gray-200">
+      <thead class="bg-gray-50">
+        <tr>
+          <th class="px-6 py-3 text-left text-sm font-semibold text-gray-900">ID</th>
+          <th class="px-6 py-3 text-left text-sm font-semibold text-gray-900">Requested Name</th>
+          <th class="px-6 py-3 text-left text-sm font-semibold text-gray-900">Requested By</th>
+          <th class="px-6 py-3 text-left text-sm font-semibold text-gray-900">Reason</th>
+          <th class="px-6 py-3 text-left text-sm font-semibold text-gray-900">Status</th>
+          <th class="px-6 py-3 text-left text-sm font-semibold text-gray-900">Created</th>
+          <th class="px-6 py-3 text-left text-sm font-semibold text-gray-900">Actions</th>
+        </tr>
+      </thead>
+      <tbody class="bg-white divide-y divide-gray-200">
+        {% for r in items %}
+          <tr class="hover:bg-gray-50">
+            <td class="px-6 py-3 text-sm text-gray-500">{{ r.id }}</td>
+            <td class="px-6 py-3 text-sm text-gray-900">{{ r.name }}</td>
+            <td class="px-6 py-3 text-sm text-gray-700">
+              {{ r.requestedBy ? r.requestedBy.userIdentifier : '-' }}
+            </td>
+            <td class="px-6 py-3 text-sm text-gray-700">
+              {{ r.reason ?: '-' }}
+            </td>
+            <td class="px-6 py-3 text-sm">
+              <span class="badge
+                {% if r.status == 'APPROVED' %}badge-success
+                {% elseif r.status == 'REJECTED' %}badge-error
+                {% else %}badge-ghost{% endif %}">
+                {{ r.status }}
+              </span>
+            </td>
+            <td class="px-6 py-3 text-sm text-gray-500">
+              {{ r.createdAt ? r.createdAt|date('Y-m-d H:i') : '-' }}
+            </td>
+            <td class="px-6 py-3 text-sm">
+              {% if r.status == 'PENDING' %}
+                <div class="flex items-center gap-3">
+                  <a class="text-green-600 hover:text-green-800"
+                     href="{{ path('app_admin_catreq_approve', {'id': r.id}) }}">Approve</a>
+                  <a class="text-red-600 hover:text-red-800"
+                     href="{{ path('app_admin_catreq_reject', {'id': r.id}) }}">Reject</a>
+                </div>
+              {% else %}
+                <span class="text-gray-400 italic">Processed</span>
+              {% endif %}
+            </td>
+          </tr>
+        {% else %}
+          <tr>
+            <td class="px-6 py-4 text-sm text-gray-500" colspan="7">No requests.</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

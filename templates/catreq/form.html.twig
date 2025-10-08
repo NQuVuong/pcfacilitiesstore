@@ -1,0 +1,29 @@
+{% extends 'admin.html.twig' %}
+{% block title %}Request New Category{% endblock %}
+
+{% block body %}
+<div class="max-w-xl mx-auto mt-6">
+  <div class="bg-white rounded-lg shadow p-6">
+    <h2 class="text-lg font-semibold text-gray-900 mb-4">Request New Category</h2>
+
+    {{ form_start(form) }}
+      <div class="mb-4">
+        {{ form_label(form.name) }}
+        {{ form_widget(form.name, {'attr': {'class': 'input input-bordered w-full'}}) }}
+        {{ form_errors(form.name) }}
+      </div>
+
+      <div class="mb-4">
+        {{ form_label(form.reason) }}
+        {{ form_widget(form.reason, {'attr': {'class': 'textarea textarea-bordered w-full', 'rows': 4}}) }}
+        {{ form_errors(form.reason) }}
+      </div>
+
+      <div class="flex gap-2">
+        <button class="btn btn-primary" type="submit">Send</button>
+        <a class="btn" href="{{ path('app_catreq_index') }}">Cancel</a>
+      </div>
+    {{ form_end(form) }}
+  </div>
+</div>
+{% endblock %}

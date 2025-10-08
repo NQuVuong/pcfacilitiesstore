@@ -1,0 +1,58 @@
+{% extends 'admin.html.twig' %}
+{% block title %}Suppliers{% endblock %}
+
+{% block body %}
+<div class="bg-white rounded-lg shadow p-6">
+  <div class="flex justify-between items-center mb-6">
+    <h1 class="text-xl font-semibold text-gray-900">Suppliers</h1>
+    <a href="{{ path('app_supplier_new') }}"
+       class="inline-flex items-center px-4 py-2 rounded-lg bg-indigo-600 text-white hover:bg-indigo-700">
+      Add Supplier
+    </a>
+  </div>
+
+  <div class="overflow-x-auto">
+    <table class="min-w-full divide-y divide-gray-200">
+      <thead class="bg-gray-50">
+        <tr>
+          <th class="px-6 py-3 text-left text-sm font-semibold text-gray-900">ID</th>
+          <th class="px-6 py-3 text-left text-sm font-semibold text-gray-900">Name</th>
+          <th class="px-6 py-3 text-left text-sm font-semibold text-gray-900">Contact</th>
+          <th class="px-6 py-3 text-left text-sm font-semibold text-gray-900">Created</th>
+          <th class="px-6 py-3 text-left text-sm font-semibold text-gray-900">Actions</th>
+        </tr>
+      </thead>
+      <tbody class="bg-white divide-y divide-gray-200">
+        {% for s in suppliers %}
+          <tr class="hover:bg-gray-50">
+            <td class="px-6 py-3 text-sm text-gray-500">{{ s.id }}</td>
+            <td class="px-6 py-3 text-sm text-gray-900">{{ s.name }}</td>
+            <td class="px-6 py-3 text-sm text-gray-700">
+              {{ s.email ?? '-' }}{% if s.phone is defined and s.phone %} • {{ s.phone }}{% endif %}
+            </td>
+            <td class="px-6 py-3 text-sm text-gray-500">
+              {% if s.createdAt is defined and s.createdAt %}{{ s.createdAt|date('Y-m-d H:i') }}{% else %}-{% endif %}
+            </td>
+            <td class="px-6 py-3 text-sm">
+              <div class="flex items-center gap-4">
+                <a href="{{ path('app_supplier_edit', {'id': s.id}) }}"
+                   class="text-indigo-600 hover:text-indigo-900">Edit</a>
+
+                <form method="post" action="{{ path('app_supplier_delete', {'id': s.id}) }}"
+                      onsubmit="return confirm('Delete this supplier?');">
+                  <input type="hidden" name="_token" value="{{ csrf_token('del_sup_' ~ s.id) }}">
+                  <button class="text-red-600 hover:text-red-800" type="submit">Delete</button>
+                </form>
+              </div>
+            </td>
+          </tr>
+        {% else %}
+          <tr>
+            <td class="px-6 py-4 text-sm text-gray-500" colspan="5">No suppliers.</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

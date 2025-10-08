@@ -14,10 +14,10 @@ use Symfony\Component\HttpFoundation\File\UploadedFile;
 use Symfony\Component\HttpFoundation\File\Exception\FileException;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\String\Slugger\SluggerInterface;
-use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
-use Doctrine\Persistence\ManagerRegistry;
+use Symfony\Component\Security\Http\Attribute\IsGranted;
 
 #[Route('/product')]
+#[IsGranted('ROLE_STAFF')]
 class ProductController extends AbstractController
 {
     private ProductRepository $repo;
@@ -67,22 +67,21 @@ class ProductController extends AbstractController
                 $p->setImage($form->get('image')->getData());
             }
 
-            // Lưu Product trước để có ID
             $this->repo->add($p, true);
 
-            // === TẠO BẢN GHI PRICE ĐẦU TIÊN (NHẬP TỪ importPrice) ===
             if ($form->has('importPrice')) {
                 $importPrice = $form->get('importPrice')->getData();
                 if ($importPrice !== null && $importPrice !== '') {
                     $price = new Price();
                     $price->setProduct($p);
                     $price->setImportPrice((float)$importPrice);
-                    $price->setExportPrice(null); // admin sẽ set sau
+                    $price->setExportPrice(null);
                     $this->em->persist($price);
                     $this->em->flush();
                 }
             }
 
+            $this->addFlash('admin.success', 'Product created.');
             return $this->redirectToRoute('app_product_index', [], Response::HTTP_SEE_OTHER);
         }
         return $this->render("product/form.html.twig", [
@@ -94,8 +93,8 @@ class ProductController extends AbstractController
     public function editAction(Request $req, Product $p, SluggerInterface $slugger): Response
     {
         $form = $this->createForm(ProductType::class, $p, [
-        'is_edit' => true, // truyền option để ẩn importPrice
-    ]);
+            'is_edit' => true,
+        ]);
 
         $form->handleRequest($req);
         if ($form->isSubmitted() && $form->isValid()) {
@@ -112,15 +111,14 @@ class ProductController extends AbstractController
                 $p->setImage($form->get('image')->getData());
             }
 
-            // Chỉ cập nhật Product, KHÔNG tạo Price mới ở màn edit
             $this->repo->add($p, true);
 
+            $this->addFlash('admin.success', 'Product updated.');
             return $this->redirectToRoute('app_product_index', [], Response::HTTP_SEE_OTHER);
         }
         return $this->render("product/form.html.twig", [
             'form' => $form->createView()
         ]);
-        
     }
 
     public function uploadImage(UploadedFile $imgFile, SluggerInterface $slugger): ?string
@@ -129,12 +127,8 @@ class ProductController extends AbstractController
         $safeFilename = $slugger->slug($originalFilename);
         $newFilename = $safeFilename . '-' . uniqid() . '.' . $imgFile->guessExtension();
         try {
-            $imgFile->move(
-                $this->getParameter('image_dir'),
-                $newFilename
-            );
+            $imgFile->move($this->getParameter('image_dir'), $newFilename);
         } catch (FileException $e) {
-            // Có thể đổi sang addFlash + redirect nếu muốn UX tốt hơn
             throw $e;
         }
         return $newFilename;
@@ -145,9 +139,9 @@ class ProductController extends AbstractController
     {
         if ($this->isCsrfTokenValid('delete_product_'.$p->getId(), $request->request->get('_token'))) {
             $this->repo->remove($p, true);
-            $this->addFlash('success', 'Đã xóa product thành công.');
+            $this->addFlash('admin.success', 'Đã xóa product thành công.');
         } else {
-            $this->addFlash('error', 'Token không hợp lệ. Không thể xóa.');
+            $this->addFlash('admin.error', 'Token không hợp lệ. Không thể xóa.');
         }
         return $this->redirectToRoute('app_product_index', [], Response::HTTP_SEE_OTHER);
     }
@@ -155,7 +149,6 @@ class ProductController extends AbstractController
     #[Route('/new', name: 'product_new')]
     public function new(Request $request, SluggerInterface $slugger): Response
     {
-        // giữ behavior giống /add cho tiện
         return $this->createAction($request, $slugger);
     }
 }

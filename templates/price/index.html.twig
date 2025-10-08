@@ -8,8 +8,8 @@
       <tr>
         <th class="px-4 py-3 text-left text-sm font-semibold text-gray-900">ID</th>
         <th class="px-4 py-3 text-left text-sm font-semibold text-gray-900">Name</th>
-        <th class="px-4 py-3 text-left text-sm font-semibold text-gray-900">Import (gốc)</th>
-        <th class="px-4 py-3 text-left text-sm font-semibold text-gray-900">Export (hiện tại)</th>
+        <th class="px-4 py-3 text-left text-sm font-semibold text-gray-900">Import (gốc, VND)</th>
+        <th class="px-4 py-3 text-left text-sm font-semibold text-gray-900">Export (hiện tại, VND)</th>
         <th class="px-4 py-3 text-left text-sm font-semibold text-gray-900">Action</th>
       </tr>
     </thead>
@@ -18,13 +18,17 @@
       <tr class="hover:bg-gray-50">
         <td class="px-4 py-3 text-sm text-gray-500">{{ p.id }}</td>
         <td class="px-4 py-3 text-sm text-gray-900">{{ p.name }}</td>
+
         <td class="px-4 py-3 text-sm text-gray-900">
-          ${{ p.originalImportPrice ?? '—' }}
+          {% set imp = p.originalImportPrice %}
+          {{ imp is not null ? (imp|number_format(0, '.', ',') ~ ' ₫') : '—' }}
         </td>
+
         <td class="px-4 py-3 text-sm text-gray-900">
           {% set exp = p.currentExportPrice %}
-          {{ exp is not null ? ('$'~exp) : 'Chưa đặt' }}
+          {{ exp is not null ? (exp|number_format(0, '.', ',') ~ ' ₫') : 'Chưa đặt' }}
         </td>
+
         <td class="px-4 py-3 text-sm">
           <a class="text-indigo-600 hover:text-indigo-800"
              href="{{ path('price_set', {'id': p.id}) }}">Set / Update</a>

@@ -1,108 +1,103 @@
 {% extends 'base.html.twig' %}
 
 {% block body %}
-<main class="flex-grow bg-gray-100 py-8">
-  <div class="container mx-auto px-4">
+  <div class="bg-gray-100 py-8">
+    <div class="container mx-auto px-4">
+      {# Filter bar #}
+      <form method="get" class="mb-6 grid grid-cols-1 sm:grid-cols-3 gap-3">
+        <select class="select select-bordered w-full" name="cat">
+          <option value="">All categories</option>
+          {% for c in categories %}
+            <option value="{{ c.id }}" {{ cat is defined and cat == c.id ? 'selected' : '' }}>
+              {{ c.name }}
+            </option>
+          {% endfor %}
+        </select>
 
-    {# Filter bar #}
-    <form method="get" class="mb-6 grid grid-cols-1 sm:grid-cols-3 gap-3">
+        <select class="select select-bordered w-full" name="sort">
+          <option value="newest"     {{ sort == 'newest' ? 'selected' }}>Newest</option>
+          <option value="name_asc"   {{ sort == 'name_asc' ? 'selected' }}>Name A→Z</option>
+          <option value="name_desc"  {{ sort == 'name_desc' ? 'selected' }}>Name Z→A</option>
+          <option value="qty_desc"   {{ sort == 'qty_desc' ? 'selected' }}>Stock high → low</option>
+          <option value="qty_asc"    {{ sort == 'qty_asc' ? 'selected' }}>Stock low → high</option>
+          <option value="price_asc"  {{ sort == 'price_asc' ? 'selected' }}>Price low → high</option>
+          <option value="price_desc" {{ sort == 'price_desc' ? 'selected' }}>Price high → low</option>
+        </select>
 
-      <select class="select select-bordered w-full" name="cat">
-        <option value="">All categories</option>
-        {% for c in categories %}
-          <option value="{{ c.id }}" {{ cat is defined and cat == c.id ? 'selected' : '' }}>
-            {{ c.name }}
-          </option>
-        {% endfor %}
-      </select>
+        <div class="sm:col-span-3">
+          <button class="btn btn-primary">Apply</button>
+          {% if app.request.get('q') or cat or sort != 'newest' %}
+            <a class="btn btn-ghost ml-2" href="{{ path('app_homepage') }}">Clear</a>
+          {% endif %}
+        </div>
+      </form>
 
-      <select class="select select-bordered w-full" name="sort">
-        <option value="newest"     {{ sort == 'newest' ? 'selected' }}>Newest</option>
-        <option value="name_asc"   {{ sort == 'name_asc' ? 'selected' }}>Name A→Z</option>
-        <option value="name_desc"  {{ sort == 'name_desc' ? 'selected' }}>Name Z→A</option>
-        <option value="qty_desc"   {{ sort == 'qty_desc' ? 'selected' }}>Stock high → low</option>
-        <option value="qty_asc"    {{ sort == 'qty_asc' ? 'selected' }}>Stock low → high</option>
-        <option value="price_asc"  {{ sort == 'price_asc' ? 'selected' }}>Price low → high</option>
-        <option value="price_desc" {{ sort == 'price_desc' ? 'selected' }}>Price high → low</option>
-      </select>
+      {# Grid sản phẩm #}
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        {% for p in products %}
+          <div class="card bg-base-100 shadow-sm w-full">
+            <figure class="h-64">
+              <img
+                src="{{ asset('uploads/' ~ p.image) }}"
+                alt="{{ p.name }}"
+                class="object-cover w-full h-full"
+              />
+            </figure>
 
-      <div class="sm:col-span-3">
-        <button class="btn btn-primary">Apply</button>
-        {% if app.request.get('q') or cat or sort != 'newest' %}
-          <a class="btn btn-ghost ml-2" href="{{ path('app_homepage') }}">Clear</a>
-        {% endif %}
-      </div>
-    </form>
+            <div class="card-body">
+              <h2 class="card-title">
+                <a href="{{ path('product_detail', {'id': p.id}) }}" class="hover:text-indigo-600">
+                  {{ p.name }}
+                </a>
+              </h2>
 
-    {# Grid sản phẩm #}
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-      {% for p in products %}
-        <div class="card bg-base-100 shadow-sm w-full">
-          <figure class="h-64">
-            <img
-              src="{{ asset('uploads/' ~ p.image) }}"
-              alt="{{ p.name }}"
-              class="object-cover w-full h-full"
-            />
-          </figure>
+              {% set latest = p.prices|first %}
+              {% set hasPrice = latest is not null and latest.exportPrice is not null %}
+              {% set canBuy = hasPrice and p.quantity > 1 %}
 
-          <div class="card-body">
-            <h2 class="card-title">
-              <a href="{{ path('product_detail', {'id': p.id}) }}" class="hover:text-indigo-600">
-                {{ p.name }}
-              </a>
-            </h2>
+              <p class="text-xl font-bold {{ hasPrice ? 'text-indigo-600' : 'text-gray-400 italic' }}">
+                {% if hasPrice %}
+                  {{ latest.exportPrice|number_format(0, '.', ',') }} ₫
+                {% else %}
+                  Chưa đặt
+                {% endif %}
+              </p>
 
-            {# Giá mới nhất (OrderBy DESC ở Product::$prices) #}
-            {% set latest = p.prices|first %}
-            {% set hasPrice = latest is not null and latest.exportPrice is not null %}
-            {# CHỈ cho phép mua khi tồn kho > 1 (còn 1 là đạt giới hạn) #}
-            {% set canBuy = hasPrice and p.quantity > 1 %}
+              <div class="space-x-2 mb-2">
+                {% if p.quantity > 0 and p.quantity <= 3 %}
+                  <span class="badge badge-warning">Sắp hết hàng ({{ p.quantity }})</span>
+                {% endif %}
+                {% if p.quantity == 0 %}
+                  <span class="badge badge-error">Hết hàng</span>
+                {% endif %}
+              </div>
 
-            <p class="text-xl font-bold {{ hasPrice ? 'text-indigo-600' : 'text-gray-400 italic' }}">
-              {% if hasPrice %}
-                {{ latest.exportPrice|number_format(0, '.', ',') }} ₫
-              {% else %}
-                Chưa đặt
-              {% endif %}
-            </p>
+              <div class="card-actions justify-between items-center">
+                <span class="badge {{ p.quantity > 0 ? 'badge-success' : 'badge-error' }}">
+                  {{ p.quantity > 0 ? ('Còn: ' ~ p.quantity) : 'Hết hàng' }}
+                </span>
 
-            {# Badges tồn kho #}
-            <div class="space-x-2 mb-2">
-              {% if p.quantity > 0 and p.quantity <= 3 %}
-                <span class="badge badge-warning">Sắp hết hàng ({{ p.quantity }})</span>
-              {% endif %}
-              {% if p.quantity == 0 %}
-                <span class="badge badge-error">Hết hàng</span>
-              {% endif %}
-            </div>
-
-            <div class="card-actions justify-between items-center">
-              <span class="badge {{ p.quantity > 0 ? 'badge-success' : 'badge-error' }}">
-                {{ p.quantity > 0 ? ('Còn: ' ~ p.quantity) : 'Hết hàng' }}
-              </span>
-
-              {% if canBuy %}
-                <form action="{{ path('app_cart_add', {id: p.id}) }}" method="post">
-                  <input type="hidden" name="_token" value="{{ csrf_token('add_to_cart_' ~ p.id) }}">
-                  <button class="btn btn-sm btn-primary" type="submit">Thêm vào giỏ</button>
-                </form>
-              {% else %}
-                <button class="btn btn-sm btn-disabled" disabled>
-                  {% if not hasPrice %}Chưa có giá
-                  {% elseif p.quantity <= 1 %}Đạt giới hạn, chưa thể mua
-                  {% else %}Hết hàng{% endif %}
-                </button>
-              {% endif %}
+                {% if canBuy %}
+                  <form action="{{ path('app_cart_add', {id: p.id}) }}" method="post">
+                    <input type="hidden" name="_token" value="{{ csrf_token('add_to_cart_' ~ p.id) }}">
+                    <button class="btn btn-sm btn-primary" type="submit">Thêm vào giỏ</button>
+                  </form>
+                {% else %}
+                  <button class="btn btn-sm btn-disabled" disabled>
+                    {% if not hasPrice %}Chưa có giá
+                    {% elseif p.quantity <= 1 %}Đạt giới hạn, chưa thể mua
+                    {% else %}Hết hàng{% endif %}
+                  </button>
+                {% endif %}
+              </div>
             </div>
           </div>
-        </div>
-      {% else %}
-        <div class="col-span-full text-center text-base-content/60">
-          Không tìm thấy sản phẩm phù hợp.
-        </div>
-      {% endfor %}
+        {% else %}
+          <div class="col-span-full text-center text-base-content/60">
+            Không tìm thấy sản phẩm phù hợp.
+          </div>
+        {% endfor %}
+      </div>
     </div>
   </div>
-</main>
 {% endblock %}

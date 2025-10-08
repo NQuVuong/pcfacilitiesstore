@@ -13,25 +13,29 @@ use Symfony\Component\Routing\Attribute\Route;
 
 class RegistrationController extends AbstractController
 {
-    #[Route('/register', name: 'app_register')]
-    public function register(Request $request, UserPasswordHasherInterface $userPasswordHasher, EntityManagerInterface $entityManager): Response
-    {
+    #[Route('/register', name: 'app_register', methods: ['GET','POST'])]
+    public function register(
+        Request $request,
+        UserPasswordHasherInterface $passwordHasher,
+        EntityManagerInterface $em
+    ): Response {
+        if ($this->getUser()) {
+            return $this->redirectToRoute('app_homepage');
+        }
+
         $user = new User();
         $form = $this->createForm(RegistrationFormType::class, $user);
         $form->handleRequest($request);
 
         if ($form->isSubmitted() && $form->isValid()) {
-            /** @var string $plainPassword */
-            $plainPassword = $form->get('plainPassword')->getData();
+            $plainPassword = (string) $form->get('plainPassword')->getData();
+            $user->setPassword($passwordHasher->hashPassword($user, $plainPassword));
+            $user->setRoles([User::ROLE_CUSTOMER]);
 
-            // encode the plain password
-            $user->setPassword($userPasswordHasher->hashPassword($user, $plainPassword));
+            $em->persist($user);
+            $em->flush();
 
-            $entityManager->persist($user);
-            $entityManager->flush();
-
-            // do anything else you need here, like send an email
-
+            $this->addFlash('shop.success', 'Đăng ký thành công. Hãy đăng nhập để tiếp tục.');
             return $this->redirectToRoute('app_login');
         }
 

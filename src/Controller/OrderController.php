@@ -13,9 +13,8 @@ use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\HttpFoundation\Request;
 use App\Service\MomoService;
 
-
 #[Route('/orders')]
-// #[IsGranted('ROLE_USER')]
+#[IsGranted('ROLE_USER')]
 class OrderController extends AbstractController
 {
     #[Route('', name: 'app_orders_index')]
@@ -28,27 +27,25 @@ class OrderController extends AbstractController
     #[Route('/{id}', name: 'app_orders_show', requirements: ['id' => '\d+'])]
     public function show(Order $order): Response
     {
-        // chặn xem đơn của người khác
         if ($order->getUser() !== $this->getUser()) {
             throw $this->createAccessDeniedException();
         }
         return $this->render('orders/show.html.twig', ['order' => $order]);
     }
-     #[Route('/{id}/resume', name: 'app_orders_resume', methods: ['GET'])]
+
+    #[Route('/{id}/resume', name: 'app_orders_resume', methods: ['GET'])]
     public function resume(
         Order $order,
         MomoService $momo,
         EntityManagerInterface $em
     ): Response {
-        // chỉ chủ đơn mới được thao tác
         $this->denyAccessUnlessGranted('IS_AUTHENTICATED_FULLY');
         if ($order->getUser() !== $this->getUser()) {
             throw $this->createAccessDeniedException();
         }
 
-        // chỉ NEW/PENDING mới tiếp tục thanh toán
         if (!in_array($order->getStatus(), ['NEW', 'PENDING'], true)) {
-            $this->addFlash('error', 'Đơn không thể thanh toán.');
+            $this->addFlash('shop.error', 'Đơn không thể thanh toán.');
             return $this->redirectToRoute('app_orders_index');
         }
 
@@ -60,10 +57,10 @@ class OrderController extends AbstractController
         if (($pay['resultCode'] ?? -1) === 0 && !empty($pay['payUrl'])) {
             $order->setStatus('PENDING');
             $em->flush();
-            return $this->redirect($pay['payUrl']); // nhảy sang trang MoMo
+            return $this->redirect($pay['payUrl']);
         }
 
-        $this->addFlash('error', 'MoMo error: ' . ($pay['message'] ?? 'unknown'));
+        $this->addFlash('shop.error', 'MoMo error: ' . ($pay['message'] ?? 'unknown'));
         return $this->redirectToRoute('app_orders_show', ['id' => $order->getId()]);
     }
 
@@ -76,16 +73,16 @@ class OrderController extends AbstractController
         }
 
         if (!$this->isCsrfTokenValid('cancel_order_'.$order->getId(), $request->request->get('_token'))) {
-            $this->addFlash('error', 'Token không hợp lệ.');
+            $this->addFlash('shop.error', 'Token không hợp lệ.');
             return $this->redirectToRoute('app_orders_index');
         }
 
         if ($order->getStatus() === 'PAID') {
-            $this->addFlash('error', 'Đơn đã thanh toán, không thể huỷ.');
+            $this->addFlash('shop.error', 'Đơn đã thanh toán, không thể huỷ.');
         } elseif ($order->getStatus() !== 'CANCELED') {
             $order->setStatus('CANCELED')->setPaidAt(null);
             $em->flush();
-            $this->addFlash('success', 'Đã huỷ đơn #'.$order->getId());
+            $this->addFlash('shop.success', 'Đã huỷ đơn #'.$order->getId());
         }
 
         return $this->redirectToRoute('app_orders_index');

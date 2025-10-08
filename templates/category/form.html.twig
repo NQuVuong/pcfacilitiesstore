@@ -1,23 +1,39 @@
 {% extends 'admin.html.twig' %}
-{% block title %}{{ title }}{% endblock %}
+{% block title %}{{ title|default('Category') }}{% endblock %}
 
 {% block body %}
 <div class="max-w-2xl mx-auto mt-6">
   <div class="bg-white rounded-lg shadow p-6">
-    <h2 class="text-lg font-semibold text-gray-900 mb-4">{{ title }}</h2>
+    <h2 class="text-lg font-semibold text-gray-900 mb-4">{{ title|default('Category') }}</h2>
 
-    {# Explicit action & method để loại trừ mọi edge case #}
-    {{ form_start(form, { 'method': 'POST', 'action': path('category_new') }) }}
-  <div class="mb-5">
-    <label class="block mb-2 text-sm font-medium text-gray-900">Name</label>
-    {{ form_widget(form.name) }}
-  </div>
-  <div class="flex gap-2">
-    {{ form_widget(form.save) }}
-    <a href="{{ path('category_index') }}"
-       class="text-gray-700 bg-gray-200 hover:bg-gray-300 px-5 py-2.5 rounded-lg">Cancel</a>
-  </div>
-{{ form_end(form) }}
+    {# KHÔNG set action thủ công -> để Symfony tự quyết (tạo/sửa đều OK) #}
+    {{ form_start(form, {'method': 'POST'}) }}
+
+      <div class="mb-5">
+        <label class="block mb-2 text-sm font-medium text-gray-900">Name</label>
+        {{ form_widget(form.name, {
+          attr: form.name.vars.attr|merge({
+            placeholder: 'Category name',
+            autofocus: true
+          })
+        }) }}
+        <div class="text-sm text-red-600 mt-1">
+          {{ form_errors(form.name) }}
+        </div>
+      </div>
+
+      <div class="flex gap-2">
+        {{ form_widget(form.save, {
+          attr: form.save.vars.attr|merge({
+            class: (form.save.vars.attr.class|default('') ~ ' text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5')
+          })
+        }) }}
+
+        <a href="{{ path('category_index') }}"
+           class="text-gray-700 bg-gray-200 hover:bg-gray-300 px-5 py-2.5 rounded-lg">Cancel</a>
+      </div>
+
+    {{ form_end(form) }}
   </div>
 </div>
 {% endblock %}

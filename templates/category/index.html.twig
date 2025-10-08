@@ -31,7 +31,6 @@
                 <a href="{{ path('category_edit', {'id': c.id}) }}"
                    class="text-indigo-600 hover:text-indigo-900">Edit</a>
 
-                <!-- Nút mở modal: gọi hàm JS trực tiếp -->
                 <button type="button"
                         class="text-red-600 hover:text-red-800"
                         onclick="openConfirmModal(
@@ -54,13 +53,10 @@
   </div>
 </div>
 
-{# ===== Modal Tailwind dùng chung ===== #}
+{# Modal xác nhận xóa #}
 <div id="confirm-modal"
      class="fixed inset-0 z-50 hidden items-center justify-center">
-  <!-- backdrop -->
   <div class="absolute inset-0 bg-black/40"></div>
-
-  <!-- dialog -->
   <div class="relative w-full max-w-md rounded-xl bg-white shadow-xl">
     <div class="p-6">
       <h3 class="text-lg font-semibold text-gray-900">Xác nhận xóa</h3>
@@ -88,7 +84,6 @@
 {% block javascripts %}
   {{ parent() }}
   <script>
-    // Hàm global để mở modal (gọi trực tiếp từ onclick)
     function openConfirmModal(action, name, token) {
       const modal   = document.getElementById('confirm-modal');
       const delName = document.getElementById('del-name');
@@ -102,12 +97,9 @@
       modal.classList.remove('hidden');
       modal.classList.add('flex');
     }
-
-    // Đóng modal khi bấm Hủy / click ra ngoài / ESC
     (function bindCloseHandlers() {
       const modal  = document.getElementById('confirm-modal');
       const cancel = document.getElementById('btn-cancel');
-
       function close() {
         modal.classList.add('hidden');
         modal.classList.remove('flex');

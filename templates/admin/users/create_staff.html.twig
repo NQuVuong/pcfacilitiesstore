@@ -1,0 +1,24 @@
+{% extends 'admin.html.twig' %}
+{% block title %}Create Staff{% endblock %}
+
+{% block body %}
+<div class="max-w-md mx-auto bg-white rounded-lg shadow p-6">
+  <h1 class="text-lg font-semibold mb-4">Create Staff Account</h1>
+
+  {{ form_start(form) }}
+    <div class="mb-4">
+      <label class="block mb-1 text-sm font-medium">Email</label>
+      {{ form_widget(form.email, {attr:{class:'input input-bordered w-full'}}) }}
+      <div class="text-sm text-rose-600 mt-1">{{ form_errors(form.email) }}</div>
+    </div>
+
+    <div class="mb-5">
+      <label class="block mb-1 text-sm font-medium">Password</label>
+      {{ form_widget(form.plainPassword, {attr:{class:'input input-bordered w-full'}}) }}
+      <div class="text-sm text-rose-600 mt-1">{{ form_errors(form.plainPassword) }}</div>
+    </div>
+
+    {{ form_widget(form.save, {attr:{class:'btn btn-primary'}}) }}
+  {{ form_end(form) }}
+</div>
+{% endblock %}

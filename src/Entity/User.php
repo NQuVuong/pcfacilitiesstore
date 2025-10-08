@@ -11,6 +11,10 @@ use Symfony\Component\Security\Core\User\UserInterface;
 #[ORM\UniqueConstraint(name: 'UNIQ_IDENTIFIER_EMAIL', fields: ['email'])]
 class User implements UserInterface, PasswordAuthenticatedUserInterface
 {
+    public const ROLE_ADMIN    = 'ROLE_ADMIN';
+    public const ROLE_STAFF    = 'ROLE_STAFF';
+    public const ROLE_CUSTOMER = 'ROLE_CUSTOMER';
+
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
@@ -31,84 +35,44 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\Column]
     private ?string $password = null;
 
-    public function getId(): ?int
-    {
-        return $this->id;
-    }
+    public function getId(): ?int { return $this->id; }
 
-    public function getEmail(): ?string
-    {
-        return $this->email;
-    }
+    public function getEmail(): ?string { return $this->email; }
+    public function setEmail(string $email): static { $this->email = $email; return $this; }
 
-    public function setEmail(string $email): static
-    {
-        $this->email = $email;
+    public function getUserIdentifier(): string { return (string) $this->email; }
 
-        return $this;
-    }
-
-    /**
-     * A visual identifier that represents this user.
-     *
-     * @see UserInterface
-     */
-    public function getUserIdentifier(): string
-    {
-        return (string) $this->email;
-    }
-
-    /**
-     * @see UserInterface
-     */
     public function getRoles(): array
     {
         $roles = $this->roles;
-        // guarantee every user at least has ROLE_USER
+        // mọi user luôn có ROLE_USER
         $roles[] = 'ROLE_USER';
-
         return array_unique($roles);
     }
 
-    /**
-     * @param list<string> $roles
-     */
+    /** @param list<string> $roles */
     public function setRoles(array $roles): static
     {
         $this->roles = $roles;
-
         return $this;
     }
 
-    /**
-     * @see PasswordAuthenticatedUserInterface
-     */
-    public function getPassword(): ?string
-    {
-        return $this->password;
-    }
+    public function getPassword(): ?string { return $this->password; }
+    public function setPassword(string $password): static { $this->password = $password; return $this; }
 
-    public function setPassword(string $password): static
-    {
-        $this->password = $password;
+    /** helper */
+    public function isAdmin(): bool    { return in_array(self::ROLE_ADMIN, $this->getRoles(), true); }
+    public function isStaff(): bool    { return in_array(self::ROLE_STAFF, $this->getRoles(), true) || $this->isAdmin(); }
+    public function isCustomer(): bool { return in_array(self::ROLE_CUSTOMER, $this->getRoles(), true); }
 
-        return $this;
-    }
-
-    /**
-     * Ensure the session doesn't contain actual password hashes by CRC32C-hashing them, as supported since Symfony 7.3.
-     */
+    /** tránh rò rỉ hash trong session (Symfony 7.3) */
     public function __serialize(): array
     {
         $data = (array) $this;
-        $data["\0".self::class."\0password"] = hash('crc32c', $this->password);
-
+        $data["\0".self::class."\0password"] = hash('crc32c', (string)$this->password);
         return $data;
     }
 
     #[\Deprecated]
-    public function eraseCredentials(): void
-    {
-        // @deprecated, to be removed when upgrading to Symfony 8
-    }
+    public function eraseCredentials(): void {}
 }
