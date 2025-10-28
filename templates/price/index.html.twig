@@ -2,14 +2,14 @@
 {% block title %}Set Export Prices{% endblock %}
 {% block body %}
 <div class="px-4 sm:px-6 lg:px-8">
-  <h1 class="text-xl font-semibold mb-4">Đặt/Chỉnh giá xuất</h1>
+  <h1 class="text-xl font-semibold mb-4">Set/Edit Export Price</h1>
   <table class="min-w-full divide-y divide-gray-300 bg-white rounded-lg overflow-hidden">
     <thead class="bg-gray-50">
       <tr>
         <th class="px-4 py-3 text-left text-sm font-semibold text-gray-900">ID</th>
         <th class="px-4 py-3 text-left text-sm font-semibold text-gray-900">Name</th>
-        <th class="px-4 py-3 text-left text-sm font-semibold text-gray-900">Import (gốc, VND)</th>
-        <th class="px-4 py-3 text-left text-sm font-semibold text-gray-900">Export (hiện tại, VND)</th>
+        <th class="px-4 py-3 text-left text-sm font-semibold text-gray-900">Import (Principal, VND)</th>
+        <th class="px-4 py-3 text-left text-sm font-semibold text-gray-900">Export (Now, VND)</th>
         <th class="px-4 py-3 text-left text-sm font-semibold text-gray-900">Action</th>
       </tr>
     </thead>
@@ -26,7 +26,7 @@
 
         <td class="px-4 py-3 text-sm text-gray-900">
           {% set exp = p.currentExportPrice %}
-          {{ exp is not null ? (exp|number_format(0, '.', ',') ~ ' ₫') : 'Chưa đặt' }}
+          {{ exp is not null ? (exp|number_format(0, '.', ',') ~ ' ₫') : 'Not priced' }}
         </td>
 
         <td class="px-4 py-3 text-sm">

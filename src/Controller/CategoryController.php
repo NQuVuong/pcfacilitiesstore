@@ -68,9 +68,9 @@ class CategoryController extends AbstractController
         if ($this->isCsrfTokenValid('delete_cat_'.$cat->getId(), $request->request->get('_token'))) {
             $em->remove($cat);
             $em->flush();
-            $this->addFlash('admin.success', 'Đã xóa category thành công.');
+            $this->addFlash('admin.success', 'Deleted category successfully.');
         } else {
-            $this->addFlash('admin.error', 'Token không hợp lệ. Không thể xóa.');
+            $this->addFlash('admin.error', 'Delete category failed');
         }
         return $this->redirectToRoute('category_index');
     }

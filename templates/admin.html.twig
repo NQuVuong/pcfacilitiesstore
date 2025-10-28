@@ -1,131 +1,85 @@
 {# templates/admin.html.twig #}
 <!DOCTYPE html>
-<html lang="en" data-theme="light" class="h-full">
+<html lang="en" data-theme="light">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>{% block title %}Admin Dashboard - PC Store{% endblock %}</title>
 
-  {{ encore_entry_link_tags('app') }}
-  {% block stylesheets %}{% endblock %}
+  
+  {% block stylesheets %}
+    {{ encore_entry_link_tags('app') }}
+  {% endblock %}
 </head>
-<body class="flex h-screen bg-gray-100">
-  {# ================= Sidebar ================= #}
-  <aside class="fixed inset-y-0 left-0 w-64 bg-white shadow-lg z-50">
-    <div class="flex items-center justify-center h-16 border-b">
-      <a href="{{ path('app_homepage') }}" class="flex items-center gap-2 select-none">
-        <img src="https://cdn-icons-png.flaticon.com/512/7656/7656399.png" class="h-8 w-auto" alt="PC Store Logo">
-        <span class="text-lg font-bold text-gray-800">PC Store</span>
-      </a>
+<body class="h-screen bg-base-200 text-base-content flex">
+
+  {# ===== Sidebar (daisyUI menu) ===== #}
+  {% set _r = app.request.attributes.get('_route') %}
+  <aside class="w-64 bg-base-100 border-r">
+    <div class="h-16 border-b flex items-center px-4">
+      <a href="{{ path('app_homepage') }}" class="text-lg font-bold">PC Store</a>
     </div>
-
-    <nav class="mt-6 px-2 space-y-1">
-      {% set _r = app.request.attributes.get('_route') %}
-
-      {# ======= STAFF & ADMIN ======= #}
+    <ul class="menu p-3 w-full">
       {% if is_granted('ROLE_STAFF') or is_granted('ROLE_ADMIN') %}
-        <div class="px-4 pt-2 pb-1 text-xs font-semibold text-gray-500 uppercase tracking-wider">Store</div>
+        <li class="menu-title">Store</li>
+        <li><a class="{{ _r starts with 'app_product_' ? 'active' }}" href="{{ path('app_product_index') }}">Products</a></li>
+        <li><a class="{{ _r starts with 'brand_' ? 'active' }}" href="{{ path('brand_index') }}">Brands</a></li>
+        <li><a class="{{ _r starts with 'price_' ? 'active' }}" href="{{ path('price_index') }}">Set Prices</a></li>
+        <li><a class="{{ _r starts with 'app_supplier_' ? 'active' }}" href="{{ path('app_supplier_index') }}">Suppliers</a></li>
 
-        <a href="{{ path('app_product_index') }}"
-           class="flex items-center px-4 py-2 rounded-md text-gray-700 hover:bg-gray-200
-           {% if _r starts with 'app_product_' %}bg-blue-100 text-blue-600{% endif %}">
-          <i data-lucide="box" class="h-5 w-5 mr-2"></i> Products
-        </a>
-
-        <a href="{{ path('brand_index') }}"
-           class="flex items-center px-4 py-2 rounded-md text-gray-700 hover:bg-gray-200
-           {% if _r starts with 'brand_' %}bg-blue-100 text-blue-600{% endif %}">
-          <i data-lucide="layers" class="h-5 w-5 mr-2"></i> Brands
-        </a>
-
-        <a href="{{ path('price_index') }}"
-           class="flex items-center px-4 py-2 rounded-md text-gray-700 hover:bg-gray-200
-           {% if _r starts with 'price_' %}bg-blue-100 text-blue-600{% endif %}">
-          <i data-lucide="dollar-sign" class="h-5 w-5 mr-2"></i> Set Prices
-        </a>
-
-        <a href="{{ path('app_supplier_index') }}"
-           class="flex items-center px-4 py-2 rounded-md text-gray-700 hover:bg-gray-200
-           {% if _r starts with 'app_supplier_' %}bg-blue-100 text-blue-600{% endif %}">
-          <i data-lucide="truck" class="h-5 w-5 mr-2"></i> Suppliers
-        </a>
-
-        {# 👉 CHỈNH Ở ĐÂY: đi tới trang danh sách, vẫn highlight khi đang ở /new #}
-        <a href="{{ path('app_catreq_index') }}"
-           class="flex items-center px-4 py-2 rounded-md text-gray-700 hover:bg-gray-200
-           {% if _r starts with 'app_catreq_' %}bg-blue-100 text-blue-600{% endif %}">
-          <i data-lucide="inbox" class="h-5 w-5 mr-2"></i> My Category Requests
-        </a>
+        {# Quan trọng: staff bấm vào đây sẽ tới TRANG DANH SÁCH (index) #}
+        <li><a class="{{ _r starts with 'app_catreq_' ? 'active' }}" href="{{ path('app_catreq_index') }}">Request New Category</a></li>
       {% endif %}
 
-      {# ======= ADMIN ONLY ======= #}
       {% if is_granted('ROLE_ADMIN') %}
-        <div class="px-4 pt-4 pb-1 text-xs font-semibold text-gray-500 uppercase tracking-wider">Administration</div>
-
-        <a href="{{ path('category_index') }}"
-           class="flex items-center px-4 py-2 rounded-md text-gray-700 hover:bg-gray-200
-           {% if _r starts with 'category_' %}bg-blue-100 text-blue-600{% endif %}">
-          <i data-lucide="list" class="h-5 w-5 mr-2"></i> Categories
-        </a>
-
-        <a href="{{ path('app_admin_catreq_index') }}"
-           class="flex items-center px-4 py-2 rounded-md text-gray-700 hover:bg-gray-200
-           {% if _r == 'app_admin_catreq_index' %}bg-blue-100 text-blue-600{% endif %}">
-          <i data-lucide="inbox" class="h-5 w-5 mr-2"></i> Category Requests (Queue)
-        </a>
-
-        {# Nếu có trang quản lý user, mở comment dưới #}
-        {#
-        <a href="{{ path('admin_user_index') }}"
-           class="flex items-center px-4 py-2 rounded-md text-gray-700 hover:bg-gray-200
-           {% if _r starts with 'admin_user_' %}bg-blue-100 text-blue-600{% endif %}">
-          <i data-lucide="users" class="h-5 w-5 mr-2"></i> Users
-        </a>
-        #}
-
-        <a href="{{ path('admin_user_create_staff') }}"
-           class="flex items-center px-4 py-2 rounded-md text-gray-700 hover:bg-gray-200
-           {% if _r == 'admin_user_create_staff' %}bg-blue-100 text-blue-600{% endif %}">
-          <i data-lucide="user-plus" class="h-5 w-5 mr-2"></i> Create Staff Account
-        </a>
+        <li class="menu-title mt-2">Administration</li>
+        <li><a class="{{ _r starts with 'category_' ? 'active' }}" href="{{ path('category_index') }}">Categories</a></li>
+        <li><a class="{{ _r == 'app_admin_catreq_index' ? 'active' }}" href="{{ path('app_admin_catreq_index') }}">Category Requests</a></li>
+        <li><a class="{{ _r == 'admin_user_create_staff' ? 'active' }}" href="{{ path('admin_user_create_staff') }}">Create Staff Account</a></li>
       {% endif %}
-    </nav>
+    </ul>
   </aside>
 
-  {# ================= Main ================= #}
-  <div class="flex-1 flex flex-col ml-64">
-    <header class="bg-white shadow-md p-4 flex justify-between items-center">
-      <div class="flex items-center">
-        <input type="text" placeholder="Search here..." class="input input-bordered w-64 mr-4">
-        <button class="btn btn-ghost btn-circle"><i data-lucide="search" class="h-5 w-5"></i></button>
+  {# ===== Main ===== #}
+  <div class="flex-1 flex flex-col">
+    <header class="bg-base-100 border-b px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+      <div class="flex items-center gap-2">
+        <input type="text" placeholder="Search here..." class="input input-bordered w-64"/>
+        <button class="btn btn-ghost btn-circle">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none"
+               viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round"
+                  d="M21 21l-4.35-4.35M10 18a8 8 0 1 1 0-16 8 8 0 0 1 0 16z"/>
+          </svg>
+        </button>
       </div>
-      <div class="flex items-center gap-3 select-none">
+      <div class="flex items-center gap-3">
         {% if app.user %}
           {% if is_granted('ROLE_ADMIN') %}
             <a href="{{ path('admin_user_create_staff') }}" class="btn btn-primary btn-sm">+ New Staff</a>
           {% endif %}
-          <div class="w-9 h-9 rounded-full overflow-hidden ring ring-primary/30 ring-offset-2 ring-offset-white">
-            <img src="https://img.daisyui.com/images/stock/photo-1534528741775-53994a69daeb.webp" alt="User avatar" class="w-full h-full object-cover">
+          <div class="avatar">
+            <div class="w-10 rounded-full ring ring-primary ring-offset-base-100 ring-offset-2">
+              <img src="https://img.daisyui.com/images/stock/photo-1534528741775-53994a69daeb.webp" alt="">
+            </div>
           </div>
-          <span class="truncate max-w-[220px] text-sm font-medium text-gray-800">{{ app.user.userIdentifier }}</span>
+          <span class="truncate max-w-[220px] text-sm font-medium">{{ app.user.userIdentifier }}</span>
         {% else %}
           <a href="{{ path('app_login') }}" class="btn btn-primary btn-sm">Login</a>
         {% endif %}
       </div>
     </header>
 
-    <main class="flex-1 p-6 overflow-y-auto">
-      <div class="container mx-auto">
-        {% block body %}{% endblock %}
-      </div>
+    <main class="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8">
+      <div class="container mx-auto">{% block body %}{% endblock %}</div>
     </main>
 
-    <footer class="bg-white p-4 text-center text-sm text-gray-500">
+    <footer class="bg-base-100 text-center text-sm text-base-content/60 p-4">
       © {{ "now"|date("Y") }} PC Store. All rights reserved.
     </footer>
   </div>
 
-  {# ================= Admin-only toasts (channels: admin.*) ================= #}
+  {# ===== Admin-only toasts (tailwind thuần) ===== #}
   {% set styleMap = {
     'admin.success': 'border-green-300 bg-green-50 text-green-800',
     'admin.error':   'border-rose-300  bg-rose-50  text-rose-800',
@@ -138,31 +92,30 @@
          class="fixed z-[100] top-[80px] left-1/2 -translate-x-1/2 w-full max-w-md flex flex-col gap-2 px-4">
       {% for type, messages in flashes_admin %}
         {% for message in messages %}
-          <div class="toast-item pointer-events-auto flex items-center justify-between gap-3 rounded-md border shadow
+          <div class="toast-item flex items-center justify-between gap-3 rounded-md border shadow
                       px-4 py-3 backdrop-blur-sm
-                      {{ styleMap[type]|default('border-gray-300 bg-white text-gray-800') }}
-                      transition-all duration-300 ease-out opacity-0 translate-y-[-8px]">
-            <span class="block leading-snug break-words">{{ message|raw }}</span>
-            <button type="button" class="shrink-0 inline-flex items-center justify-center rounded p-1 text-current/70 hover:text-current" aria-label="Close">✕</button>
+                      {{ styleMap[type]|default('border-base-300 bg-base-100 text-base-content') }}
+                      transition-all duration-300 ease-out opacity-0 -translate-y-2">
+            <span class="block leading-snug break-words text-sm">{{ message|raw }}</span>
+            <button type="button" class="btn btn-ghost btn-xs">✕</button>
           </div>
         {% endfor %}
       {% endfor %}
     </div>
-
     <script>
       (function () {
         const items = Array.from(document.querySelectorAll('#toasts-admin .toast-item'));
         items.forEach((el, idx) => {
           requestAnimationFrame(() => { el.style.opacity = '1'; el.style.transform = 'translateY(0)'; });
-          const timer = setTimeout(() => close(el), 3500 + idx * 150);
-          el.querySelector('button')?.addEventListener('click', () => { clearTimeout(timer); close(el); });
+          const t = setTimeout(() => close(el), 3500 + idx * 120);
+          el.querySelector('button')?.addEventListener('click', () => { clearTimeout(t); close(el); });
         });
         function close(el){ el.style.opacity = '0'; el.style.transform = 'translateY(-8px)'; setTimeout(() => el.remove(), 200); }
       })();
     </script>
   {% endif %}
 
-  {% block javascripts %}{% endblock %}
-  {{ encore_entry_script_tags('app') }}
+  
+  {% block javascripts %}{{ encore_entry_script_tags('app') }}{% endblock %}
 </body>
 </html>

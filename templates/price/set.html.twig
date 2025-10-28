@@ -5,18 +5,18 @@
   <div class="max-w-2xl mx-auto mt-6">
     <div class="bg-white rounded-lg shadow p-6">
       <h2 class="text-lg font-semibold text-gray-900 mb-4">
-        Đặt giá xuất cho: <span class="font-bold">{{ product.name }}</span>
+        Set export price: <span class="font-bold">{{ product.name }}</span>
       </h2>
 
       <div class="mb-5">
-        <label class="block mb-2 text-sm font-medium text-gray-900">Import Price (gốc)</label>
+        <label class="block mb-2 text-sm font-medium text-gray-900">Import Price (principal)</label>
         <input
           type="text"
           value="{{ product.originalImportPrice is not null ? product.originalImportPrice : '—' }}"
           class="bg-gray-100 border border-gray-300 text-gray-500 text-sm rounded-lg block w-full p-2.5 cursor-not-allowed"
           disabled
         />
-        <p class="mt-1 text-xs text-gray-500">Giá nhập ban đầu, không thay đổi.</p>
+        <p class="mt-1 text-xs text-gray-500">Import price, Cannot change.</p>
       </div>
 
       {{ form_start(form) }}

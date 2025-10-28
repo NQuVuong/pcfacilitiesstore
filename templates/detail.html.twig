@@ -1,77 +1,152 @@
-{% extends "home.html.twig" %}
-
-{% block title %}
-  Detail of product {{ p.id }}
-{% endblock %}
+{# templates/detail.html.twig #}
+{% extends 'base.html.twig' %}
+{% block title %}{{ p.name }} — PC Store{% endblock %}
 
 {% block body %}
-<main class="bg-base-200 py-8">
-  <div class="container mx-auto px-4">
-    <!-- Breadcrumbs -->
+<section class="bg-base-100">
+  <div class="max-w-7xl mx-auto px-4 lg:px-8 py-6">
     <div class="breadcrumbs text-sm mb-4">
       <ul>
-        <li><a href="{{ path('app_product_index') }}">Home</a></li>
+        <li><a href="{{ path('app_homepage') }}">Home</a></li>
+        {% if p.category %}<li><a href="{{ path('catalog', {cat: p.category.id}) }}">{{ p.category.name }}</a></li>{% endif %}
         <li>{{ p.name }}</li>
       </ul>
     </div>
 
     <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
-      <!-- Left: Image -->
       <div class="lg:col-span-5">
-        <div class="card bg-base-100 shadow-xl">
-          <figure class="aspect-[4/3]">
-            <img
-              src="{{ p.image ? asset('uploads/' ~ p.image) : asset('uploads/placeholder.png') }}"
-              alt="{{ p.name }}"
-              class="object-cover w-full h-full"
-            />
+        <div class="card bg-base-100 border">
+          <figure class="bg-base-200 aspect-square">
+            {% set main = p.image ? asset('uploads/' ~ p.image) : asset('uploads/placeholder.png') %}
+            <img id="mainImage" src="{{ main }}" alt="{{ p.name }}" class="w-full h-full object-contain p-3">
           </figure>
+        </div>
+
+        <div class="mt-3 flex gap-2 overflow-x-auto">
+          <button class="btn btn-ghost btn-sm px-0 border rounded w-20 h-20 shrink-0" data-main="{{ main }}">
+            <img src="{{ main }}" class="object-contain w-full h-full p-1" alt="">
+          </button>
+          {% for gi in p.images|default([]) %}
+            {% set url = asset('uploads/' ~ gi.path) %}
+            <button class="btn btn-ghost btn-sm px-0 border rounded w-20 h-20 shrink-0" data-main="{{ url }}">
+              <img src="{{ url }}" class="object-contain w-full h-full p-1" alt="">
+            </button>
+          {% endfor %}
         </div>
       </div>
 
-      <!-- Right: Info -->
       <div class="lg:col-span-7">
-        <div class="card bg-base-100 shadow-xl">
+        <div class="card bg-base-100 border">
           <div class="card-body">
-            <h1 class="card-title text-3xl">{{ p.name }}</h1>
+            <h1 class="text-2xl md:text-3xl font-semibold leading-tight">{{ p.name }}</h1>
 
-            {# Lấy bản ghi Price mới nhất (nhờ OrderBy DESC ở Product::$prices) #}
             {% set latest = p.prices|first %}
-
-            <p class="text-2xl font-bold text-primary">
+            <div class="mt-2">
               {% if latest and latest.exportPrice is not null %}
-                {{ latest.exportPrice|number_format(0, '.', ',') }}
+                <div class="text-3xl font-bold text-primary">{{ latest.exportPrice|number_format(0,'.',',') }} ₫</div>
               {% else %}
-                <span class="text-gray-400 italic">Chưa đặt</span>
+                <div class="text-xl text-base-content/50 italic">No price</div>
               {% endif %}
-            </p>
+            </div>
 
-            <div class="space-x-2 mt-2">
-              <span class="badge badge-outline">
-                Ngày thêm: {{ p.created ? p.created|date("m/d/Y") : '—' }}
-              </span>
+            <div class="mt-3 flex flex-wrap gap-2">
+              <span class="badge badge-ghost">SKU: #{{ p.id }}</span>
+              {% if p.category %}<span class="badge badge-ghost">{{ p.category.name }}</span>{% endif %}
               <span class="badge {{ p.quantity > 0 ? 'badge-success' : 'badge-error' }}">
-                {{ p.quantity > 0 ? ('Còn hàng: ' ~ p.quantity) : 'Hết hàng' }}
+                {{ p.quantity > 0 ? ('In stock: ' ~ p.quantity) : 'Out of stock' }}
               </span>
+              <span class="badge badge-ghost">Added: {{ p.created ? p.created|date('d/m/Y') : '—' }}</span>
             </div>
 
-            <div class="divider"></div>
+            <div class="divider my-4"></div>
 
-            <div class="form-control w-40">
-              <label class="label"><span class="label-text">Số lượng</span></label>
-              <input type="number" id="quantity_input" name="quantity_input" value="1" min="1"
-                     class="input input-bordered" />
+            <div class="flex items-center gap-3">
+              <label class="form-control w-32">
+                <div class="label"><span class="label-text">Quantity</span></div>
+                <input id="qty" type="number" value="1" min="1" class="input input-bordered" />
+              </label>
+
+              {% if latest and latest.exportPrice is not null and p.quantity > 0 %}
+                <form action="{{ path('app_cart_add', {id: p.id}) }}" method="post" class="flex items-end">
+                  <input type="hidden" name="_token" value="{{ csrf_token('add_to_cart_' ~ p.id) }}">
+                  <button class="btn btn-primary">Add to cart</button>
+                </form>
+              {% else %}
+                <button class="btn" disabled>Not available</button>
+              {% endif %}
             </div>
 
-            <div class="card-actions mt-6">
-              <a href="{{ path('app_homepage') }}" class="btn btn-outline">Quay lại</a>
-              <a href="{{ path('product_detail', {'id': p.id}) }}" class="btn btn-primary">Buy Now</a>
+            {% if is_granted('ROLE_STAFF') %}
+              <div class="mt-4">
+                <a href="{{ path('product_edit', {id: p.id}) }}" class="btn btn-ghost">Edit product</a>
+              </div>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+    </div>
+
+    {# Specs + Description #}
+    <div class="mt-10 grid grid-cols-1 lg:grid-cols-12 gap-8">
+      <div class="lg:col-span-5">
+        <div class="card bg-base-100 border">
+          <div class="card-body">
+            <h2 class="card-title">Specifications</h2>
+            <div class="overflow-x-auto">
+              <table class="table">
+                <tbody>
+                  <tr><th>Category</th><td>{{ p.category ? p.category.name : '—' }}</td></tr>
+                  <tr><th>Stock</th><td>{{ p.quantity }}</td></tr>
+                  <tr><th>Created</th><td>{{ p.created ? p.created|date('d/m/Y') : '—' }}</td></tr>
+                </tbody>
+              </table>
             </div>
           </div>
         </div>
       </div>
-      <!-- /Right -->
+
+      <div class="lg:col-span-7">
+        <div class="card bg-base-100 border">
+          <div class="card-body prose max-w-none">
+            <h2 class="card-title">Product overview</h2>
+
+            {% set hasDesc = p.description is not empty %}
+            <div id="descWrap" class="{{ hasDesc ? 'max-h-64 overflow-hidden' : '' }}">
+              {% if hasDesc %}
+                {{ p.description|raw }}
+              {% else %}
+                <p class="text-base-content/70">No description yet.</p>
+              {% endif %}
+            </div>
+
+            {% if hasDesc %}
+              <button id="btnToggleDesc" class="btn btn-ghost btn-sm mt-2">Xem thêm</button>
+            {% endif %}
+          </div>
+        </div>
+      </div>
     </div>
   </div>
-</main>
+</section>
+
+<script>
+  (function(){
+    const main = document.getElementById('mainImage');
+    document.querySelectorAll('[data-main]').forEach(b=>{
+      b.addEventListener('click', ()=>{ main.src = b.dataset.main; });
+    });
+
+    const wrap = document.getElementById('descWrap');
+    const btn  = document.getElementById('btnToggleDesc');
+    if (wrap && btn) {
+      let open = false;
+      btn.addEventListener('click', ()=>{
+        open = !open;
+        wrap.classList.toggle('max-h-64', !open);
+        wrap.classList.toggle('overflow-hidden', !open);
+        btn.textContent = open ? 'Thu gọn' : 'Xem thêm';
+      });
+    }
+  })();
+</script>
 {% endblock %}

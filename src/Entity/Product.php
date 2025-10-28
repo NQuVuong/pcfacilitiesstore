@@ -39,10 +39,19 @@ class Product
     #[ORM\OneToMany(mappedBy: 'product', targetEntity: Price::class, orphanRemoval: true)]
     #[ORM\OrderBy(['createdAt' => 'DESC'])] 
     private Collection $prices;
+    #[ORM\OneToMany(mappedBy: 'product', targetEntity: ProductImage::class, cascade: ['persist','remove'], orphanRemoval: true)]
+    #[ORM\OrderBy(['position' => 'ASC', 'id' => 'ASC'])]
+    private Collection $images;
+     #[ORM\Column(type: 'text', nullable: true)]
+    private ?string $description = null;
+
+    #[ORM\Column(type: 'string', length: 180, unique: true)]
+    private string $slug = '';
 
     public function __construct()
     {
         $this->prices = new ArrayCollection();
+        $this->images = new ArrayCollection();
     }
 
     public function getId(): ?int
@@ -151,4 +160,30 @@ class Product
         $oldest = $this->prices->last(); // nhờ OrderBy DESC
         return $oldest ? $oldest->getImportPrice() : null;
     }
+
+    /** @return Collection<int, ProductImage> */
+    public function getImages(): Collection { return $this->images; }
+
+    public function addImage(ProductImage $image): self
+    {
+        if (!$this->images->contains($image)) {
+            $this->images->add($image);
+            $image->setProduct($this);
+        }
+        return $this;
+    }
+    public function removeImage(ProductImage $image): self
+    {
+        if ($this->images->removeElement($image)) {
+            if ($image->getProduct() === $this) {
+                $image->setProduct(null);
+            }
+        }
+        return $this;
+    }
+    public function getDescription(): ?string { return $this->description; }
+    public function setDescription(?string $d): self { $this->description = $d; return $this; }
+
+    public function getSlug(): string { return $this->slug; }
+    public function setSlug(string $slug): self { $this->slug = $slug; return $this; }
 }

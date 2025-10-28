@@ -4,10 +4,6 @@
 @tailwind components;
 @tailwind utilities;
 
-/* (tuỳ chọn) tiện ích cho toast thuần Tailwind */
-.toast-enter        { @apply opacity-0 -translate-y-2; }
-.toast-enter-active { @apply opacity-100 translate-y-0 transition-all duration-300; }
-.toast-leave        { @apply opacity-100 translate-y-0; }
-.toast-leave-active { @apply opacity-0 -translate-y-2 transition-all duration-200; }
 
 :root { --navbar-h: 72px; }
+
