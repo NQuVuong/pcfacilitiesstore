@@ -1,103 +1,201 @@
 {% extends 'base.html.twig' %}
+{% block title %}PC Store — Home{% endblock %}
 
 {% block body %}
-  <div class="bg-gray-100 py-8">
-    <div class="container mx-auto px-4">
-      {# Filter bar #}
-      <form method="get" class="mb-6 grid grid-cols-1 sm:grid-cols-3 gap-3">
-        <select class="select select-bordered w-full" name="cat">
-          <option value="">All categories</option>
-          {% for c in categories %}
-            <option value="{{ c.id }}" {{ cat is defined and cat == c.id ? 'selected' : '' }}>
-              {{ c.name }}
-            </option>
-          {% endfor %}
-        </select>
+{# HERO: compact carousel #}
+<section class="relative">
+  <div class="carousel w-full"> 
 
-        <select class="select select-bordered w-full" name="sort">
-          <option value="newest"     {{ sort == 'newest' ? 'selected' }}>Newest</option>
-          <option value="name_asc"   {{ sort == 'name_asc' ? 'selected' }}>Name A→Z</option>
-          <option value="name_desc"  {{ sort == 'name_desc' ? 'selected' }}>Name Z→A</option>
-          <option value="qty_desc"   {{ sort == 'qty_desc' ? 'selected' }}>Stock high → low</option>
-          <option value="qty_asc"    {{ sort == 'qty_asc' ? 'selected' }}>Stock low → high</option>
-          <option value="price_asc"  {{ sort == 'price_asc' ? 'selected' }}>Price low → high</option>
-          <option value="price_desc" {{ sort == 'price_desc' ? 'selected' }}>Price high → low</option>
-        </select>
+    <div id="slide1" class="carousel-item relative w-full h-[450px]"> 
+      <img
+        src="hero/mkeyboard.jpg"
+        class="w-full h-full object-cover" /> 
+      <div class="absolute left-5 right-5 top-1/2 flex -translate-y-1/2 transform justify-between">
+        <a href="#slide4" class="btn btn-circle">❮</a>
+        <a href="#slide2" class="btn btn-circle">❯</a>
+      </div>
+    </div>
 
-        <div class="sm:col-span-3">
-          <button class="btn btn-primary">Apply</button>
-          {% if app.request.get('q') or cat or sort != 'newest' %}
-            <a class="btn btn-ghost ml-2" href="{{ path('app_homepage') }}">Clear</a>
-          {% endif %}
-        </div>
-      </form>
+    <div id="slide2" class="carousel-item relative w-full h-[450px]">
+      <img
+        src="hero/LargeHero_Xbox_PeripheralsWrapper_Banner.jpg"
+        class="w-full h-full object-cover" /> 
+      <div class="absolute left-5 right-5 top-1/2 flex -translate-y-1/2 transform justify-between">
+        <a href="#slide1" class="btn btn-circle">❮</a>
+        <a href="#slide3" class="btn btn-circle">❯</a>
+      </div>
+    </div>
 
-      {# Grid sản phẩm #}
-      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        {% for p in products %}
-          <div class="card bg-base-100 shadow-sm w-full">
-            <figure class="h-64">
-              <img
-                src="{{ asset('uploads/' ~ p.image) }}"
-                alt="{{ p.name }}"
-                class="object-cover w-full h-full"
-              />
-            </figure>
+    <div id="slide3" class="carousel-item relative w-full h-[450px]">
+      <img
+        src="hero/banner.jpg"
+        class="w-full h-full object-cover" /> 
+      <div class="absolute left-5 right-5 top-1/2 flex -translate-y-1/2 transform justify-between">
+        <a href="#slide2" class="btn btn-circle">❮</a>
+        <a href="#slide4" class="btn btn-circle">❯</a>
+      </div>
+    </div>
 
-            <div class="card-body">
-              <h2 class="card-title">
-                <a href="{{ path('product_detail', {'id': p.id}) }}" class="hover:text-indigo-600">
-                  {{ p.name }}
-                </a>
-              </h2>
-
-              {% set latest = p.prices|first %}
-              {% set hasPrice = latest is not null and latest.exportPrice is not null %}
-              {% set canBuy = hasPrice and p.quantity > 1 %}
-
-              <p class="text-xl font-bold {{ hasPrice ? 'text-indigo-600' : 'text-gray-400 italic' }}">
-                {% if hasPrice %}
-                  {{ latest.exportPrice|number_format(0, '.', ',') }} ₫
-                {% else %}
-                  Chưa đặt
-                {% endif %}
-              </p>
-
-              <div class="space-x-2 mb-2">
-                {% if p.quantity > 0 and p.quantity <= 3 %}
-                  <span class="badge badge-warning">Sắp hết hàng ({{ p.quantity }})</span>
-                {% endif %}
-                {% if p.quantity == 0 %}
-                  <span class="badge badge-error">Hết hàng</span>
-                {% endif %}
-              </div>
-
-              <div class="card-actions justify-between items-center">
-                <span class="badge {{ p.quantity > 0 ? 'badge-success' : 'badge-error' }}">
-                  {{ p.quantity > 0 ? ('Còn: ' ~ p.quantity) : 'Hết hàng' }}
-                </span>
-
-                {% if canBuy %}
-                  <form action="{{ path('app_cart_add', {id: p.id}) }}" method="post">
-                    <input type="hidden" name="_token" value="{{ csrf_token('add_to_cart_' ~ p.id) }}">
-                    <button class="btn btn-sm btn-primary" type="submit">Thêm vào giỏ</button>
-                  </form>
-                {% else %}
-                  <button class="btn btn-sm btn-disabled" disabled>
-                    {% if not hasPrice %}Chưa có giá
-                    {% elseif p.quantity <= 1 %}Đạt giới hạn, chưa thể mua
-                    {% else %}Hết hàng{% endif %}
-                  </button>
-                {% endif %}
-              </div>
-            </div>
-          </div>
-        {% else %}
-          <div class="col-span-full text-center text-base-content/60">
-            Không tìm thấy sản phẩm phù hợp.
-          </div>
-        {% endfor %}
+    <div id="slide4" class="carousel-item relative w-full h-[450px]">
+      <img
+        src="hero/keyboard.jpg"
+        class="w-full h-full object-cover" /> 
+      <div class="absolute left-5 right-5 top-1/2 flex -translate-y-1/2 transform justify-between">
+        <a href="#slide3" class="btn btn-circle">❮</a>
+        <a href="#slide1" class="btn btn-circle">❯</a>
       </div>
     </div>
   </div>
+</section>
+
+{# ==== One horizontal row per category ==== #}
+{% if categoriesWithProducts is defined and categoriesWithProducts|length > 0 %}
+  {% for row in categoriesWithProducts %}
+    {% set catEntity = row.category %}
+    {% set items = row.products %}
+    {% if items|length > 0 %}
+      <section class="bg-base-100">
+        <div class="max-w-7xl mx-auto px-4 lg:px-8 py-8">
+          <div class="flex items-center justify-between mb-3">
+            <h2 class="text-lg font-semibold">{{ catEntity.name }}</h2>
+            <a class="btn btn-ghost btn-sm" href="{{ path('catalog', { cat: catEntity.id }) }}">View all</a>
+          </div>
+
+          <div class="grid grid-rows-1 grid-flow-col gap-3 justify-center">
+
+
+            {% for p in items|slice(0, 4) %}
+              <a href="{{ path('product_detail', {'slug': p.slug}) }}" class="w-56 md:w-64">
+                <article class="card bg-base-100 border hover:shadow-md transition h-full flex flex-col">
+                  <figure class="h-64 bg-base-200">
+                    <img src="{{ asset('uploads/' ~ p.image) }}"
+                         alt="{{ p.name }}" class="w-full h-full object-contain p-3" />
+                  </figure>
+
+                  <div class="card-body p-3 grow flex flex-col justify-between">
+                    <div class="line-clamp-2 h-10 text-sm hover:text-primary">{{ p.name }}</div>
+                    {% set latest = p.prices|first %}
+                    {% set hasPrice = latest is not null and latest.exportPrice is not null %}
+                    <div class="text-base font-semibold {{ hasPrice ? 'text-primary' : 'text-base-content/50 italic' }}">
+                      {% if hasPrice %}
+                        {{ latest.exportPrice|number_format(0,'.',',') }} ₫
+                      {% else %}No price{% endif %}
+                    </div>
+                  </div>
+                </article>
+              </a>
+            {% endfor %}
+          </div>
+          
+        </div>
+      </section>
+    {% endif %}
+  {% endfor %}
+{% endif %}
+{% block javascripts %}
+    {{ parent() }} {# Kế thừa JS từ file base.html.twig, nếu có #}
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const carousel = document.querySelector('.carousel');
+            if (!carousel) return; // Thoát nếu không tìm thấy carousel
+
+            const items = carousel.querySelectorAll('.carousel-item');
+            const itemCount = items.length;
+            if (itemCount <= 1) return; // Không tự chạy nếu chỉ có 1 ảnh
+
+            let currentSlideIndex = 0;
+            let autoPlayInterval = null; // Khởi tạo là null
+
+            // --- Hàm cuộn chính ---
+            const scrollToSlide = (index) => {
+                currentSlideIndex = (index + itemCount) % itemCount;
+                const targetSlide = items[currentSlideIndex];
+                
+                if (targetSlide) {
+                    targetSlide.scrollIntoView({
+                        behavior: 'smooth',
+                        block: 'nearest',
+                        inline: 'start'
+                    });
+                }
+            };
+
+            const goToNextSlide = () => {
+                scrollToSlide(currentSlideIndex + 1);
+            };
+
+            // --- Bắt đầu và Dừng Autoplay ---
+            const startAutoplay = () => {
+                // Chỉ bắt đầu nếu chưa có interval
+                if (autoPlayInterval === null) {
+                    clearInterval(autoPlayInterval); // Xóa interval cũ (nếu có)
+                    autoPlayInterval = setInterval(goToNextSlide, 3000); 
+                }
+            };
+
+            const stopAutoplay = () => {
+                clearInterval(autoPlayInterval);
+                autoPlayInterval = null; // Đặt lại là null
+            };
+
+            // --- Sửa lỗi "Lăn lên" khi bấm nút ---
+            const slideButtons = carousel.querySelectorAll('.carousel-item a.btn-circle');
+            slideButtons.forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    e.preventDefault(); 
+                    stopAutoplay(); // Dừng khi bấm
+
+                    const href = btn.getAttribute('href');
+                    if (!href) return;
+
+                    const targetId = href.substring(1);
+                    const targetElement = document.getElementById(targetId);
+                    if (!targetElement) return;
+
+                    const targetIndex = Array.from(items).indexOf(targetElement);
+                    
+                    if (targetIndex !== -1) {
+                        scrollToSlide(targetIndex);
+                    }
+                    
+                    startAutoplay(); // Khởi động lại
+                });
+            });
+            
+            // --- SỬA LỖI TỰ NHẢY LÊN ĐẦU TRANG ---
+            // 1. Tạo một "người quan sát"
+            const observer = new IntersectionObserver((entries) => {
+                // Lấy phần tử đầu tiên (chính là carousel)
+                const entry = entries[0];
+                
+                if (entry.isIntersecting) {
+                    // 2. NẾU người dùng THẤY carousel, BẮT ĐẦU tự chạy
+                    startAutoplay();
+                } else {
+                    // 3. NẾU người dùng KHÔNG THẤY (đã cuộn đi), DỪNG tự chạy
+                    stopAutoplay();
+                }
+            }, { 
+                threshold: 0.1 // Kích hoạt khi 10% carousel lọt vào màn hình
+            });
+
+            // 4. Bắt đầu theo dõi carousel
+            observer.observe(carousel);
+
+            // Dừng khi hover chuột (vẫn giữ)
+            carousel.addEventListener('mouseenter', stopAutoplay);
+            // Khởi động lại khi di chuột ra (chỉ nếu đang trong tầm nhìn)
+            carousel.addEventListener('mouseleave', () => {
+                // Kiểm tra xem nó có còn trong tầm nhìn không
+                if (observer.takeRecords().length > 0 && observer.takeRecords()[0].isIntersecting) {
+                   startAutoplay();
+                }
+            });
+            
+            // Không tự khởi động ở đây nữa, để observer lo việc đó
+            // startAutoplay(); 
+        });
+    </script>
+{% endblock %}
 {% endblock %}

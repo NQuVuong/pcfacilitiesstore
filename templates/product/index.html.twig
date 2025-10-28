@@ -59,8 +59,8 @@
                                         <input type="checkbox" id="delete-modal-{{ product.id }}" class="modal-toggle" />
                                         <div class="modal" role="dialog">
                                         <div class="modal-box">
-                                            <h3 class="font-bold text-lg">Xác nhận xóa</h3>
-                                            <p class="py-4">Bạn có chắc muốn xóa <strong>{{ product.name }}</strong> không?</p>
+                                            <h3 class="font-bold text-lg">Confirm delete</h3>
+                                            <p class="py-4">Bạn có chắc muốn xóa <strong>{{ product.name }}</strong> No?</p>
                                             <div class="modal-action">
                                             <form method="post" action="{{ path('product_delete', {'id': product.id}) }}">
                                                 <input type="hidden" name="_token" value="{{ csrf_token('delete_product_' ~ product.id) }}">

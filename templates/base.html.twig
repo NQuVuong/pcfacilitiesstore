@@ -1,147 +1,237 @@
 {# templates/base.html.twig #}
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="light" class="scroll-smooth">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>{% block title %}PC Store{% endblock %}</title>
-    {% block stylesheets %}
-        {{ encore_entry_link_tags('app') }}
-    {% endblock %}
-
-    {% block javascripts %}
-        {{ encore_entry_script_tags('app') }}
-    {% endblock %}
+    {% block stylesheets %}{{ encore_entry_link_tags('app') }}{% endblock %}
+    {% block javascripts %}{{ encore_entry_script_tags('app') }}{% endblock %}
   </head>
-  <body class="flex flex-col min-h-screen bg-gray-100">
 
-  {# --- Navbar --- #}
-  {% block navbar %}
-  <div class="navbar bg-base-100 shadow-sm fixed top-0 left-0 right-0 z-50">
-    <div class="flex-1">
-      <a class="btn btn-ghost text-xl" href="{{ path('app_homepage') }}">PC Store</a>
-    </div>
-    <div class="flex items-center gap-2">
-      <form action="{{ path('app_homepage') }}" method="get" class="hidden md:block">
-        <input type="text" name="q" value="{{ app.request.get('q') }}" placeholder="Search products..." class="input input-bordered w-48 md:w-64" />
-      </form>
-
-      {% if app.user %}
-        {# Cart icon #}
-        {% set _raw = app.session.get('cart', {}) %}
-        {% set _count = 0 %}
-        {% for q in _raw %}{% set _count = _count + q %}{% endfor %}
-
-        <div class="indicator mr-1">
-          <a href="{{ path('app_cart_index') }}" class="btn btn-ghost btn-circle" aria-label="Cart">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <circle cx="9" cy="21" r="1"></circle>
-              <circle cx="20" cy="21" r="1"></circle>
-              <path d="M1 1h4l2.68 12.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path>
-            </svg>
-          </a>
-          {% if _count > 0 %}
-            <span class="indicator-item badge badge-primary badge-sm">{{ _count }}</span>
-          {% endif %}
-        </div>
-
-        {# Avatar dropdown #}
-        <div class="dropdown dropdown-end">
-          <div tabindex="0" role="button" class="btn btn-ghost btn-circle avatar">
-            <div class="w-10 rounded-full">
-              <img alt="{{ app.user.userIdentifier }}" src="https://img.daisyui.com/images/stock/photo-1534528741775-53994a69daeb.webp" />
-            </div>
-          </div>
-          <ul tabindex="0" class="menu menu-sm dropdown-content bg-base-100 rounded-box z-[60] mt-3 w-56 p-2 shadow">
-            <li class="menu-title px-4">{{ app.user.userIdentifier }}</li>
-            <li><a href="{{ path('app_orders_index') }}">My Orders</a></li>
-            <li><a href="#">Profile</a></li>
-            <li><a href="{{ path('app_admin') }}">Dashboard</a></li>
-            <li class="mt-2">
-              <form method="post" action="{{ path('app_logout') }}">
-                <input type="hidden" name="_csrf_token" value="{{ csrf_token('logout') }}">
-                <button type="submit" class="btn btn-error btn-sm w-full">Logout</button>
-              </form>
-            </li>
-          </ul>
-        </div>
-      {% else %}
-        <div class="flex gap-2">
-          <a href="{{ path('app_login') }}" class="btn btn-ghost">Login</a>
-          <a href="{{ path('app_register') }}" class="btn btn-primary">Register</a>
-        </div>
-      {% endif %}
-    </div>
-  </div>
-  <div class="h-16"></div>
-  {% endblock %}
-
-  <main class="flex-grow container mx-auto px-4 py-8">
-    {% block body %}{% endblock %}
-  </main>
-
-  <footer class="footer sm:footer-horizontal bg-base-300 text-base-content p-10">
-    <nav>
-      <h6 class="footer-title">Services</h6>
-      <a class="link link-hover">Branding</a>
-      <a class="link link-hover">Design</a>
-      <a class="link link-hover">Marketing</a>
-      <a class="link link-hover">Advertisement</a>
-    </nav>
-    <nav>
-      <h6 class="footer-title">Company</h6>
-      <a class="link link-hover">About us</a>
-      <a class="link link-hover">Contact</a>
-      <a class="link link-hover">Jobs</a>
-      <a class="link link-hover">Press kit</a>
-    </nav>
-    <nav>
-      <h6 class="footer-title">Social</h6>
-      <div class="grid grid-flow-col gap-4">
-        <a></a><a></a><a></a>
+  <body class="min-h-screen flex flex-col bg-gray-100">
+    {# ===== Navbar (daisyUI, sticky) ===== #}
+    <div class="navbar sticky top-0 z-50 bg-base-100 shadow-sm">
+      <div class="flex-1">
+        <a class="btn btn-ghost text-xl" href="{{ path('app_homepage') }}">PC Store</a>
       </div>
-    </nav>
-  </footer>
 
-  {# === FRONT TOASTS: kênh shop.* === #}
-  {% set styleMap = {
-    'shop.success': 'border-green-300 bg-green-50 text-green-800',
-    'shop.error':   'border-rose-300  bg-rose-50  text-rose-800',
-    'shop.warning': 'border-amber-300 bg-amber-50 text-amber-900',
-    'shop.info':    'border-sky-300   bg-sky-50   text-sky-800'
-  } %}
-  {% set flashes_front = app.flashes(['shop.success','shop.error','shop.warning','shop.info']) %}
-  {% if flashes_front is not empty %}
-    <div id="toasts"
-         class="fixed z-[100] top-[80px] left-1/2 -translate-x-1/2 w-full max-w-md flex flex-col gap-2 px-4">
-      {% for type, messages in flashes_front %}
-        {% for message in messages %}
-          <div class="toast-item pointer-events-auto flex items-center justify-between gap-3 rounded-md border shadow
-                      px-4 py-3 backdrop-blur-sm
-                      {{ styleMap[type]|default('border-gray-300 bg-white text-gray-800') }}
-                      transition-all duration-300 ease-out opacity-0 translate-y-[-8px]">
-            <span class="block leading-snug break-words">{{ message|raw }}</span>
-            <button type="button"
-                    class="shrink-0 inline-flex items-center justify-center rounded p-1 text-current/70 hover:text-current"
-                    aria-label="Close">✕</button>
+      <div class="flex items-center gap-1">
+        {# Open Search modal #}
+        <button id="btnOpenSearch" type="button" class="btn btn-ghost btn-circle" aria-label="Search">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 24 24" fill="none"
+               stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="11" cy="11" r="8"></circle><path d="m21 21-4.3-4.3"></path>
+          </svg>
+        </button>
+
+        {% if app.user %}
+          {% set _raw = app.session.get('cart', {}) %}
+          {% set _count = 0 %}{% for q in _raw %}{% set _count = _count + q %}{% endfor %}
+          <div class="indicator mr-1">
+            <a href="{{ path('app_cart_index') }}" class="btn btn-ghost btn-circle" aria-label="Cart">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none"
+                   viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <circle cx="9" cy="21" r="1"></circle><circle cx="20" cy="21" r="1"></circle>
+                <path d="M1 1h4l2.68 12.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path>
+              </svg>
+            </a>
+            {% if _count > 0 %}
+              <span class="indicator-item badge badge-primary badge-sm">{{ _count }}</span>
+            {% endif %}
           </div>
-        {% endfor %}
-      {% endfor %}
-    </div>
-    <script>
-      (function () {
-        const items = Array.from(document.querySelectorAll('#toasts .toast-item'));
-        items.forEach((el, idx) => {
-          requestAnimationFrame(() => { el.style.opacity = '1'; el.style.transform = 'translateY(0)'; });
-          const timer = setTimeout(() => close(el), 3500 + idx * 150);
-          el.querySelector('button')?.addEventListener('click', () => { clearTimeout(timer); close(el); });
-        });
-        function close(el){ el.style.opacity = '0'; el.style.transform = 'translateY(-8px)'; setTimeout(() => el.remove(), 200); }
-      })();
-    </script>
-  {% endif %}
 
-  {% block javascripts_bottom %}{% endblock %}
+          <div class="dropdown dropdown-end">
+            <div tabindex="0" role="button" class="btn btn-ghost btn-circle avatar">
+              <div class="w-10 rounded-full">
+                <img alt="{{ app.user.userIdentifier }}"
+                     src="https://img.daisyui.com/images/stock/photo-1534528741775-53994a69daeb.webp"/>
+              </div>
+            </div>
+            <ul tabindex="0" class="menu menu-sm dropdown-content bg-base-100 rounded-box z-[60] mt-3 w-56 p-2 shadow">
+              <li class="menu-title px-4">{{ app.user.userIdentifier }}</li>
+              <li><a href="{{ path('app_orders_index') }}">My Orders</a></li>
+              <li><a href="#">Profile</a></li>
+              <li><a href="{{ path('app_admin') }}">Dashboard</a></li>
+              <li class="mt-2">
+                <form method="post" action="{{ path('app_logout') }}">
+                  <input type="hidden" name="_csrf_token" value="{{ csrf_token('logout') }}">
+                  <button type="submit" class="btn btn-error btn-sm w-full">Logout</button>
+                </form>
+              </li>
+            </ul>
+          </div>
+        {% else %}
+          <div class="flex gap-2">
+            <a href="{{ path('app_login') }}" class="btn btn-ghost">Login</a>
+            <a href="{{ path('app_register') }}" class="btn btn-primary">Register</a>
+          </div>
+        {% endif %}
+      </div>
+    </div>
+
+    {# ===== Page body ===== #}
+    <main class="flex-1">
+      {% block body %}{% endblock %}
+    </main>
+
+    
+
+    {# ===== Search Modal (daisyUI) ===== #}
+    <dialog id="searchModal" class="modal modal-top sm:modal-middle">
+      <div class="modal-box w-screen h-screen p-0 border rounded-2xl overflow-hidden">
+        <div class="p-6 md:p-10">
+          <div class="flex justify-center">
+            <button type="button" id="btnCloseSearch" class="btn btn-ghost btn-circle">✕</button>
+          </div>
+
+          <form id="globalSearchForm" action="{{ path('catalog') }}" method="get" class="mt-6">
+            <div class="join w-full border rounded-full overflow-hidden">
+              {% if categories is defined %}
+                <select name="cat"
+                        class="select join-item rounded-l-full max-w-[260px] h-14 text-base focus:outline-none">
+                  <option value="">CATEGORY</option>
+                  {% for c in categories %}
+                    <option value="{{ c.id }}" {{ app.request.get('cat') == c.id ? 'selected' : '' }}>{{ c.name }}</option>
+                  {% endfor %}
+                </select>
+              {% endif %}
+
+              <input id="globalSearchQuery" name="q" value="{{ app.request.get('q') }}"
+                     type="text"
+                     class="input join-item w-full h-14 text-base focus:outline-none"
+                     placeholder="WHAT ARE YOU LOOKING FOR ?" />
+
+              <button class="btn join-item h-14 px-8 rounded-r-full text-white border-0
+                             bg-gradient-to-r from-rose-500 to-fuchsia-500">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6"
+                     viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                     stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <circle cx="11" cy="11" r="8"></circle>
+                  <path d="m21 21-4.3-4.3"></path>
+                </svg>
+              </button>
+            </div>
+
+            <div class="mt-8">
+              <p class="text-xs font-semibold tracking-wide text-base-content/60">POPULAR SEARCH:</p>
+              <div class="mt-4 flex flex-wrap gap-3">
+                {% set tags = ['Keyboard','Mouse','Consoles','Headphone'] %}
+                {% for t in tags %}
+                  <a href="#" class="badge badge-ghost px-5 py-3 text-sm" data-fill-q="{{ t }}">{{ t }}</a>
+                {% endfor %}
+              </div>
+            </div>
+            <div class="mt-4 flex items-center justify-end gap-3">
+    <button id="btnAdvancedSearch" type="button" class="btn btn-outline btn-sm">
+      <!-- sliders icon -->
+      <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-2" viewBox="0 0 24 24" fill="none"
+           stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <line x1="4" y1="21" x2="4" y2="14"/><line x1="4" y1="10" x2="4" y2="3"/>
+        <line x1="12" y1="21" x2="12" y2="12"/><line x1="12" y1="8" x2="12" y2="3"/>
+        <line x1="20" y1="21" x2="20" y2="16"/><line x1="20" y1="12" x2="20" y2="3"/>
+        <line x1="1" y1="14" x2="7" y2="14"/><line x1="9" y1="8" x2="15" y2="8"/>
+        <line x1="17" y1="16" x2="23" y2="16"/>
+      </svg>
+      Advanced search
+    </button>
+  </div>
+          </form>
+        </div>
+      </div>
+    </dialog>
+    {# Back to top (bottom-right) #}
+<button
+  id="btnBackToTop"
+  class="btn btn-primary btn-circle fixed bottom-6 right-6 top-auto left-auto z-50
+         opacity-0 pointer-events-none transition"
+  aria-label="Back to top"
+>
+  ↑
+</button>
+    {% block javascripts_bottom %}{% endblock %}
+
+    <script>
+      // Back-to-top
+      (() => {
+        const btn = document.getElementById('btnBackToTop');
+        const showAt = 350;
+        const toggle = () => (window.scrollY > showAt)
+          ? btn.classList.remove('opacity-0','pointer-events-none')
+          : btn.classList.add('opacity-0','pointer-events-none');
+        window.addEventListener('scroll', toggle, { passive:true });
+        toggle();
+        btn.addEventListener('click', () => window.scrollTo({ top:0, behavior:'smooth' }));
+      })();
+
+      // Search Modal (robust)
+      document.addEventListener('DOMContentLoaded', () => {
+        const openBtn  = document.getElementById('btnOpenSearch');
+        const closeBtn = document.getElementById('btnCloseSearch');
+        const modal    = document.getElementById('searchModal');
+        const form     = document.getElementById('globalSearchForm');
+        const q        = document.getElementById('globalSearchQuery');
+
+        function openModal() {
+          if (!modal) return;
+          if (typeof modal.showModal === 'function') modal.showModal();
+          else modal.setAttribute('open', '');
+          setTimeout(() => q?.focus(), 60);
+        }
+        function closeModal() {
+          if (!modal) return;
+          try { modal.close(); } catch(_) { modal.removeAttribute('open'); }
+        }
+
+        openBtn?.addEventListener('click', (e) => { e.preventDefault(); openModal(); });
+        closeBtn?.addEventListener('click', (e) => { e.preventDefault(); closeModal(); });
+
+        modal?.addEventListener('click', (e) => {
+          const box = modal.querySelector('.modal-box');
+          if (box && !box.contains(e.target)) closeModal();
+        });
+        document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeModal(); });
+
+        // Quick tags fill
+        modal?.querySelectorAll('[data-fill-q]').forEach(el => {
+          el.addEventListener('click', (ev) => {
+            ev.preventDefault();
+            if (q) q.value = el.dataset.fillQ || '';
+            form?.submit();
+          });
+        });
+      });
+    </script>
+    <script>
+  // Advanced search: go to /catalog with current q & cat
+  (function () {
+    const adv = document.getElementById('btnAdvancedSearch');
+    const form = document.getElementById('globalSearchForm');
+    if (adv && form) {
+      adv.addEventListener('click', () => {
+        const params = new URLSearchParams(new FormData(form));
+        const base = form.getAttribute('action') || '{{ path("catalog") }}';
+        window.location.href = base + (params.toString() ? ('?' + params.toString()) : '');
+      });
+    }
+  })();
+</script>
   </body>
+  {# ===== Footer ===== #}
+    <footer class="footer sm:footer-horizontal bg-base-300 text-base-content p-10">
+      <nav>
+        <h6 class="footer-title">Services</h6>
+        <a class="link link-hover">Branding</a><a class="link link-hover">Design</a>
+        <a class="link link-hover">Marketing</a><a class="link link-hover">Advertisement</a>
+      </nav>
+      <nav>
+        <h6 class="footer-title">Company</h6>
+        <a class="link link-hover">About us</a><a class="link link-hover">Contact</a>
+        <a class="link link-hover">Jobs</a><a class="link link-hover">Press kit</a>
+      </nav>
+      <nav>
+        <h6 class="footer-title">Social</h6>
+        <div class="grid grid-flow-col gap-4"><a></a><a></a><a></a></div>
+      </nav>
+    </footer>
 </html>

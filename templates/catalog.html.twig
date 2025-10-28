@@ -1,0 +1,67 @@
+{% extends 'base.html.twig' %}
+{% block title %}Catalog — PC Store{% endblock %}
+
+{% block body %}
+<section class="bg-base-100">
+  <div class="max-w-7xl mx-auto px-4 lg:px-8 py-8">
+
+    <div class="flex items-center justify-between gap-4 mb-6">
+      <h1 class="text-2xl font-semibold">Catalog</h1>
+
+      <form method="get" class="flex items-center gap-2">
+        <input type="hidden" name="q" value="{{ q }}">
+        {% if cat %}<input type="hidden" name="cat" value="{{ cat }}">{% endif %}
+
+        <select name="sort" class="select select-bordered select-sm">
+          <option value="newest"    {{ sort=='newest' ? 'selected' }}>Newest</option>
+          <option value="name_asc"  {{ sort=='name_asc' ? 'selected' }}>Name A→Z</option>
+          <option value="name_desc" {{ sort=='name_desc' ? 'selected' }}>Name Z→A</option>
+          <option value="price_asc" {{ sort=='price_asc' ? 'selected' }}>Price low → high</option>
+          <option value="price_desc"{{ sort=='price_desc' ? 'selected' }}>Price high → low</option>
+          <option value="qty_asc"   {{ sort=='qty_asc' ? 'selected' }}>Stock low → high</option>
+          <option value="qty_desc"  {{ sort=='qty_desc' ? 'selected' }}>Stock high → low</option>
+        </select>
+        <button class="btn btn-primary btn-sm">Apply</button>
+        <a href="{{ path('catalog') }}" class="btn btn-ghost btn-sm">Clear</a>
+      </form>
+    </div>
+
+    <form method="get" class="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-6">
+      <input name="q" value="{{ q }}" class="input input-bordered w-full" placeholder="Search products..." />
+      <select class="select select-bordered w-full" name="cat">
+        <option value="">All categories</option>
+        {% for c in categories %}
+          <option value="{{ c.id }}" {{ cat is defined and cat == c.id ? 'selected' : '' }}>{{ c.name }}</option>
+        {% endfor %}
+      </select>
+      <button class="btn btn-primary">Search</button>
+    </form>
+
+    {% if products is empty %}
+      <div class="text-center text-base-content/60 py-20">No matching products.</div>
+    {% else %}
+      {# SAME CARD SIZE EVERYWHERE #}
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        {% for p in products %}
+          <a href="{{ path('product_detail', {'slug': p.slug}) }}" class="block">
+            <article class="card bg-base-100 border hover:shadow-md transition h-full">
+              <figure class="h-64 bg-base-200">
+                <img src="{{ asset('uploads/' ~ p.image) }}" alt="{{ p.name }}"
+                     class="w-full h-full object-contain p-4"/>
+              </figure>
+              <div class="card-body flex flex-col justify-between gap-3">
+                <h2 class="line-clamp-2 h-12 hover:text-primary">{{ p.name }}</h2>
+                {% set latest = p.prices|first %}
+                {% set hasPrice = latest is not null and latest.exportPrice is not null %}
+                <p class="text-xl font-bold {{ hasPrice ? 'text-primary' : 'text-base-content/50 italic' }}">
+                  {% if hasPrice %}{{ latest.exportPrice|number_format(0,'.',',') }} ₫{% else %}No price{% endif %}
+                </p>
+              </div>
+            </article>
+          </a>
+        {% endfor %}
+      </div>
+    {% endif %}
+  </div>
+</section>
+{% endblock %}
