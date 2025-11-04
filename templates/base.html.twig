@@ -67,7 +67,12 @@
             <li class="menu-title px-4">{{ app.user.userIdentifier }}</li>
             <li><a href="{{ path('app_orders_index') }}">My Orders</a></li>
             <li><a href="{{ path('account_profile') }}">Profile</a></li>
-            <li><a href="{{ path('app_admin') }}">Dashboard</a></li>
+
+            {# CHỈ hiển thị Dashboard khi là STAFF hoặc ADMIN #}
+            {% if is_granted('ROLE_STAFF') or is_granted('ROLE_ADMIN') %}
+              <li><a href="{{ path('app_admin') }}">Dashboard</a></li>
+            {% endif %}
+
             <li class="mt-2">
               <form method="post" action="{{ path('app_logout') }}">
                 <input type="hidden" name="_csrf_token" value="{{ csrf_token('logout') }}">
