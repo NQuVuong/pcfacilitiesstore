@@ -1,4 +1,5 @@
 <?php
+// src/Entity/Order.php
 
 namespace App\Entity;
 
@@ -24,7 +25,7 @@ class Order
     #[ORM\Column(length: 32)]
     private string $status = 'NEW';
 
-    // Lưu tổng tiền (demo: decimal). Sản xuất nên cân nhắc integer (cents).
+    // Demo: decimal. (Sản xuất nên cân nhắc integer cents)
     #[ORM\Column(type: 'decimal', precision: 10, scale: 2)]
     private string $total = '0.00';
 
@@ -54,13 +55,30 @@ class Order
     #[ORM\Column(type: 'datetime_immutable', nullable: true)]
     private ?\DateTimeImmutable $paidAt = null;
 
-    // Mã giao dịch do cổng thanh toán trả về (vd: MoMo transId). Dùng cho tra soát/idempotency.
+    // Mã giao dịch do cổng thanh toán trả về (vd: MoMo transId)
     #[ORM\Column(length: 64, nullable: true, unique: true)]
     private ?string $paymentTxnId = null;
 
-    // Hạn dùng phiên thanh toán (ví dụ: +1 hour kể từ lúc tạo yêu cầu)
+    // Hạn dùng phiên thanh toán
     #[ORM\Column(type: 'datetime_immutable', nullable: true)]
     private ?\DateTimeImmutable $expiresAt = null;
+
+    // MoMo orderId khi tạo payment
+    #[ORM\Column(length: 255, nullable: true, unique: true)]
+    private ?string $momoOrderId = null;
+
+    // ===== Refund tracking =====
+    #[ORM\Column(type: 'integer', options: ['default' => 0])]
+    private int $refundableRemaining = 0; // VND
+
+    #[ORM\Column(type: 'integer', options: ['default' => 0])]
+    private int $refundedTotal = 0; // VND
+
+    #[ORM\Column(length: 64, nullable: true)]
+    private ?string $lastRefundRequestId = null;
+
+    #[ORM\Column(length: 64, nullable: true)]
+    private ?string $lastRefundOrderId = null;
 
     public function __construct()
     {
@@ -102,16 +120,13 @@ class Order
 
     /** @return Collection<int, OrderItem> */
     public function getItems(): Collection { return $this->items; }
-
     public function addItem(OrderItem $item): self
     {
         if (!$this->items->contains($item)) {
-            $this->items->add($item);
-            $item->setOrder($this);
+            $this->items->add($item); $item->setOrder($this);
         }
         return $this;
     }
-
     public function removeItem(OrderItem $item): self
     {
         if ($this->items->removeElement($item) && $item->getOrder() === $this) {
@@ -129,9 +144,31 @@ class Order
     public function getExpiresAt(): ?\DateTimeImmutable { return $this->expiresAt; }
     public function setExpiresAt(?\DateTimeImmutable $dt): self { $this->expiresAt = $dt; return $this; }
 
-    /** Đơn đã quá hạn hay chưa */
     public function isExpired(): bool
     {
         return $this->expiresAt !== null && $this->expiresAt <= new \DateTimeImmutable();
     }
+
+    public function getMomoOrderId(): ?string { return $this->momoOrderId; }
+    public function setMomoOrderId(?string $momoOrderId): static { $this->momoOrderId = $momoOrderId; return $this; }
+
+    // ===== Refund helpers =====
+    public function getRefundableRemaining(): int { return $this->refundableRemaining; }
+    public function setRefundableRemaining(int $v): self { $this->refundableRemaining = max(0, $v); return $this; }
+
+    public function getRefundedTotal(): int { return $this->refundedTotal; }
+    public function setRefundedTotal(int $v): self { $this->refundedTotal = max(0, $v); return $this; }
+
+    public function addRefunded(int $amount): self
+    {
+        $this->refundedTotal = max(0, $this->refundedTotal + $amount);
+        $this->refundableRemaining = max(0, $this->refundableRemaining - $amount);
+        return $this;
+    }
+
+    public function getLastRefundRequestId(): ?string { return $this->lastRefundRequestId; }
+    public function setLastRefundRequestId(?string $v): self { $this->lastRefundRequestId = $v; return $this; }
+
+    public function getLastRefundOrderId(): ?string { return $this->lastRefundOrderId; }
+    public function setLastRefundOrderId(?string $v): self { $this->lastRefundOrderId = $v; return $this; }
 }

@@ -1,0 +1,114 @@
+{% extends 'base.html.twig' %}
+{% block title %}My Profile{% endblock %}
+
+{% block body %}
+<div class="max-w-5xl mx-auto my-10 grid grid-cols-1 md:grid-cols-3 gap-6">
+
+  {# Sidebar #}
+  <aside class="bg-white rounded-xl border border-gray-200 p-5">
+    <div class="flex items-center gap-3">
+      {% set rawAvatar = user.avatar ?? '' %}
+      {% set fallback  = (user.gender ?? '') == 'female' ? 'women.png' : 'man.png' %}
+      {% set finalName = rawAvatar is not empty ? rawAvatar : fallback %}
+      {% set avatarUrl = (finalName starts with 'http' or finalName starts with '//')
+          ? finalName : asset('uploads/avatars/' ~ finalName) %}
+
+      <img src="{{ avatarUrl }}" class="w-16 h-16 rounded-full border" alt="avatar">
+      <div>
+        <div class="font-semibold text-gray-900 text-sm">{{ user.fullName ?? user.email }}</div>
+        <div class="text-xs text-gray-500 break-words">{{ user.email }}</div>
+      </div>
+    </div>
+
+    <ul class="mt-6 space-y-3 text-sm">
+      <li class="font-medium text-violet-600">Thông tin tài khoản</li>
+      <li class="text-gray-600"><a href="{{ path('app_orders_index') }}">Đơn hàng của tôi</a></li>
+      <li class="text-gray-600">Sản phẩm đã xem</li>
+      <li class="text-gray-600">
+        <form method="post" action="{{ path('app_logout') }}">
+          <input type="hidden" name="_csrf_token" value="{{ csrf_token('logout') }}">
+          <button class="text-red-600 font-medium" type="submit">Đăng xuất</button>
+        </form>
+      </li>
+    </ul>
+  </aside>
+
+  {# Content #}
+  <section class="md:col-span-2 space-y-8">
+
+    {# AVATAR FORM (form riêng) #}
+    <div class="bg-white rounded-lg shadow p-6 border border-gray-200">
+      <h2 class="text-lg font-semibold text-gray-900 mb-3">Ảnh đại diện</h2>
+      <div class="flex items-center gap-4">
+        <img src="{{ avatarUrl }}" alt="avatar" class="w-16 h-16 rounded-full border">
+
+        {{ form_start(avatar_form, { attr: { enctype: 'multipart/form-data', class: 'flex items-center gap-3' } }) }}
+          {{ form_widget(avatar_form.avatarFile, {
+            attr: { class: 'file-input file-input-bordered w-full max-w-xs' }
+          }) }}
+          <button class="btn btn-primary btn-sm" type="submit">Cập nhật ảnh</button>
+        {{ form_end(avatar_form) }}
+      </div>
+    </div>
+
+    {# PROFILE FORM (form riêng) #}
+    <div class="bg-white rounded-lg shadow p-6 border border-gray-200">
+      <h2 class="text-lg font-semibold text-gray-900 mb-4">Thông tin tài khoản</h2>
+
+      {{ form_start(profile_form) }}
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+
+        {# Full name (luôn đầu) #}
+        <div>
+          <label class="block mb-2 text-sm font-medium text-gray-900">
+            {{ profile_form.fullName.vars.label }}
+          </label>
+          {{ form_widget(profile_form.fullName) }}
+          <div class="text-xs text-red-500 mt-1">{{ form_errors(profile_form.fullName) }}</div>
+        </div>
+
+        {# Birthday (DateType single_text đã cấu hình trong FormType) #}
+        <div>
+          <label class="block mb-2 text-sm font-medium text-gray-900">
+            {{ profile_form.birthday.vars.label }}
+          </label>
+          {{ form_widget(profile_form.birthday) }}
+          <div class="text-xs text-red-500 mt-1">{{ form_errors(profile_form.birthday) }}</div>
+        </div>
+
+        {# Gender: dùng chính field gender của form để đảm bảo submit/mapping #}
+        {% if profile_form.gender is defined %}
+          <div class="md:col-span-2">
+            <span class="block mb-2 text-sm font-medium text-gray-900">Giới tính</span>
+            {{ form_widget(profile_form.gender) }}
+            <div class="text-xs text-red-500 mt-1">{{ form_errors(profile_form.gender) }}</div>
+          </div>
+        {% endif %}
+
+        {# Phone #}
+        <div>
+          <label class="block mb-2 text-sm font-medium text-gray-900">
+            {{ profile_form.phone.vars.label }}
+          </label>
+          {{ form_widget(profile_form.phone) }}
+          <div class="text-xs text-red-500 mt-1">{{ form_errors(profile_form.phone) }}</div>
+        </div>
+
+        {# Email (readonly/disabled từ FormType) #}
+        <div>
+          <label class="block mb-2 text-sm font-medium text-gray-900">
+            {{ profile_form.email.vars.label }}
+          </label>
+          {{ form_widget(profile_form.email) }}
+        </div>
+
+        <div class="md:col-span-2 flex justify-end">
+          <button type="submit" class="btn btn-primary">Lưu thay đổi</button>
+        </div>
+
+      </div>
+      {{ form_end(profile_form) }}
+    </div>
+  </section>
+</div>
+{% endblock %}

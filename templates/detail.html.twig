@@ -67,8 +67,10 @@
               </label>
 
               {% if latest and latest.exportPrice is not null and p.quantity > 0 %}
-                <form action="{{ path('app_cart_add', {id: p.id}) }}" method="post" class="flex items-end">
+                <form id="addToCartForm" action="{{ path('app_cart_add', {id: p.id}) }}" method="post" class="flex items-end">
                   <input type="hidden" name="_token" value="{{ csrf_token('add_to_cart_' ~ p.id) }}">
+                  {# gửi qty thực sự về controller #}
+                  <input type="hidden" name="qty" id="qtyField" value="1">
                   <button class="btn btn-primary">Add to cart</button>
                 </form>
               {% else %}
@@ -76,11 +78,7 @@
               {% endif %}
             </div>
 
-            {% if is_granted('ROLE_STAFF') %}
-              <div class="mt-4">
-                <a href="{{ path('product_edit', {id: p.id}) }}" class="btn btn-ghost">Edit product</a>
-              </div>
-            {% endif %}
+            {# ĐÃ XOÁ nút Edit product để tránh staff/admin mở từ trang public #}
           </div>
         </div>
       </div>
@@ -92,15 +90,28 @@
         <div class="card bg-base-100 border">
           <div class="card-body">
             <h2 class="card-title">Specifications</h2>
-            <div class="overflow-x-auto">
-              <table class="table">
-                <tbody>
-                  <tr><th>Category</th><td>{{ p.category ? p.category.name : '—' }}</td></tr>
-                  <tr><th>Stock</th><td>{{ p.quantity }}</td></tr>
-                  <tr><th>Created</th><td>{{ p.created ? p.created|date('d/m/Y') : '—' }}</td></tr>
-                </tbody>
-              </table>
-            </div>
+
+            {% set specs = p.specs ?? [] %}
+            {% if specs|length > 0 %}
+              <div class="overflow-x-auto">
+                <table class="table w-full">
+                  <tbody>
+                    {% for item in specs %}
+                      {% set k = item.key|default('') %}
+                      {% set v = item.value|default('') %}
+                      {% if k is not empty or v is not empty %}
+                        <tr>
+                          <th class="w-48 align-top">{{ k }}</th>
+                          <td>{{ v|nl2br }}</td>
+                        </tr>
+                      {% endif %}
+                    {% endfor %}
+                  </tbody>
+                </table>
+              </div>
+            {% else %}
+              <p class="text-base-content/70">No specifications.</p>
+            {% endif %}
           </div>
         </div>
       </div>
@@ -131,11 +142,22 @@
 
 <script>
   (function(){
+    // thumbs -> main image
     const main = document.getElementById('mainImage');
     document.querySelectorAll('[data-main]').forEach(b=>{
       b.addEventListener('click', ()=>{ main.src = b.dataset.main; });
     });
 
+    // sync qty to hidden field in form
+    const qtyInput = document.getElementById('qty');
+    const qtyField = document.getElementById('qtyField');
+    if (qtyInput && qtyField) {
+      const sync = () => { qtyField.value = Math.max(1, parseInt(qtyInput.value || '1', 10)); };
+      qtyInput.addEventListener('input', sync);
+      qtyInput.addEventListener('change', sync);
+    }
+
+    // Toggle description
     const wrap = document.getElementById('descWrap');
     const btn  = document.getElementById('btnToggleDesc');
     if (wrap && btn) {

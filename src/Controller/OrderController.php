@@ -1,4 +1,5 @@
 <?php
+// src/Controller/OrderController.php
 
 namespace App\Controller;
 
@@ -34,11 +35,8 @@ class OrderController extends AbstractController
     }
 
     #[Route('/{id}/resume', name: 'app_orders_resume', methods: ['GET'])]
-    public function resume(
-        Order $order,
-        MomoService $momo,
-        EntityManagerInterface $em
-    ): Response {
+    public function resume(Order $order, MomoService $momo, EntityManagerInterface $em): Response
+    {
         $this->denyAccessUnlessGranted('IS_AUTHENTICATED_FULLY');
         if ($order->getUser() !== $this->getUser()) {
             throw $this->createAccessDeniedException();
@@ -86,5 +84,30 @@ class OrderController extends AbstractController
         }
 
         return $this->redirectToRoute('app_orders_index');
+    }
+
+    #[Route('/{id}/request-refund', name: 'app_orders_request_refund', methods: ['POST'])]
+    public function requestRefund(Order $order, Request $request, EntityManagerInterface $em): Response
+    {
+        $this->denyAccessUnlessGranted('IS_AUTHENTICATED_FULLY');
+        if ($order->getUser() !== $this->getUser()) {
+            throw $this->createAccessDeniedException();
+        }
+
+        if (!$this->isCsrfTokenValid('request_refund_'.$order->getId(), $request->request->get('_token'))) {
+            $this->addFlash('shop.error', 'Token không hợp lệ.');
+            return $this->redirectToRoute('app_orders_show', ['id' => $order->getId()]);
+        }
+
+        if ($order->getStatus() !== 'PAID') {
+            $this->addFlash('shop.error', 'Không thể yêu cầu hoàn tiền cho đơn hàng này.');
+            return $this->redirectToRoute('app_orders_show', ['id' => $order->getId()]);
+        }
+
+        $order->setStatus('REFUND_REQUESTED');
+        $em->flush();
+
+        $this->addFlash('shop.success', 'Đã gửi yêu cầu hoàn tiền cho đơn hàng #'.$order->getId().'. Shop sẽ sớm liên hệ và xác nhận với bạn.');
+        return $this->redirectToRoute('app_orders_show', ['id' => $order->getId()]);
     }
 }

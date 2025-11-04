@@ -93,4 +93,5 @@ class MainController extends AbstractController
             'categories' => $catRepo->findBy([], ['name' => 'ASC']),
         ]);
     }
+
 }

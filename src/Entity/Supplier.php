@@ -4,6 +4,8 @@ namespace App\Entity;
 
 use App\Repository\SupplierRepository;
 use Doctrine\ORM\Mapping as ORM;
+use Doctrine\Common\Collections\Collection;
+use Doctrine\Common\Collections\ArrayCollection;
 
 #[ORM\Entity(repositoryClass: SupplierRepository::class)]
 class Supplier
@@ -33,6 +35,8 @@ class Supplier
     {
         $this->createdAt = new \DateTimeImmutable();
     }
+    #[ORM\OneToMany(mappedBy: 'supplier', targetEntity: Product::class)]
+    private Collection $products;
 
     public function getId(): ?int { return $this->id; }
     public function getName(): string { return $this->name; }
@@ -46,4 +50,25 @@ class Supplier
     public function getNote(): ?string { return $this->note; }
     public function setNote(?string $v): self { $this->note = $v; return $this; }
     public function getCreatedAt(): \DateTimeImmutable { return $this->createdAt; }
+    public function addProduct(Product $product): static
+    {
+        if (!$this->products->contains($product)) {
+            $this->products->add($product);
+            $product->setSupplier($this);
+        }
+
+        return $this;
+    }
+
+    public function removeProduct(Product $product): static
+    {
+        if ($this->products->removeElement($product)) {
+            // set the owning side to null (unless already changed)
+            if ($product->getSupplier() === $this) {
+                $product->setSupplier(null);
+            }
+        }
+
+        return $this;
+    }
 }

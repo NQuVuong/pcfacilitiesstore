@@ -1,17 +1,48 @@
 {% extends 'base.html.twig' %}
 {% block title %}Order #{{ order.id }}{% endblock %}
+
 {% block body %}
-<div class="max-w-5xl mx-auto mt-6 space-y-4">
-  <div class="bg-white rounded-lg shadow p-6">
-    <div class="flex items-center justify-between">
-      <h1 class="text-xl font-semibold">Order #{{ order.id }}</h1>
-      <div class="text-gray-600">{{ order.createdAt|date('Y-m-d H:i') }}</div>
+<div class="max-w-5xl mx-auto p-4 space-y-4">
+
+  {% for label, messages in app.flashes(['shop.success', 'shop.error', 'shop.info']) %}
+    {% for m in messages %}
+      {% set alert_class = 'alert-info' %}
+      {% if label == 'shop.success' %}
+        {% set alert_class = 'alert-success' %}
+      {% elseif label == 'shop.error' %}
+        {% set alert_class = 'alert-error' %}
+      {% endif %}
+      <div class="alert {{ alert_class }} mb-3">
+        <span>{{ m }}</span>
+      </div>
+    {% endfor %}
+  {% endfor %}
+
+  <div class="card bg-base-100 shadow">
+    <div class="card-body">
+      <div class="flex items-center justify-between">
+        <h1 class="text-xl font-semibold">Order #{{ order.id }}</h1>
+        <div class="text-gray-600">{{ order.createdAt|date('Y-m-d H:i') }}</div>
+      </div>
+      <div class="mt-1 text-gray-600">
+        Status:
+        <span class="badge
+          {% if order.status == 'PAID' %}badge-success
+          {% elseif order.status == 'PENDING' %}badge-warning
+          {% elseif order.status == 'REFUND_REQUESTED' %}badge-info
+          {% elseif order.status == 'REFUND_PROCESSING' %}badge-accent
+          {% elseif order.status == 'REFUNDED' %}badge-success
+          {% elseif order.status in ['CANCELED','REFUND_REJECTED'] %}badge-ghost
+          {% elseif order.status in ['FAILED','REFUND_FAILED'] %}badge-error
+          {% else %}badge-neutral{% endif %}">
+          {{ order.status|replace({'_': ' '})|capitalize }}
+        </span>
+      </div>
+      <div class="mt-1 text-gray-600">Total: <b>{{ order.total|number_format(0,'.',',') }} ₫</b></div>
     </div>
-    <div class="mt-1 text-gray-600">Status: <b>{{ order.status }}</b></div>
-    <div class="mt-1 text-gray-600">Total: <b>${{ order.total }}</b></div>
   </div>
 
-  <div class="bg-white rounded-lg shadow overflow-x-auto">
+  <div class="card bg-base-100 shadow overflow-x-auto">
     <table class="min-w-full">
       <thead class="bg-gray-50">
         <tr class="text-left text-sm text-gray-600">
@@ -25,29 +56,42 @@
         {% for it in order.items %}
           <tr class="text-sm">
             <td class="px-6 py-4">{{ it.productName }}</td>
-            <td class="px-6 py-4">${{ it.unitPrice }}</td>
+            <td class="px-6 py-4">{{ it.unitPrice|number_format(0,'.',',') }} ₫</td>
             <td class="px-6 py-4">{{ it.quantity }}</td>
-            <td class="px-6 py-4 font-medium">${{ it.lineTotal }}</td>
+            <td class="px-6 py-4 font-medium">{{ it.lineTotal|number_format(0,'.',',') }} ₫</td>
           </tr>
         {% endfor %}
       </tbody>
     </table>
   </div>
 
-  <div>
-    <a href="{{ path('app_orders_index') }}" class="text-gray-700 hover:underline">← Back to orders</a>
+  <div class="flex items-center gap-2">
+    <a href="{{ path('app_orders_index') }}" class="btn btn-ghost">← Back to orders</a>
+
+    {% if order.status in ['NEW','PENDING'] %}
+      <a href="{{ path('app_orders_resume', {id: order.id}) }}" class="btn btn-primary">
+        Tiếp tục thanh toán
+      </a>
+      <form method="post" action="{{ path('app_orders_cancel', {id: order.id}) }}"
+            onsubmit="return confirm('Huỷ đơn #{{ order.id }}?');">
+        <input type="hidden" name="_token" value="{{ csrf_token('cancel_order_' ~ order.id) }}">
+        <button class="btn btn-outline" type="submit">Huỷ</button>
+      </form>
+    {% endif %}
+
+    {% if order.status == 'PAID' %}
+      <form method="post" class="inline"
+            action="{{ path('app_orders_request_refund', {id: order.id}) }}"
+            onsubmit="return confirm('Gửi yêu cầu hoàn tiền cho đơn #{{ order.id }}?');">
+        <input type="hidden" name="_token" value="{{ csrf_token('request_refund_' ~ order.id) }}">
+        <button type="submit" class="btn btn-error">Yêu cầu hoàn tiền</button>
+      </form>
+    {% endif %}
+
+    {% if order.status == 'REFUND_REQUESTED' %}
+        <span class="italic text-info">Đơn hàng đang chờ xử lý hoàn tiền.</span>
+    {% endif %}
   </div>
+
 </div>
-{% if order.status in ['NEW','PENDING'] %}
-  <div class="mt-4 flex gap-2">
-    <a href="{{ path('app_orders_resume', {id: order.id}) }}" class="btn btn-primary">
-      Tiếp tục thanh toán
-    </a>
-    <form method="post" action="{{ path('app_orders_cancel', {id: order.id}) }}"
-          onsubmit="return confirm('Huỷ đơn #{{ order.id }}?');">
-      <input type="hidden" name="_token" value="{{ csrf_token('cancel_order_' ~ order.id) }}">
-      <button class="btn btn-outline" type="submit">Huỷ</button>
-    </form>
-  </div>
-{% endif %}
 {% endblock %}

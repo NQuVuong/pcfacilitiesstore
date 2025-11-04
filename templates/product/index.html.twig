@@ -16,6 +16,7 @@
                         <th class="px-6 py-3 text-left text-sm font-semibold text-gray-900">Name</th>
                         <th class="px-6 py-3 text-left text-sm font-semibold text-gray-900">Category</th>
                         <th class="px-6 py-3 text-left text-sm font-semibold text-gray-900">Brand</th>
+                        <th class="px-6 py-3 text-left text-sm font-semibold text-gray-900">Supplier</th>
                         <th class="px-6 py-3 text-left text-sm font-semibold text-gray-900">Import Price</th>
                         <th class="px-6 py-3 text-left text-sm font-semibold text-gray-900">Export Price</th>
                         <th class="px-6 py-3 text-left text-sm font-semibold text-gray-900">Created</th>
@@ -33,6 +34,9 @@
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                                 {{ product.brand ? product.brand.name : '—' }}
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                {{ product.supplier ? product.supplier.name : '—' }} {# Hiển thị tên supplier hoặc gạch ngang #}
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                                 {{ product.originalImportPrice is not null ? '$' ~ product.originalImportPrice : '—' }}
