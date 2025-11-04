@@ -28,9 +28,18 @@ class RegistrationController extends AbstractController
         $form->handleRequest($request);
 
         if ($form->isSubmitted() && $form->isValid()) {
+            // roles mặc định
+            $user->setRoles([User::ROLE_CUSTOMER]);
+
+            // hash password
             $plainPassword = (string) $form->get('plainPassword')->getData();
             $user->setPassword($passwordHasher->hashPassword($user, $plainPassword));
-            $user->setRoles([User::ROLE_CUSTOMER]);
+
+            // avatar mặc định theo giới tính
+            if (!$user->getAvatar()) {
+                $default = ($user->getGender() === 'female') ? 'women.png' : 'man.png';
+                $user->setAvatar($default); // file trong public/uploads/avatars
+            }
 
             $em->persist($user);
             $em->flush();

@@ -1,81 +1,148 @@
 {% extends 'admin.html.twig' %}
-
 {% block title %}{{ title|default('Add / Edit Product') }}{% endblock %}
 
 {% block body %}
-<div class="max-w-2xl mx-auto mt-6">
+<div class="max-w-4xl mx-auto mt-6">
   <div class="bg-white rounded-lg shadow p-6">
-    {{ form_start(form, { 'attr': { 'enctype': 'multipart/form-data' } }) }}
+    {{ form_start(form, { attr: { enctype: 'multipart/form-data' } }) }}
 
-      {# Product Name #}
-      <div class="mb-5">
-        <label class="block mb-2 text-sm font-medium text-gray-900">Product Name</label>
-        {{ form_widget(form.name) }}
-      </div>
-
-      {# Category Dropdown #}
-      <div class="mb-5">
-        <label class="block mb-2 text-sm font-medium text-gray-900">Category</label>
-        {{ form_widget(form.category) }}  
-      </div>
-
-      {# Brand Dropdown #}
-      <div class="mb-5">
-        <label class="block mb-2 text-sm font-medium text-gray-900">Brand</label>
-        {{ form_widget(form.brand) }}
-      </div>
-
-      {# Import Price chỉ hiển thị khi tạo mới (is_edit = false) #}
-      {% if form.importPrice is defined %}
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div>
         <div class="mb-5">
-          <label class="block mb-2 text-sm font-medium text-gray-900">Import Price</label>
-          {{ form_widget(form.importPrice) }}
+          <label class="block mb-2 text-sm font-medium text-gray-900">Product Name</label>
+          {{ form_widget(form.name) }}
         </div>
-      {% endif %}
 
-      {# Quantity #}
-      <div class="mb-5">
-        <label class="block mb-2 text-sm font-medium text-gray-900">Quantity</label>
-        {{ form_widget(form.quantity) }}
-      </div>
-
-      {# Created Date (auto set nếu null) #}
-      <div class="mb-5">
-        <label class="block mb-2 text-sm font-medium text-gray-900">Created Date</label>
-        {{ form_widget(form.created, {
-          'attr': {
-            'class': 'bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg 
-                      focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5'
-          }
-        }) }}
-      </div>
-
-      {# Product Image Upload #}
-      <div class="mb-5">
-        <label class="block mb-2 text-sm font-medium text-gray-900">Product Image</label>
-        <div class="flex items-center justify-center w-full">
-          {{ form_widget(form.file, {
-            'attr': {
-              'class': 'block w-full text-sm text-gray-900 border border-gray-300 rounded-lg cursor-pointer bg-gray-50 
-                        focus:outline-none file:mr-4 file:py-2 file:px-4 file:border-0 
-                        file:text-sm file:font-semibold file:bg-gray-800 file:text-white hover:file:bg-gray-700',
-              'id': 'file_upload'
-            }
-          }) }}
+        <div class="mb-5">
+          <label class="block mb-2 text-sm font-medium text-gray-900">Category</label>
+          {{ form_widget(form.category) }}
         </div>
-        {{ form_widget(form.image) }}
+
+        <div class="mb-5">
+          <label class="block mb-2 text-sm font-medium text-gray-900">Brand</label>
+          {{ form_widget(form.brand) }}
+        </div>
+
+        <div class="mb-5">
+          <label class="block mb-2 text-sm font-medium text-gray-900">Supplier</label>
+          {{ form_widget(form.supplier) }}
+        </div>
+
+        {% if form.importPrice is defined %}
+          <div class="mb-5">
+            <label class="block mb-2 text-sm font-medium text-gray-900">Import Price</label>
+            {{ form_widget(form.importPrice) }}
+          </div>
+        {% endif %}
+
+        <div class="mb-5">
+          <label class="block mb-2 text-sm font-medium text-gray-900">Quantity</label>
+          {{ form_widget(form.quantity) }}
+        </div>
+
+        <div class="mb-5">
+          <label class="block mb-2 text-sm font-medium text-gray-900">Created Date</label>
+          {{ form_widget(form.created) }}
+        </div>
       </div>
 
-      {# Action Buttons #}
-      <div class="flex gap-2">
-        {{ form_widget(form.save) }}
-        <a href="{{ path('app_product_index') }}"
-           class="text-gray-700 bg-gray-200 hover:bg-gray-300 focus:ring-4 
-                  focus:outline-none focus:ring-gray-300 font-medium rounded-lg 
-                  text-sm px-5 py-2.5 text-center">Cancel</a>
-      </div>
+      <div>
+        {# Preview ảnh hiện có (nếu đang edit và có ảnh) #}
+        {% set current = form.vars.data and form.vars.data.image ? asset('uploads/' ~ form.vars.data.image) : null %}
+        {% if current %}
+          <div class="mb-3">
+            <p class="text-sm text-gray-500 mb-1">Current image</p>
+            <img src="{{ current }}" alt="Current image" class="w-40 h-40 object-contain border rounded">
+          </div>
+        {% endif %}
 
-    {{ form_end(form) }}
+        <div class="mb-5">
+          <label class="block mb-2 text-sm font-medium text-gray-900">Main Image</label>
+          <div class="flex items-center justify-center w-full">
+            {{ form_widget(form.file, {
+              attr: {
+                class: 'block w-full text-sm text-gray-900 border border-gray-300 rounded-lg cursor-pointer bg-gray-50 focus:outline-none file:mr-4 file:py-2 file:px-4 file:border-0 file:text-sm file:font-semibold file:bg-gray-800 file:text-white hover:file:bg-gray-700',
+                id: 'file_upload'
+              }
+            }) }}
+          </div>
+          <p class="text-xs text-gray-500 mt-2">
+            Chọn ảnh mới để thay thế (tùy chọn). Bỏ trống nếu muốn giữ ảnh hiện tại.
+          </p>
+        </div>
+
+        {% if form.galleryFiles is defined %}
+          <div class="mb-5">
+            <label class="block mb-2 text-sm font-medium text-gray-900">Gallery Images (multiple)</label>
+            {{ form_widget(form.galleryFiles, { attr: { class: 'file-input file-input-bordered w-full', multiple: true } }) }}
+            <p class="text-xs text-gray-500 mt-2">Có thể chọn nhiều ảnh.</p>
+          </div>
+        {% endif %}
+
+        <div class="mb-5">
+          <label class="block mb-2 text-sm font-medium text-gray-900">Description (blog-style)</label>
+          {{ form_widget(form.description) }}
+          <p class="mt-1 text-xs text-gray-500">
+            Bạn có thể dán ảnh, kéo-thả ảnh, tạo bảng, căn lề, chèn link/video. Ảnh sẽ upload tự động qua TinyMCE.
+          </p>
+        </div>
+
+        <div class="mb-6">
+          <label class="block mb-2 text-sm font-medium text-gray-900">Specifications</label>
+          <div id="specs-holder"
+               data-specs-holder
+               data-prototype="{{ include('product/_spec_row.html.twig', {'spec': form.specs.vars.prototype})|e('html_attr') }}">
+            {% for spec in form.specs %}
+              {{ include('product/_spec_row.html.twig', {'spec': spec}) }}
+            {% endfor %}
+          </div>
+          <button id="btnAddSpec" type="button" class="btn btn-outline btn-sm mt-2">+ Thêm dòng</button>
+        </div>
+
+        <div class="flex gap-2">
+          {{ form_widget(form.save) }}
+          <a href="{{ path('app_product_index') }}"
+             class="text-gray-700 bg-gray-200 hover:bg-gray-300 focus:ring-4 focus:outline-none focus:ring-gray-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center">
+            Cancel
+          </a>
+        </div>
+
+        {# IMPORTANT: không render rest để tránh in lại specs #}
+        {{ form_row(form._token) }}
+        {{ form_end(form, { render_rest: false }) }}
+      </div>
+    </div>
   </div>
 </div>
+{% endblock %}
+
+{% block javascripts %}
+  {{ parent() }}
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const holder = document.querySelector('[data-specs-holder]');
+      if (!holder) return;
+
+      const addBtn = document.getElementById('btnAddSpec');
+      const proto  = holder.dataset.prototype;
+      let index    = holder.querySelectorAll('.spec-row').length;
+
+      function attachRemoveButtons(scope) {
+        scope.querySelectorAll('.remove-spec').forEach(btn => {
+          btn.addEventListener('click', () => btn.closest('.spec-row')?.remove());
+        });
+      }
+      attachRemoveButtons(holder);
+
+      addBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        const html = proto.replace(/__name__/g, index++);
+        const wrap = document.createElement('div');
+        wrap.innerHTML = html;
+        const row = wrap.firstElementChild;
+        holder.appendChild(row);
+        attachRemoveButtons(row);
+      });
+    });
+  </script>
 {% endblock %}

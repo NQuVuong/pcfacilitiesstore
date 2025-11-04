@@ -5,18 +5,14 @@
 <div class="min-h-screen flex items-center justify-center px-4">
   <div class="w-full max-w-md">
 
-    {# Logo + Title #}
     <div class="flex flex-col items-center mb-6">
       <div class="h-10 w-10 rounded-2xl bg-violet-600/10 flex items-center justify-center mb-3">
-        <svg class="h-6 w-6 text-violet-600" viewBox="0 0 24 24" fill="currentColor">
-          <circle cx="12" cy="12" r="10"/>
-        </svg>
+        <svg class="h-6 w-6 text-violet-600" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="10"/></svg>
       </div>
       <h1 class="text-2xl font-bold text-gray-900">Create your account</h1>
     </div>
 
     <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-7">
-      {# Hiển thị lỗi form tổng (nếu có) #}
       {{ form_errors(registrationForm) }}
 
       {{ form_start(registrationForm, { attr: { class: 'space-y-5' } }) }}
@@ -25,26 +21,27 @@
           <label class="block text-sm font-medium text-gray-900">Email</label>
           {{ form_widget(registrationForm.email, {
             attr: {
-              class: 'mt-2 block w-full rounded-lg border border-gray-200 px-3.5 py-2.5 text-gray-900 ' ~
-                     'placeholder-gray-400 focus:ring-2 focus:ring-violet-500 focus:border-violet-500'
+              class: 'mt-2 block w-full rounded-lg border border-gray-200 px-3.5 py-2.5 text-gray-900 placeholder-gray-400 focus:ring-2 focus:ring-violet-500 focus:border-violet-500'
             }
           }) }}
-          <div class="text-sm text-red-600 mt-1">
-            {{ form_errors(registrationForm.email) }}
-          </div>
+          <div class="text-sm text-red-600 mt-1">{{ form_errors(registrationForm.email) }}</div>
+        </div>
+
+        <div>
+          <label class="block text-sm font-medium text-gray-900">Gender</label>
+          {{ form_widget(registrationForm.gender, {
+            attr: { class: 'mt-2 select select-bordered w-full' }
+          }) }}
         </div>
 
         <div>
           <label class="block text-sm font-medium text-gray-900">Password</label>
           {{ form_widget(registrationForm.plainPassword, {
             attr: {
-              class: 'mt-2 block w-full rounded-lg border border-gray-200 px-3.5 py-2.5 text-gray-900 ' ~
-                     'placeholder-gray-400 focus:ring-2 focus:ring-violet-500 focus:border-violet-500'
+              class: 'mt-2 block w-full rounded-lg border border-gray-200 px-3.5 py-2.5 text-gray-900 placeholder-gray-400 focus:ring-2 focus:ring-violet-500 focus:border-violet-500'
             }
           }) }}
-          <div class="text-sm text-red-600 mt-1">
-            {{ form_errors(registrationForm.plainPassword) }}
-          </div>
+          <div class="text-sm text-red-600 mt-1">{{ form_errors(registrationForm.plainPassword) }}</div>
         </div>
 
         <label class="inline-flex items-center gap-2 text-sm text-gray-700">
@@ -53,13 +50,10 @@
           }) }}
           I agree to the Terms & Privacy
         </label>
-        <div class="text-sm text-red-600 -mt-3">
-          {{ form_errors(registrationForm.agreeTerms) }}
-        </div>
+        <div class="text-sm text-red-600 -mt-3">{{ form_errors(registrationForm.agreeTerms) }}</div>
 
         <button type="submit"
-                class="w-full rounded-lg bg-violet-600 px-4 py-2.5 text-white font-semibold
-                       hover:bg-violet-700 focus:outline-none focus:ring-4 focus:ring-violet-300">
+                class="w-full rounded-lg bg-violet-600 px-4 py-2.5 text-white font-semibold hover:bg-violet-700 focus:outline-none focus:ring-4 focus:ring-violet-300">
           Create account
         </button>
 

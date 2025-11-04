@@ -5,6 +5,7 @@ namespace App\Form;
 use App\Entity\Product;
 use App\Entity\Category;
 use App\Entity\Brand;
+use App\Entity\Supplier;
 use Symfony\Bridge\Doctrine\Form\Type\EntityType;
 use Symfony\Component\Form\AbstractType;
 use Symfony\Component\Form\Extension\Core\Type\FileType;
@@ -13,8 +14,10 @@ use Symfony\Component\Form\Extension\Core\Type\SubmitType;
 use Symfony\Component\Form\Extension\Core\Type\TextType;
 use Symfony\Component\Form\Extension\Core\Type\DateType;
 use Symfony\Component\Form\Extension\Core\Type\TextareaType;
+use Symfony\Component\Form\Extension\Core\Type\CollectionType;
 use Symfony\Component\Form\FormBuilderInterface;
 use Symfony\Component\OptionsResolver\OptionsResolver;
+use App\Form\SpecItemType;
 
 class ProductType extends AbstractType
 {
@@ -29,6 +32,7 @@ class ProductType extends AbstractType
                     'placeholder' => 'Enter product name',
                 ],
             ])
+
             // Category
             ->add('category', EntityType::class, [
                 'class' => Category::class,
@@ -39,6 +43,7 @@ class ProductType extends AbstractType
                                 focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5',
                 ],
             ])
+
             // Brand
             ->add('brand', EntityType::class, [
                 'class'        => Brand::class,
@@ -49,6 +54,18 @@ class ProductType extends AbstractType
                                 focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5',
                 ],
             ])
+
+            // Supplier
+            ->add('supplier', EntityType::class, [
+                'class' => Supplier::class,
+                'choice_label' => 'name',
+                'placeholder'  => 'Select a supplier',
+                'attr' => [
+                    'class' => 'bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg
+                                focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5',
+                ],
+            ])
+
             // Import Price (mapped=false -> lưu vào Price entity)
             ->add('importPrice', IntegerType::class, [
                 'required' => false,
@@ -59,6 +76,7 @@ class ProductType extends AbstractType
                     'placeholder' => 'Enter import price',
                 ],
             ])
+
             // Quantity
             ->add('quantity', IntegerType::class, [
                 'attr' => [
@@ -67,6 +85,7 @@ class ProductType extends AbstractType
                     'placeholder' => 'Enter product quantity',
                 ],
             ])
+
             // Created
             ->add('created', DateType::class, [
                 'widget' => 'single_text',
@@ -76,56 +95,50 @@ class ProductType extends AbstractType
                                 focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5',
                 ],
             ])
-            // Short image text fallback
-            ->add('image', TextType::class, [
-                'required' => false,
-            ])
-            // Main image file (replace)
+
+            // Main image file (upload)
             ->add('file', FileType::class, [
                 'mapped' => false,
                 'required' => false,
                 'label' => 'Main image',
+                'attr' => ['accept' => 'image/*'],
             ])
-            // NEW: Gallery images (multiple)
+
+            // Gallery (multi)
             ->add('galleryFiles', FileType::class, [
                 'mapped' => false,
                 'required' => false,
                 'multiple' => true,
-                'label' => 'Gallery images (you can select many)',
+                'label' => 'Gallery Images (multiple)',
+                'attr' => ['accept' => 'image/*'],
             ])
-            // NEW: long description (HTML allowed if you dùng WYSIWYG)
+
+            // Description (TinyMCE)
             ->add('description', TextareaType::class, [
                 'required' => false,
                 'attr' => [
-                    'rows' => 8,
-                    'class' => 'bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg
-                                focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5',
-                    'placeholder' => 'Long description (HTML allowed)',
+                    'class' => 'tinymce w-full',
+                    'rows'  => 20,
+                    'style' => 'min-height:420px',
                 ],
             ])
+
+            // Specs (Collection)
+            ->add('specs', CollectionType::class, [
+                'label'         => 'Specifications',
+                'entry_type'    => SpecItemType::class,
+                'allow_add'     => true,
+                'allow_delete'  => true,
+                'by_reference'  => false,
+                'prototype'     => true,
+                'required'      => false,
+                'attr'          => ['class' => 'specs-collection'],
+            ])
+
             // Save
             ->add('save', SubmitType::class, [
                 'label' => 'Save',
-                'attr' => [
-                    'class' => 'text-white bg-blue-700 hover:bg-blue-800 focus:ring-4
-                                focus:outline-none focus:ring-blue-300 font-medium rounded-lg
-                                text-sm px-5 py-2.5 text-center',
-                ],
-            ])
-            ->add('description', TextareaType::class, [
-                'required' => false,
-                'attr' => [
-                    'rows' => 8,
-                    'class' => 'textarea textarea-bordered w-full',
-                    'placeholder' => 'Mô tả (hỗ trợ HTML). Có thể chèn <img ...> hoặc dùng ô tải ảnh bên dưới để tự chèn.'
-                ],
-            ])
-            // ảnh chèn vào mô tả (tùy chọn)
-            ->add('descImages', FileType::class, [
-                'mapped' => false,
-                'required' => false,
-                'multiple' => true,
-                'attr' => ['accept' => 'image/*'],
+                'attr' => ['class' => 'btn btn-primary'],
             ])
         ;
     }

@@ -1,85 +1,95 @@
-{# templates/orders/index.html.twig #}
 {% extends 'base.html.twig' %}
 {% block title %}My Orders{% endblock %}
 
 {% block body %}
-<div class="container mx-auto max-w-6xl">
+<div class="container mx-auto max-w-6xl p-4">
   <div class="card bg-base-100 shadow">
     <div class="card-body">
       <h1 class="text-2xl font-semibold mb-4">My Orders</h1>
 
-      {# hiển thị flash nếu có #}
-      {% for label, messages in app.flashes %}
+      {% for label, messages in app.flashes(['shop.success', 'shop.error', 'shop.info']) %}
         {% for m in messages %}
-          <div class="alert {{ label == 'success' ? 'alert-success' : (label == 'error' ? 'alert-error' : 'alert-info') }} mb-3">
-            {{ m }}
+          {% set alert_class = 'alert-info' %}
+          {% if label == 'shop.success' %}
+            {% set alert_class = 'alert-success' %}
+          {% elseif label == 'shop.error' %}
+            {% set alert_class = 'alert-error' %}
+          {% endif %}
+          <div class="alert {{ alert_class }} mb-3">
+            <span>{{ m }}</span>
           </div>
         {% endfor %}
       {% endfor %}
 
       <div class="overflow-x-auto">
-  <table class="table align-middle w-full">
-    {# Cố định độ rộng cột để hàng nào cũng đều #}
-    <colgroup>
-      <col style="width:6rem">   {# # #}
-      <col style="width:14rem">  {# Date #}
-      <col style="width:10rem">  {# Status #}
-      <col style="width:10rem">  {# Total  #}
-      <col style="width:18rem">  {# Actions #}
-    </colgroup>
+        <table class="table align-middle w-full">
+          <colgroup>
+            <col style="width:6rem"><col style="width:14rem"><col style="width:12rem"><col style="width:10rem"><col style="width:18rem">
+          </colgroup>
+          <thead class="whitespace-nowrap">
+            <tr><th>#</th><th>Date</th><th>Status</th><th class="text-right">Total</th><th class="text-right">Actions</th></tr>
+          </thead>
+          <tbody class="whitespace-nowrap">
+            {% for o in orders %}
+              <tr>
+                <td class="text-base-content/70">#{{ o.id }}</td>
+                <td>{{ o.createdAt|date('Y-m-d H:i') }}</td>
+                <td>
+                  <span class="badge
+                    {% if o.status == 'PAID' %}badge-success
+                    {% elseif o.status == 'PENDING' %}badge-warning
+                    {% elseif o.status == 'REFUND_REQUESTED' %}badge-info
+                    {% elseif o.status == 'REFUND_PROCESSING' %}badge-accent
+                    {% elseif o.status == 'REFUNDED' %}badge-success
+                    {% elseif o.status in ['CANCELED','REFUND_REJECTED'] %}badge-ghost
+                    {% elseif o.status in ['FAILED','REFUND_FAILED'] %}badge-error
+                    {% else %}badge-neutral{% endif %}">
+                    {{ o.status|replace({'_': ' '})|capitalize }}
+                  </span>
+                </td>
+                <td class="text-right font-medium">{{ o.total|number_format(0,'.',',') }} ₫</td>
 
-    <thead class="whitespace-nowrap">
-      <tr>
-        <th>#</th>
-        <th>Date</th>
-        <th>Status</th>
-        <th class="text-right">Total</th>
-        <th class="text-right">Actions</th>
-      </tr>
-    </thead>
+                <td class="text-right">
+                  <div class="inline-flex items-center justify-end gap-2">
+                    <a href="{{ path('app_orders_show', {id: o.id}) }}" class="link">View</a>
 
-    <tbody class="whitespace-nowrap">
-      {% for o in orders %}
-        <tr>
-          <td class="text-base-content/70">#{{ o.id }}</td>
-          <td>{{ o.createdAt|date('Y-m-d H:i') }}</td>
-          <td>
-            <span class="badge
-              {{ o.status == 'PAID' ? 'badge-success' :
-                 (o.status == 'PENDING' ? 'badge-warning' :
-                 (o.status == 'CANCELED' ? 'badge-ghost' : 'badge-neutral')) }}">
-              {{ o.status }}
-            </span>
-          </td>
-          <td class="text-right font-medium">${{ o.total }}</td>
+                    {% if o.status in ['NEW','PENDING'] %}
+                      <a href="{{ path('app_orders_resume', {id: o.id}) }}"
+                         class="btn btn-sm btn-primary">Tiếp tục thanh toán</a>
+                      <form method="post" class="inline"
+                            action="{{ path('app_orders_cancel', {id: o.id}) }}"
+                            onsubmit="return confirm('Huỷ đơn #{{ o.id }}?');">
+                        <input type="hidden" name="_token" value="{{ csrf_token('cancel_order_' ~ o.id) }}">
+                        <button type="submit" class="btn btn-sm btn-outline">Huỷ</button>
+                      </form>
+                    {% endif %}
 
-          <td class="text-right">
-            <div class="inline-flex items-center justify-end gap-2">
-              <a href="{{ path('app_orders_show', {id: o.id}) }}" class="link">View</a>
+                    {% if o.status == 'PAID' %}
+                      <form method="post" class="inline"
+                            action="{{ path('app_orders_request_refund', {id: o.id}) }}"
+                            onsubmit="return confirm('Gửi yêu cầu hoàn tiền cho đơn #{{ o.id }}?');">
+                        <input type="hidden" name="_token" value="{{ csrf_token('request_refund_' ~ o.id) }}">
+                        <button type="submit" class="btn btn-sm btn-outline btn-error">Yêu cầu hoàn tiền</button>
+                      </form>
+                    {% endif %}
 
-              {% if o.status in ['NEW','PENDING'] %}
-                <a href="{{ path('app_orders_resume', {id: o.id}) }}"
-                   class="btn btn-sm btn-primary">Tiếp tục thanh toán</a>
+                    {% if o.status == 'REFUND_REQUESTED' %}
+                        <span class="italic text-info text-xs">Đang chờ xử lý</span>
+                    {% endif %}
 
-                <form method="post" class="inline"
-                      action="{{ path('app_orders_cancel', {id: o.id}) }}"
-                      onsubmit="return confirm('Huỷ đơn #{{ o.id }}?');">
-                  <input type="hidden" name="_token" value="{{ csrf_token('cancel_order_' ~ o.id) }}">
-                  <button type="submit" class="btn btn-sm btn-outline">Huỷ</button>
-                </form>
-              {% endif %}
-            </div>
-          </td>
-        </tr>
-      {% else %}
-        <tr>
-          <td colspan="5" class="text-center text-sm text-base-content/60">
-            Chưa có đơn hàng
-          </td>
-        </tr>
-      {% endfor %}
-    </tbody>
-  </table>
+                  </div>
+                </td>
+              </tr>
+            {% else %}
+              <tr>
+                <td colspan="5" class="text-center text-sm text-base-content/60 py-4">
+                  Chưa có đơn hàng
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
     </div>
   </div>
 </div>

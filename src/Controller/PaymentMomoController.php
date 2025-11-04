@@ -1,4 +1,5 @@
 <?php
+// src/Controller/PaymentMomoController.php
 
 namespace App\Controller;
 
@@ -36,28 +37,31 @@ class PaymentMomoController extends AbstractController
             return new JsonResponse(['resultCode' => 2, 'message' => 'Order not found'], 404);
         }
 
-        if ($order->getStatus() === 'PAID') {
-            return new JsonResponse(['resultCode' => 0, 'message' => 'Already paid']);
-        }
-
         if ((int)$data['resultCode'] === 0) {
-            foreach ($order->getItems() as $oi) {
-                $prod = $oi->getProduct();
-                if ($prod) {
-                    $prod->setQuantity(max(0, (int)$prod->getQuantity() - (int)$oi->getQuantity()));
+            if ($order->getStatus() !== 'PAID') {
+                foreach ($order->getItems() as $oi) {
+                    $prod = $oi->getProduct();
+                    if ($prod) {
+                        $prod->setQuantity(max(0, (int)$prod->getQuantity() - (int)$oi->getQuantity()));
+                    }
+                }
+                $order->setStatus('PAID');
+                $order->setPaidAt(new DateTimeImmutable());
+                $order->setPaymentMethod('MOMO');
+
+                if (!empty($data['transId']) && !$order->getPaymentTxnId()) {
+                    $order->setPaymentTxnId((string)$data['transId']);
+                }
+
+                // Khởi tạo số tiền có thể hoàn
+                if ($order->getRefundableRemaining() === 0) {
+                    $order->setRefundableRemaining((int) round((float) $order->getTotal()));
                 }
             }
-
-            $order->setStatus('PAID');
-            $order->setPaidAt(new DateTimeImmutable());
-            $order->setPaymentMethod('MOMO');
-
-            if (method_exists($order, 'setPaymentTxnId') && !empty($data['transId'])
-                && method_exists($order, 'getPaymentTxnId') && !$order->getPaymentTxnId()) {
-                $order->setPaymentTxnId((string)$data['transId']);
-            }
         } else {
-            $order->setStatus('FAILED');
+            if ($order->getStatus() !== 'PAID') {
+                $order->setStatus('FAILED');
+            }
         }
 
         $this->em->flush();
@@ -96,9 +100,19 @@ class PaymentMomoController extends AbstractController
                 $order->setStatus('PAID');
                 $order->setPaidAt(new DateTimeImmutable());
                 $order->setPaymentMethod('MOMO');
+
+                if (!empty($data['transId']) && !$order->getPaymentTxnId()) {
+                    $order->setPaymentTxnId((string)$data['transId']);
+                }
+
+                if ($order->getRefundableRemaining() === 0) {
+                    $order->setRefundableRemaining((int) round((float) $order->getTotal()));
+                }
+
                 $this->em->flush();
             }
 
+            // Xóa khỏi giỏ
             $ids = [];
             foreach ($order->getItems() as $oi) {
                 $pid = $oi->getProduct()?->getId();
@@ -130,5 +144,47 @@ class PaymentMomoController extends AbstractController
         }
 
         return $this->redirectToRoute('app_orders_show', ['id' => $order->getId()]);
+    }
+
+    #[Route('/payment/momo/refund-ipn', name: 'momo_refund_ipn', methods: ['POST'])]
+    public function refundIpn(Request $req, OrderRepository $orders): Response
+    {
+        $data = json_decode($req->getContent(), true) ?? [];
+
+        if (!$this->momo->verifyRefundIpnSignature($data)) {
+            // để MoMo retry
+            return new Response('', 400);
+        }
+
+        $transId = $data['transId'] ?? null;
+        if (!$transId) {
+            return new Response('', 400);
+        }
+
+        $order = $orders->findOneBy(['paymentTxnId' => (string)$transId]);
+        if (!$order) {
+            return new Response('', 404);
+        }
+
+        // Chỉ cập nhật nếu đang PROCESSING
+        if ($order->getStatus() !== 'REFUND_PROCESSING') {
+            return new Response('', 204);
+        }
+
+        $resultCode = (int) ($data['resultCode'] ?? -1);
+        if ($resultCode === 0) {
+            $amount = isset($data['amount']) ? (int)$data['amount'] : 0;
+            if ($amount > 0) { $order->addRefunded($amount); }
+            $order->setStatus('REFUNDED');
+            $order->setLastRefundRequestId(null);
+            $order->setLastRefundOrderId(null);
+        } else {
+            $order->setStatus('REFUND_FAILED');
+        }
+
+        $this->em->flush();
+
+        // chuẩn webhook: 204 No Content
+        return new Response('', 204);
     }
 }

@@ -17,6 +17,7 @@ use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
 use Symfony\Component\String\Slugger\SluggerInterface;
 use Symfony\Bridge\Doctrine\Attribute\MapEntity;
+use Symfony\Component\HttpFoundation\JsonResponse;
 
 #[Route('/product')]
 class ProductController extends AbstractController
@@ -213,43 +214,63 @@ class ProductController extends AbstractController
     /** Trang chi tiết — PUBLIC — dùng slug.
      *  Requirements tránh đụng /add, /edit, /delete, /new
      */
-   #[Route(
-        '/{slug}',
-        name: 'product_detail',
-        requirements: ['slug' => '(?!add$|edit$|delete$|new$).+'],
-        methods: ['GET']
-    )]
+    #[Route('/{slug}', name:'product_detail',
+    requirements:['slug'=>'(?!add$|edit$|delete$|new$|editor-upload$).*'], methods:['GET'])]
     public function show(#[MapEntity(mapping: ['slug' => 'slug'])] Product $p): Response
     {
         return $this->render('detail.html.twig', ['p' => $p]);
     }
-    // ================= helpers =================
+        // ================= helpers =================
 
-    private function uploadImage(UploadedFile $imgFile, SluggerInterface $slugger): ?string
-    {
-        $originalFilename = pathinfo($imgFile->getClientOriginalName(), PATHINFO_FILENAME);
-        $safeFilename     = $slugger->slug($originalFilename)->lower();
-        $newFilename      = $safeFilename.'-'.uniqid().'.'.$imgFile->guessExtension();
+        private function uploadImage(UploadedFile $imgFile, SluggerInterface $slugger): ?string
+        {
+            $originalFilename = pathinfo($imgFile->getClientOriginalName(), PATHINFO_FILENAME);
+            $safeFilename     = $slugger->slug($originalFilename)->lower();
+            $newFilename      = $safeFilename.'-'.uniqid().'.'.$imgFile->guessExtension();
 
-        try {
-            $imgFile->move($this->getParameter('image_dir'), $newFilename);
-        } catch (FileException $e) {
-            throw $e;
-        }
-        return $newFilename;
-    }
-
-    /** Tạo slug duy nhất, tránh trùng với sản phẩm khác */
-    private function uniqueSlug(string $base, ?int $ignoreId = null): string
-    {
-        $slug = $base;
-        $i = 1;
-        while (true) {
-            $found = $this->repo->findOneBy(['slug' => $slug]);
-            if (!$found || ($ignoreId !== null && $found->getId() === $ignoreId)) {
-                return $slug;
+            try {
+                $imgFile->move($this->getParameter('image_dir'), $newFilename);
+            } catch (FileException $e) {
+                throw $e;
             }
-            $slug = $base.'-'.$i++;
+            return $newFilename;
         }
+
+        /** Tạo slug duy nhất, tránh trùng với sản phẩm khác */
+        private function uniqueSlug(string $base, ?int $ignoreId = null): string
+        {
+            $slug = $base;
+            $i = 1;
+            while (true) {
+                $found = $this->repo->findOneBy(['slug' => $slug]);
+                if (!$found || ($ignoreId !== null && $found->getId() === $ignoreId)) {
+                    return $slug;
+                }
+                $slug = $base.'-'.$i++;
+            }
+        }
+        
+    #[Route('/editor-upload', name: 'editor_image_upload', methods: ['POST'])]
+    #[IsGranted('ROLE_STAFF')]
+    public function editorUpload(Request $request, SluggerInterface $slugger): JsonResponse
+    {
+        /** @var UploadedFile|null $file */
+        $file = $request->files->get('file');
+        if (!$file instanceof UploadedFile) {
+            return new JsonResponse(['error' => 'No file'], 400);
+        }
+        $ok = ['image/png','image/jpeg','image/gif','image/webp'];
+        if (!in_array($file->getMimeType(), $ok, true)) {
+            return new JsonResponse(['error' => 'Invalid type'], 415);
+        }
+        if ($file->getSize() > 5 * 1024 * 1024) {
+            return new JsonResponse(['error' => 'File too large'], 413);
+        }
+
+        $original = pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME);
+        $name = $slugger->slug((string)$original)->lower().'-'.uniqid().'.'.$file->guessExtension();
+        $file->move($this->getParameter('image_dir'), $name);
+
+        return new JsonResponse(['location' => '/uploads/'.$name]);
     }
 }

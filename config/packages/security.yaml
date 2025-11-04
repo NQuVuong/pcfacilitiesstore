@@ -1,4 +1,5 @@
 security:
+  role_hierarchy: {}
   password_hashers:
     Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface: 'auto'
 
@@ -16,6 +17,7 @@ security:
     main:
       lazy: true
       provider: app_user_provider
+      access_denied_handler: App\Security\AccessDeniedHandler
 
       form_login:
         login_path: app_login
@@ -38,13 +40,38 @@ security:
         target: app_homepage
 
   access_control:
-    - { path: ^/payment/momo/ipn$, roles: PUBLIC_ACCESS }
-    - { path: ^/login$,    roles: PUBLIC_ACCESS }
-    - { path: ^/register$, roles: PUBLIC_ACCESS }
-    - { path: ^/(product|brand|set-prices|supplier|staff), roles: [ROLE_STAFF, ROLE_ADMIN] }
-    - { path: ^/admin/users, roles: ROLE_ADMIN }
-    - { path: ^/admin/category-requests, roles: ROLE_ADMIN }
+    # ===== PUBLIC =====
+    - { path: '^/payment/momo/ipn$', roles: PUBLIC_ACCESS }
+    - { path: '^/login$',            roles: PUBLIC_ACCESS }
+    - { path: '^/register$',         roles: PUBLIC_ACCESS }
 
+    # Trang chi tiết sản phẩm công khai: /product/{slug}
+    # (loại trừ các route quản trị như add/new/edit/delete/editor-upload)
+    - { path: '^/product/(?!add$|new$|edit$|delete$|editor-upload$)[^/]+$', methods: ['GET'], roles: PUBLIC_ACCESS }
+
+    # ===== STAFF-ONLY (Admin KHÔNG vào trang staff) =====
+    - { path: '^/admin/brands',            allow_if: "is_granted('ROLE_STAFF') and not is_granted('ROLE_ADMIN')" }
+    - { path: '^/admin/price',             allow_if: "is_granted('ROLE_STAFF') and not is_granted('ROLE_ADMIN')" }
+    - { path: '^/supplier',                allow_if: "is_granted('ROLE_STAFF') and not is_granted('ROLE_ADMIN')" }
+    - { path: '^/staff/category-requests', allow_if: "is_granted('ROLE_STAFF') and not is_granted('ROLE_ADMIN')" }
+
+    # Các route /product dành cho staff (index/add/edit/delete/upload)
+    - { path: '^/product$',                                   allow_if: "is_granted('ROLE_STAFF') and not is_granted('ROLE_ADMIN')" }
+    - { path: '^/product/(add|new|edit|delete|editor-upload)', allow_if: "is_granted('ROLE_STAFF') and not is_granted('ROLE_ADMIN')" }
+
+    # ===== ADMIN-ONLY =====
+    - { path: '^/admin/users',             roles: 'ROLE_ADMIN' }
+    - { path: '^/admin/order',             roles: 'ROLE_ADMIN' }
+    - { path: '^/admin/categories',        roles: 'ROLE_ADMIN' }
+    - { path: '^/admin/category-requests', roles: 'ROLE_ADMIN' }
+
+    # Dashboard: Staff & Admin
+    - { path: '^/admin$', roles: ['ROLE_STAFF', 'ROLE_ADMIN'] }
+    - { path: '^/admin/', roles: ['ROLE_STAFF', 'ROLE_ADMIN'] }
+
+    # ===== Accounts =====
+    - { path: '^/account', roles: 'IS_AUTHENTICATED_FULLY' }
+    
 when@test:
   security:
     password_hashers:

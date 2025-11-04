@@ -6,36 +6,65 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>{% block title %}Admin Dashboard - PC Store{% endblock %}</title>
 
-  
   {% block stylesheets %}
     {{ encore_entry_link_tags('app') }}
   {% endblock %}
 </head>
 <body class="h-screen bg-base-200 text-base-content flex">
 
-  {# ===== Sidebar (daisyUI menu) ===== #}
+  {# ===== Sidebar ===== #}
   {% set _r = app.request.attributes.get('_route') %}
+
   <aside class="w-64 bg-base-100 border-r">
     <div class="h-16 border-b flex items-center px-4">
       <a href="{{ path('app_homepage') }}" class="text-lg font-bold">PC Store</a>
     </div>
     <ul class="menu p-3 w-full">
-      {% if is_granted('ROLE_STAFF') or is_granted('ROLE_ADMIN') %}
-        <li class="menu-title">Store</li>
-        <li><a class="{{ _r starts with 'app_product_' ? 'active' }}" href="{{ path('app_product_index') }}">Products</a></li>
-        <li><a class="{{ _r starts with 'brand_' ? 'active' }}" href="{{ path('brand_index') }}">Brands</a></li>
-        <li><a class="{{ _r starts with 'price_' ? 'active' }}" href="{{ path('price_index') }}">Set Prices</a></li>
-        <li><a class="{{ _r starts with 'app_supplier_' ? 'active' }}" href="{{ path('app_supplier_index') }}">Suppliers</a></li>
 
-        {# Quan trọng: staff bấm vào đây sẽ tới TRANG DANH SÁCH (index) #}
-        <li><a class="{{ _r starts with 'app_catreq_' ? 'active' }}" href="{{ path('app_catreq_index') }}">Request New Category</a></li>
+      {# ==== STAFF-ONLY (ADMIN không thấy) ==== #}
+      {% if is_granted('ROLE_STAFF') and not is_granted('ROLE_ADMIN') %}
+        <li class="menu-title">Store</li>
+        <li>
+          <a class="{{ _r starts with 'app_product_' ? 'active' }}"
+             href="{{ path('app_product_index') }}">Products</a>
+        </li>
+        <li>
+          <a class="{{ _r starts with 'brand_' ? 'active' }}"
+             href="{{ path('brand_index') }}">Brands</a>
+        </li>
+        <li>
+          <a class="{{ _r starts with 'price_' ? 'active' }}"
+             href="{{ path('price_index') }}">Set Prices</a>
+        </li>
+        <li>
+          <a class="{{ _r starts with 'app_supplier_' ? 'active' }}"
+             href="{{ path('app_supplier_index') }}">Suppliers</a>
+        </li>
+        <li>
+          <a class="{{ _r starts with 'app_catreq_' ? 'active' }}"
+             href="{{ path('app_catreq_index') }}">Request New Category</a>
+        </li>
       {% endif %}
 
+      {# ==== ADMIN-ONLY ==== #}
       {% if is_granted('ROLE_ADMIN') %}
         <li class="menu-title mt-2">Administration</li>
-        <li><a class="{{ _r starts with 'category_' ? 'active' }}" href="{{ path('category_index') }}">Categories</a></li>
-        <li><a class="{{ _r == 'app_admin_catreq_index' ? 'active' }}" href="{{ path('app_admin_catreq_index') }}">Category Requests</a></li>
-        <li><a class="{{ _r == 'admin_user_create_staff' ? 'active' }}" href="{{ path('admin_user_create_staff') }}">Create Staff Account</a></li>
+        <li>
+          <a class="{{ _r starts with 'app_admin_order_' ? 'active' }}"
+             href="{{ path('app_admin_order_index') }}">Orders</a>
+        </li>
+        <li>
+          <a class="{{ _r starts with 'category_' ? 'active' }}"
+             href="{{ path('category_index') }}">Categories</a>
+        </li>
+        <li>
+          <a class="{{ _r starts with 'app_admin_catreq_' ? 'active' }}"
+             href="{{ path('app_admin_catreq_index') }}">Category Requests</a>
+        </li>
+        <li>
+          <a class="{{ _r == 'admin_user_index' ? 'active' }}"
+             href="{{ path('admin_user_index') }}">Users</a>
+        </li>
       {% endif %}
     </ul>
   </aside>
@@ -44,23 +73,24 @@
   <div class="flex-1 flex flex-col">
     <header class="bg-base-100 border-b px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
       <div class="flex items-center gap-2">
-        <input type="text" placeholder="Search here..." class="input input-bordered w-64"/>
-        <button class="btn btn-ghost btn-circle">
-          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none"
-               viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-            <path stroke-linecap="round" stroke-linejoin="round"
-                  d="M21 21l-4.35-4.35M10 18a8 8 0 1 1 0-16 8 8 0 0 1 0 16z"/>
-          </svg>
-        </button>
       </div>
-      <div class="flex items-center gap-3">
+      <div class="flex items-center gap-2">
         {% if app.user %}
+          {% set _rawAvatar = app.user.avatar ?? '' %}
+          {% set _fallback = (app.user.gender ?? '') == 'female' ? 'women.png' : 'man.png' %}
+          {% set _finalName = _rawAvatar is not empty ? _rawAvatar : _fallback %}
+          {% set _avatarUrl = (_finalName starts with 'http' or _finalName starts with '//')
+              ? _finalName
+              : asset('uploads/avatars/' ~ _finalName) %}
+
+          {# Nút tạo Staff chỉ hiện với ADMIN #}
           {% if is_granted('ROLE_ADMIN') %}
             <a href="{{ path('admin_user_create_staff') }}" class="btn btn-primary btn-sm">+ New Staff</a>
           {% endif %}
+
           <div class="avatar">
             <div class="w-10 rounded-full ring ring-primary ring-offset-base-100 ring-offset-2">
-              <img src="https://img.daisyui.com/images/stock/photo-1534528741775-53994a69daeb.webp" alt="">
+              <img src="{{ _avatarUrl }}" alt="{{ app.user.userIdentifier }}" loading="lazy">
             </div>
           </div>
           <span class="truncate max-w-[220px] text-sm font-medium">{{ app.user.userIdentifier }}</span>
@@ -79,12 +109,12 @@
     </footer>
   </div>
 
-  {# ===== Admin-only toasts (tailwind thuần) ===== #}
+  {# ===== Flash toasts ===== #}
   {% set styleMap = {
     'admin.success': 'border-green-300 bg-green-50 text-green-800',
-    'admin.error':   'border-rose-300  bg-rose-50  text-rose-800',
+    'admin.error': 'border-rose-300 bg-rose-50 text-rose-800',
     'admin.warning': 'border-amber-300 bg-amber-50 text-amber-900',
-    'admin.info':    'border-sky-300   bg-sky-50   text-sky-800'
+    'admin.info': 'border-sky-300 bg-sky-50 text-sky-800'
   } %}
   {% set flashes_admin = app.flashes(['admin.success','admin.error','admin.warning','admin.info']) %}
   {% if flashes_admin is not empty %}
@@ -115,7 +145,61 @@
     </script>
   {% endif %}
 
-  
+  {# JS từ Encore #}
   {% block javascripts %}{{ encore_entry_script_tags('app') }}{% endblock %}
+
+  {# TinyMCE + init (chỉ cho layout admin) #}
+  <style>
+    .tox.tox-tinymce { width: 100% !important; }
+    .tox .tox-edit-area__iframe { min-height: 480px !important; }
+    .tox .tox-statusbar__branding { display: none; }
+  </style>
+
+  <script src="https://cdn.jsdelivr.net/npm/tinymce@7.3.0/tinymce.min.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const el = document.querySelector('textarea.tinymce, textarea[name="product[description]"]');
+      if (!el || !window.tinymce) return;
+
+      const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+
+      tinymce.init({
+        selector: 'textarea.tinymce, textarea[name="product[description]"]',
+        promotion: false,
+        branding: false,
+        menubar: 'file edit view insert format table tools help',
+        plugins: 'autoresize code lists link image table media paste fullscreen',
+        toolbar: [
+          'undo redo | blocks fontfamily fontsize | bold italic underline strikethrough forecolor backcolor |',
+          'alignleft aligncenter alignright alignjustify | outdent indent | numlist bullist | table image link media |',
+          'removeformat | code fullscreen'
+        ].join(' '),
+        height: 520,
+        min_height: 420,
+        resize: true,
+        skin: prefersDark ? 'oxide-dark' : 'oxide',
+        content_css: prefersDark ? 'dark' : 'default',
+        automatic_uploads: true,
+        images_upload_url: '{{ path("editor_image_upload") }}',
+        images_upload_credentials: true,
+        images_file_types: 'jpg,jpeg,png,gif,webp',
+        paste_data_images: true,
+        setup: (ed) => {
+          ed.on('init', () => {
+            const box = ed.getContainer();
+            box.style.zIndex = 30;
+            box.style.width = '100%';
+          });
+        },
+        content_style: `
+          :root { color-scheme: ${prefersDark ? 'dark' : 'light'}; }
+          body { font-family: ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,'Helvetica Neue',Arial; }
+          img { max-width: 100%; height: auto; }
+          table { width: 100%; border-collapse: collapse; }
+          td, th { border: 1px solid #e5e7eb; padding: 6px; }
+        `,
+      });
+    });
+  </script>
 </body>
 </html>

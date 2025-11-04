@@ -22,7 +22,19 @@
           <tr>
             <td>{{ u.id }}</td>
             <td>{{ u.email }}</td>
-            <td>{{ u.roles|join(', ') }}</td>
+            <td class="space-x-1">
+  {% for role in u.roles %}
+    {% set label = role|replace({'ROLE_': ''})|capitalize %}
+    <span class="badge
+      {% if 'ADMIN' in role %} badge-primary
+      {% elseif 'STAFF' in role %} badge-error
+      {% elseif 'CUSTOMER' in role %} badge-success
+      {% elseif 'USER' in role %} badge-neutral
+      {% else %} badge-outline{% endif %}">
+      {{ label }}
+    </span>
+  {% endfor %}
+</td>
           </tr>
         {% else %}
           <tr><td colspan="3" class="text-center text-gray-500">No users.</td></tr>

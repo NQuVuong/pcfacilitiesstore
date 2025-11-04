@@ -1,0 +1,50 @@
+{% extends 'admin.html.twig' %}
+{% block title %}Manage Orders{% endblock %}
+
+{% block body %}
+<div class="bg-white rounded-lg shadow p-6">
+  <h1 class="text-xl font-semibold text-gray-900 mb-6">Manage Orders</h1>
+  <div class="overflow-x-auto">
+    <table class="min-w-full divide-y divide-gray-200">
+      <thead class="bg-gray-50">
+        <tr>
+          <th class="px-6 py-3 text-left text-sm font-semibold text-gray-900">ID</th>
+          <th class="px-6 py-3 text-left text-sm font-semibold text-gray-900">User</th>
+          <th class="px-6 py-3 text-left text-sm font-semibold text-gray-900">Date</th>
+          <th class="px-6 py-3 text-left text-sm font-semibold text-gray-900">Status</th>
+          <th class="px-6 py-3 text-left text-sm font-semibold text-gray-900">Total</th>
+          <th class="px-6 py-3 text-left text-sm font-semibold text-gray-900">Actions</th>
+        </tr>
+      </thead>
+      <tbody class="bg-white divide-y divide-gray-200">
+        {% for o in orders %}
+          <tr class="hover:bg-gray-50">
+            <td class="px-6 py-3 text-sm text-gray-500">#{{ o.id }}</td>
+            <td class="px-6 py-3 text-sm text-gray-700">{{ o.user.email }}</td>
+            <td class="px-6 py-3 text-sm text-gray-500">{{ o.createdAt|date('Y-m-d H:i') }}</td>
+            <td class="px-6 py-3 text-sm">
+              <span class="badge
+                {% if o.status == 'PAID' %}badge-success
+                {% elseif o.status == 'PENDING' %}badge-warning
+                {% elseif o.status == 'REFUND_REQUESTED' %}badge-info
+                {% elseif o.status == 'REFUND_PROCESSING' %}badge-accent
+                {% elseif o.status == 'REFUNDED' %}badge-success
+                {% elseif o.status in ['CANCELED','REFUND_REJECTED'] %}badge-ghost
+                {% elseif o.status in ['FAILED','REFUND_FAILED'] %}badge-error
+                {% else %}badge-neutral{% endif %}">
+                {{ o.status|replace({'_': ' '})|capitalize }}
+              </span>
+            </td>
+            <td class="px-6 py-3 text-sm text-gray-900">{{ o.total|number_format(0,'.',',') }} ₫</td>
+            <td class="px-6 py-3 text-sm">
+               <a href="{{ path('app_admin_order_show', {id: o.id}) }}" class="btn btn-sm btn-ghost">View</a>
+            </td>
+          </tr>
+        {% else %}
+          <tr><td class="px-6 py-4" colspan="7">No orders found.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

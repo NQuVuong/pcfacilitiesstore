@@ -48,6 +48,13 @@ class Product
     #[ORM\Column(type: 'string', length: 180, unique: true)]
     private string $slug = '';
 
+    #[ORM\ManyToOne(targetEntity: Supplier::class, inversedBy: 'products')]
+    #[ORM\JoinColumn(nullable: true)] // Đặt là 'true' để sản phẩm cũ không bị lỗi
+    private ?Supplier $supplier = null;
+
+    #[ORM\Column(type: 'json', nullable: true)]
+    private ?array $specs = [];
+
     public function __construct()
     {
         $this->prices = new ArrayCollection();
@@ -186,4 +193,25 @@ class Product
 
     public function getSlug(): string { return $this->slug; }
     public function setSlug(string $slug): self { $this->slug = $slug; return $this; }
+    public function getSupplier(): ?Supplier
+    {
+        return $this->supplier;
+    }
+
+    public function setSupplier(?Supplier $supplier): static
+    {
+        $this->supplier = $supplier;
+        return $this;
+    }
+    public function getSpecs(): array
+    {
+        return $this->specs ?? [];
+    }
+
+    public function setSpecs(?array $specs): self
+    {
+        $this->specs = $specs;
+        return $this;
+    }
 }
+
