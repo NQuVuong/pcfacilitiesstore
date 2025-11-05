@@ -5,6 +5,7 @@
     "prefer-stable": true,
     "require": {
         "php": ">=8.2",
+        "ext-pdo_mysql": "*",
         "ext-ctype": "*",
         "ext-iconv": "*",
         "doctrine/dbal": "^3",
