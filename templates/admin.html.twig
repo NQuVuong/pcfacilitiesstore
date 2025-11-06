@@ -12,67 +12,46 @@
 </head>
 <body class="h-screen bg-base-200 text-base-content flex">
 
-  {# ===== Sidebar ===== #}
+  {# ===== Sidebar (mobile slide-in) ===== #}
   {% set _r = app.request.attributes.get('_route') %}
 
-  <aside class="w-64 bg-base-100 border-r">
+  <aside id="adminAside"
+         class="fixed md:static inset-y-0 left-0 z-40 w-72 md:w-64 bg-base-100 border-r
+                -translate-x-full md:translate-x-0 transition-transform duration-200 ease-out">
     <div class="h-16 border-b flex items-center px-4">
       <a href="{{ path('app_homepage') }}" class="text-lg font-bold">PC Store</a>
     </div>
     <ul class="menu p-3 w-full">
 
-      {# ==== STAFF-ONLY (ADMIN không thấy) ==== #}
-      {% if is_granted('ROLE_STAFF') and not is_granted('ROLE_ADMIN') %}
+      {# Staff menu (Staff & Admin đều có thể thấy phần Store) #}
+      {% if is_granted('ROLE_STAFF') or is_granted('ROLE_ADMIN') %}
         <li class="menu-title">Store</li>
-        <li>
-          <a class="{{ _r starts with 'app_product_' ? 'active' }}"
-             href="{{ path('app_product_index') }}">Products</a>
-        </li>
-        <li>
-          <a class="{{ _r starts with 'brand_' ? 'active' }}"
-             href="{{ path('brand_index') }}">Brands</a>
-        </li>
-        <li>
-          <a class="{{ _r starts with 'price_' ? 'active' }}"
-             href="{{ path('price_index') }}">Set Prices</a>
-        </li>
-        <li>
-          <a class="{{ _r starts with 'app_supplier_' ? 'active' }}"
-             href="{{ path('app_supplier_index') }}">Suppliers</a>
-        </li>
-        <li>
-          <a class="{{ _r starts with 'app_catreq_' ? 'active' }}"
-             href="{{ path('app_catreq_index') }}">Request New Category</a>
-        </li>
+        <li><a class="{{ _r starts with 'app_product_' ? 'active' }}" href="{{ path('app_product_index') }}">Products</a></li>
+        <li><a class="{{ _r starts with 'brand_' ? 'active' }}" href="{{ path('brand_index') }}">Brands</a></li>
+        <li><a class="{{ _r starts with 'price_' ? 'active' }}" href="{{ path('price_index') }}">Set Prices</a></li>
+        <li><a class="{{ _r starts with 'app_supplier_' ? 'active' }}" href="{{ path('app_supplier_index') }}">Suppliers</a></li>
+        <li><a class="{{ _r starts with 'app_catreq_' ? 'active' }}" href="{{ path('app_catreq_index') }}">Request New Category</a></li>
       {% endif %}
 
-      {# ==== ADMIN-ONLY ==== #}
+      {# Admin-only #}
       {% if is_granted('ROLE_ADMIN') %}
         <li class="menu-title mt-2">Administration</li>
-        <li>
-          <a class="{{ _r starts with 'app_admin_order_' ? 'active' }}"
-             href="{{ path('app_admin_order_index') }}">Orders</a>
-        </li>
-        <li>
-          <a class="{{ _r starts with 'category_' ? 'active' }}"
-             href="{{ path('category_index') }}">Categories</a>
-        </li>
-        <li>
-          <a class="{{ _r starts with 'app_admin_catreq_' ? 'active' }}"
-             href="{{ path('app_admin_catreq_index') }}">Category Requests</a>
-        </li>
-        <li>
-          <a class="{{ _r == 'admin_user_index' ? 'active' }}"
-             href="{{ path('admin_user_index') }}">Users</a>
-        </li>
+        <li><a class="{{ _r starts with 'app_admin_order_' ? 'active' }}" href="{{ path('app_admin_order_index') }}">Orders</a></li>
+        <li><a class="{{ _r starts with 'category_' ? 'active' }}" href="{{ path('category_index') }}">Categories</a></li>
+        <li><a class="{{ _r starts with 'app_admin_catreq_' ? 'active' }}" href="{{ path('app_admin_catreq_index') }}">Category Requests</a></li>
+        <li><a class="{{ _r == 'admin_user_index' ? 'active' }}" href="{{ path('admin_user_index') }}">Users</a></li>
       {% endif %}
     </ul>
   </aside>
+
+  {# backdrop cho mobile aside #}
+  <div id="asideBackdrop" class="fixed inset-0 bg-black/30 z-30 hidden md:hidden"></div>
 
   {# ===== Main ===== #}
   <div class="flex-1 flex flex-col">
     <header class="bg-base-100 border-b px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
       <div class="flex items-center gap-2">
+        <button id="btnOpenAside" class="btn btn-ghost btn-sm md:hidden" aria-label="Menu">☰</button>
       </div>
       <div class="flex items-center gap-2">
         {% if app.user %}
@@ -80,20 +59,17 @@
           {% set _fallback = (app.user.gender ?? '') == 'female' ? 'women.png' : 'man.png' %}
           {% set _finalName = _rawAvatar is not empty ? _rawAvatar : _fallback %}
           {% set _avatarUrl = (_finalName starts with 'http' or _finalName starts with '//')
-              ? _finalName
-              : asset('uploads/avatars/' ~ _finalName) %}
+              ? _finalName : asset('uploads/avatars/' ~ _finalName) %}
 
-          {# Nút tạo Staff chỉ hiện với ADMIN #}
           {% if is_granted('ROLE_ADMIN') %}
-            <a href="{{ path('admin_user_create_staff') }}" class="btn btn-primary btn-sm">+ New Staff</a>
+            <a href="{{ path('admin_user_create_staff') }}" class="btn btn-primary btn-sm hidden sm:inline-flex">+ New Staff</a>
           {% endif %}
-
           <div class="avatar">
-            <div class="w-10 rounded-full ring ring-primary ring-offset-base-100 ring-offset-2">
+            <div class="w-9 md:w-10 rounded-full ring ring-primary ring-offset-base-100 ring-offset-2">
               <img src="{{ _avatarUrl }}" alt="{{ app.user.userIdentifier }}" loading="lazy">
             </div>
           </div>
-          <span class="truncate max-w-[220px] text-sm font-medium">{{ app.user.userIdentifier }}</span>
+          <span class="truncate max-w-[160px] md:max-w-[220px] text-sm font-medium">{{ app.user.userIdentifier }}</span>
         {% else %}
           <a href="{{ path('app_login') }}" class="btn btn-primary btn-sm">Login</a>
         {% endif %}
@@ -104,7 +80,7 @@
       <div class="container mx-auto">{% block body %}{% endblock %}</div>
     </main>
 
-    <footer class="bg-base-100 text-center text-sm text-base-content/60 p-4">
+    <footer class="bg-base-100 text-center text-xs md:text-sm text-base-content/60 p-3 md:p-4">
       © {{ "now"|date("Y") }} PC Store. All rights reserved.
     </footer>
   </div>
@@ -112,14 +88,15 @@
   {# ===== Flash toasts ===== #}
   {% set styleMap = {
     'admin.success': 'border-green-300 bg-green-50 text-green-800',
-    'admin.error': 'border-rose-300 bg-rose-50 text-rose-800',
+    'admin.error':   'border-rose-300  bg-rose-50  text-rose-800',
     'admin.warning': 'border-amber-300 bg-amber-50 text-amber-900',
-    'admin.info': 'border-sky-300 bg-sky-50 text-sky-800'
+    'admin.info':    'border-sky-300   bg-sky-50   text-sky-800'
   } %}
   {% set flashes_admin = app.flashes(['admin.success','admin.error','admin.warning','admin.info']) %}
   {% if flashes_admin is not empty %}
     <div id="toasts-admin"
-         class="fixed z-[100] top-[80px] left-1/2 -translate-x-1/2 w-full max-w-md flex flex-col gap-2 px-4">
+         class="fixed z-[100] top-[70px] md:top-[80px] left-1/2 -translate-x-1/2 w-full
+                max-w-sm md:max-w-md flex flex-col gap-2 px-3 md:px-4">
       {% for type, messages in flashes_admin %}
         {% for message in messages %}
           <div class="toast-item flex items-center justify-between gap-3 rounded-md border shadow
@@ -148,21 +125,18 @@
   {# JS từ Encore #}
   {% block javascripts %}{{ encore_entry_script_tags('app') }}{% endblock %}
 
-  {# TinyMCE + init (chỉ cho layout admin) #}
+  {# TinyMCE init giữ nguyên #}
   <style>
     .tox.tox-tinymce { width: 100% !important; }
-    .tox .tox-edit-area__iframe { min-height: 480px !important; }
+    .tox .tox-edit-area__iframe { min-height: 420px !important; }
     .tox .tox-statusbar__branding { display: none; }
   </style>
-
   <script src="https://cdn.jsdelivr.net/npm/tinymce@7.3.0/tinymce.min.js"></script>
   <script>
     document.addEventListener('DOMContentLoaded', () => {
       const el = document.querySelector('textarea.tinymce, textarea[name="product[description]"]');
       if (!el || !window.tinymce) return;
-
       const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-
       tinymce.init({
         selector: 'textarea.tinymce, textarea[name="product[description]"]',
         promotion: false,
@@ -170,12 +144,12 @@
         menubar: 'file edit view insert format table tools help',
         plugins: 'autoresize code lists link image table media paste fullscreen',
         toolbar: [
-          'undo redo | blocks fontfamily fontsize | bold italic underline strikethrough forecolor backcolor |',
+          'undo redo | blocks fontfamily fontsize | bold italic underline strikthrough forecolor backcolor |',
           'alignleft aligncenter alignright alignjustify | outdent indent | numlist bullist | table image link media |',
           'removeformat | code fullscreen'
         ].join(' '),
-        height: 520,
-        min_height: 420,
+        height: window.innerWidth < 768 ? 420 : 520,
+        min_height: 380,
         resize: true,
         skin: prefersDark ? 'oxide-dark' : 'oxide',
         content_css: prefersDark ? 'dark' : 'default',
@@ -190,16 +164,21 @@
             box.style.zIndex = 30;
             box.style.width = '100%';
           });
-        },
-        content_style: `
-          :root { color-scheme: ${prefersDark ? 'dark' : 'light'}; }
-          body { font-family: ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,'Helvetica Neue',Arial; }
-          img { max-width: 100%; height: auto; }
-          table { width: 100%; border-collapse: collapse; }
-          td, th { border: 1px solid #e5e7eb; padding: 6px; }
-        `,
+        }
       });
     });
+
+    // Toggle mobile aside
+    (function(){
+      const aside = document.getElementById('adminAside');
+      const openBtn = document.getElementById('btnOpenAside');
+      const backdrop = document.getElementById('asideBackdrop');
+      function open(){ aside.classList.remove('-translate-x-full'); backdrop.classList.remove('hidden'); }
+      function close(){ aside.classList.add('-translate-x-full'); backdrop.classList.add('hidden'); }
+      openBtn?.addEventListener('click', open);
+      backdrop?.addEventListener('click', close);
+      window.addEventListener('resize', () => { if (window.innerWidth >= 768) close(); });
+    })();
   </script>
 </body>
 </html>
