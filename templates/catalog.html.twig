@@ -41,24 +41,11 @@
       <div class="text-center text-base-content/60 py-20">No matching products.</div>
     {% else %}
       {# SAME CARD SIZE EVERYWHERE #}
-      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
         {% for p in products %}
-          <a href="{{ path('product_detail', {'slug': p.slug}) }}" class="block">
-            <article class="card bg-base-100 border hover:shadow-md transition h-full">
-              <figure class="h-64 bg-base-200">
-                <img src="{{ asset('uploads/' ~ p.image) }}" alt="{{ p.name }}"
-                     class="w-full h-full object-contain p-4"/>
-              </figure>
-              <div class="card-body flex flex-col justify-between gap-3">
-                <h2 class="line-clamp-2 h-12 hover:text-primary">{{ p.name }}</h2>
-                {% set latest = p.prices|first %}
-                {% set hasPrice = latest is not null and latest.exportPrice is not null %}
-                <p class="text-xl font-bold {{ hasPrice ? 'text-primary' : 'text-base-content/50 italic' }}">
-                  {% if hasPrice %}{{ latest.exportPrice|number_format(0,'.',',') }} ₫{% else %}No price{% endif %}
-                </p>
-              </div>
-            </article>
-          </a>
+          {% include '_components/product-card.html.twig' with { p: p, specs_count: 4 } %}
+        {% else %}
+          <p class="col-span-full text-center text-base-content/60 py-8">No products.</p>
         {% endfor %}
       </div>
     {% endif %}

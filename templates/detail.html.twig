@@ -60,21 +60,19 @@
 
             <div class="divider my-4"></div>
 
-            <div class="flex items-center gap-3">
-              <label class="form-control w-32">
-                <div class="label"><span class="label-text">Quantity</span></div>
-                <input id="qty" type="number" value="1" min="1" class="input input-bordered" />
+            <div class="flex items-end md:items-center gap-3 flex-wrap">
+              <label class="form-control w-28 md:w-32">
+                <div class="label"><span class="label-text text-sm md:text-base">Quantity</span></div>
+                <input id="qty" type="number" value="1" min="1" class="input input-bordered input-sm md:input-md" />
               </label>
 
               {% if latest and latest.exportPrice is not null and p.quantity > 0 %}
-                <form id="addToCartForm" action="{{ path('app_cart_add', {id: p.id}) }}" method="post" class="flex items-end">
+                <form action="{{ path('app_cart_add', {id: p.id}) }}" method="post" class="flex items-end">
                   <input type="hidden" name="_token" value="{{ csrf_token('add_to_cart_' ~ p.id) }}">
-                  {# gửi qty thực sự về controller #}
-                  <input type="hidden" name="qty" id="qtyField" value="1">
-                  <button class="btn btn-primary">Add to cart</button>
+                  <button class="btn btn-primary btn-sm md:btn">Add to cart</button>
                 </form>
               {% else %}
-                <button class="btn" disabled>Not available</button>
+                <button class="btn btn-sm md:btn" disabled>Not available</button>
               {% endif %}
             </div>
 

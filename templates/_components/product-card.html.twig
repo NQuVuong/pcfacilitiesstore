@@ -1,25 +1,51 @@
-{# templates/_components/product-card.html.twig #}
-{# expects: p (Product) #}
+{# expects: p (Product), specs_count? (int) #}
+{% set latest   = p.prices|first %}
+{% set hasPrice = latest is not null and latest.exportPrice is not null %}
+{% set maxSpecs = specs_count|default(3) %}
+{% set specs    = p.specs|default([]) %}
+
+{% set shown = [] %}
+{% for it in specs %}
+  {% set k = it.key|default('') %}
+  {% set v = it.value|default('') %}
+  {% if (k is not empty or v is not empty) and shown|length < maxSpecs %}
+    {% set shown = shown|merge([{'k': k, 'v': v}]) %}
+  {% endif %}
+{% endfor %}
+
 <div class="bg-white rounded-xl border border-slate-200 card-smooth overflow-hidden">
-  <a href="{{ path('product_detail', {'id': p.id}) }}" class="block aspect-[4/3] bg-slate-100">
-    <img src="{{ asset('uploads/' ~ p.image) }}" alt="{{ p.name }}" class="w-full h-full object-cover"/>
+  <a href="{{ path('product_detail', {'slug': p.slug}) }}" class="block aspect-[4/3] bg-slate-100">
+    <img src="{{ asset('uploads/' ~ p.image) }}"
+         alt="{{ p.name }}" class="w-full h-full object-contain"/>
   </a>
 
   <div class="p-4 space-y-3">
-    <a class="line-clamp-2 font-medium hover:text-indigo-600" href="{{ path('product_detail', {'id': p.id}) }}">
+    <a class="line-clamp-2 font-medium hover:text-indigo-600"
+       href="{{ path('product_detail', {'slug': p.slug}) }}">
       {{ p.name }}
     </a>
 
-    {% set latest   = p.prices|first %}
-    {% set hasPrice = latest is not null and latest.exportPrice is not null %}
-    {% set canBuy   = hasPrice and p.quantity > 1 %}
+    {% if shown|length > 0 %}
+      <div class="grid gap-1">
+        {% for s in shown %}
+          <div class="inline-flex items-center gap-2 text-xs px-3 py-1.5 rounded-md border bg-slate-50">
+            <span class="w-1.5 h-1.5 rounded-full bg-slate-400"></span>
+            <span class="text-slate-500 whitespace-nowrap">{{ s.k ?: 'Spec' }}:</span>
+            <span class="truncate font-medium">{{ s.v }}</span>
+          </div>
+        {% endfor %}
+      </div>
+    {% endif %}
 
-    <div class="flex items-center gap-2">
-      <span class="chip chip-price">
+    <div class="flex items-center gap-3 pt-1">
+      {# === GIÁ NỔI BẬT === #}
+      <span class="leading-none">
         {% if hasPrice %}
-          {{ latest.exportPrice|number_format(0, '.', ',') }} ₫
+          <span class="text-primary font-extrabold tracking-tight text-[18px] sm:text-[20px] lg:text-[22px]">
+            {{ latest.exportPrice|number_format(0, '.', ',') }} ₫
+          </span>
         {% else %}
-          Chưa đặt
+          <span class="text-slate-400 italic">Chưa đặt</span>
         {% endif %}
       </span>
 
@@ -31,23 +57,6 @@
         {% endif %}
       {% else %}
         <span class="chip chip-oos">Out of stock</span>
-      {% endif %}
-    </div>
-
-    <div class="flex justify-end pt-1">
-      {% if canBuy %}
-        <form action="{{ path('app_cart_add', {id: p.id}) }}" method="post">
-          <input type="hidden" name="_token" value="{{ csrf_token('add_to_cart_' ~ p.id) }}">
-          <button class="btn btn-primary btn-sm" type="submit">
-            <i data-lucide="shopping-bag" class="w-4 h-4 mr-1"></i> Add
-          </button>
-        </form>
-      {% else %}
-        <button class="btn btn-sm btn-disabled" disabled>
-          {% if not hasPrice %}Not Priced
-          {% elseif p.quantity <= 1 %}Reach the limit
-          {% else %}Out of stock{% endif %}
-        </button>
       {% endif %}
     </div>
   </div>

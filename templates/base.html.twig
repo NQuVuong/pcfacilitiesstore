@@ -7,10 +7,14 @@
     <title>{% block title %}PC Store{% endblock %}</title>
 
     {# CSS từ Webpack Encore #}
-    {% block stylesheets %}{{ encore_entry_link_tags('app') }}{% endblock %}
+    {% block stylesheets %}
+      {{ encore_entry_link_tags('app') }}
+    {% endblock %}
 
-    {# JS từ Webpack Encore (DUY NHẤT một block trong <head>) #}
-    {% block javascripts %}{{ encore_entry_script_tags('app') }}{% endblock %}
+    {# JS đầu trang #}
+    {% block javascripts %}
+      {{ encore_entry_script_tags('app') }}
+    {% endblock %}
   </head>
 
   <body class="min-h-screen flex flex-col bg-gray-100">
@@ -30,66 +34,60 @@
         </button>
 
         {% if app.user %}
-        {# ===== Cart badge (đếm tổng quantity trong session 'cart') ===== #}
-        {% set _raw = app.session.get('cart', {}) %}
-        {% set _count = 0 %}
-        {% for qty in _raw %}
-          {% set _count = _count + qty %}
-        {% endfor %}
+          {# ===== Cart badge ===== #}
+          {% set _raw = app.session.get('cart', {}) %}
+          {% set _count = 0 %}
+          {% for qty in _raw %}{% set _count = _count + qty %}{% endfor %}
 
-        <div class="indicator mr-1">
-          <a href="{{ path('app_cart_index') }}" class="btn btn-ghost btn-circle" aria-label="Cart">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none"
-                viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-              <circle cx="9" cy="21" r="1"></circle><circle cx="20" cy="21" r="1"></circle>
-              <path d="M1 1h4l2.68 12.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path>
-            </svg>
-          </a>
-          {% if _count > 0 %}
-            <span class="indicator-item badge badge-primary badge-sm">{{ _count }}</span>
-          {% endif %}
-        </div>
-
-        {# ===== Avatar dropdown (phần bạn đã có) ===== #}
-        {% set _rawAvatar = app.user.avatar ?? '' %}
-        {% set _fallback  = (app.user.gender ?? '') == 'female' ? 'women.png' : 'man.png' %}
-        {% set _finalName = _rawAvatar is not empty ? _rawAvatar : _fallback %}
-        {% set _avatarUrl = (_finalName starts with 'http' or _finalName starts with '//')
-            ? _finalName : asset('uploads/avatars/' ~ _finalName) %}
-
-        <div class="dropdown dropdown-end">
-          <div tabindex="0" role="button" class="btn btn-ghost btn-circle avatar">
-            <div class="w-10 rounded-full">
-              <img alt="{{ app.user.userIdentifier }}" src="{{ _avatarUrl }}" loading="lazy" />
-            </div>
-          </div>
-          <ul tabindex="0" class="menu menu-sm dropdown-content bg-base-100 rounded-box z-[60] mt-3 w-56 p-2 shadow">
-            <li class="menu-title px-4">{{ app.user.userIdentifier }}</li>
-            <li><a href="{{ path('app_orders_index') }}">My Orders</a></li>
-            <li><a href="{{ path('account_profile') }}">Profile</a></li>
-
-            {# CHỈ hiển thị Dashboard khi là STAFF hoặc ADMIN #}
-            {% if is_granted('ROLE_STAFF') or is_granted('ROLE_ADMIN') %}
-              <li><a href="{{ path('app_admin') }}">Dashboard</a></li>
+          <div class="indicator mr-1">
+            <a href="{{ path('app_cart_index') }}" class="btn btn-ghost btn-circle" aria-label="Cart">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none"
+                   viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <circle cx="9" cy="21" r="1"></circle><circle cx="20" cy="21" r="1"></circle>
+                <path d="M1 1h4l2.68 12.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path>
+              </svg>
+            </a>
+            {% if _count > 0 %}
+              <span class="indicator-item badge badge-primary badge-sm">{{ _count }}</span>
             {% endif %}
+          </div>
 
-            <li class="mt-2">
-              <form method="post" action="{{ path('app_logout') }}">
-                <input type="hidden" name="_csrf_token" value="{{ csrf_token('logout') }}">
-                <button type="submit" class="btn btn-error btn-sm w-full">Logout</button>
-              </form>
-            </li>
-          </ul>
-        </div>
-      {% else %}
-        <div class="flex gap-2">
-          <a href="{{ path('app_login') }}" class="btn btn-ghost">Login</a>
-          <a href="{{ path('app_register') }}" class="btn btn-primary">Register</a>
-        </div>
-      {% endif %}
+          {# ===== Avatar dropdown ===== #}
+          {% set _rawAvatar = app.user.avatar ?? '' %}
+          {% set _fallback  = (app.user.gender ?? '') == 'female' ? 'women.png' : 'man.png' %}
+          {% set _finalName = _rawAvatar is not empty ? _rawAvatar : _fallback %}
+          {% set _avatarUrl = (_finalName starts with 'http' or _finalName starts with '//')
+              ? _finalName : asset('uploads/avatars/' ~ _finalName) %}
+
+          <div class="dropdown dropdown-end">
+            <div tabindex="0" role="button" class="btn btn-ghost btn-circle avatar">
+              <div class="w-10 rounded-full">
+                <img alt="{{ app.user.userIdentifier }}" src="{{ _avatarUrl }}" loading="lazy" />
+              </div>
+            </div>
+            <ul tabindex="0" class="menu menu-sm dropdown-content bg-base-100 rounded-box z-[60] mt-3 w-56 p-2 shadow">
+              <li class="menu-title px-4 truncate">{{ app.user.userIdentifier }}</li>
+              <li><a href="{{ path('app_orders_index') }}">My Orders</a></li>
+              <li><a href="{{ path('account_profile') }}">Profile</a></li>
+              {% if is_granted('ROLE_STAFF') or is_granted('ROLE_ADMIN') %}
+                <li><a href="{{ path('app_admin') }}">Dashboard</a></li>
+              {% endif %}
+              <li class="mt-2">
+                <form method="post" action="{{ path('app_logout') }}">
+                  <input type="hidden" name="_csrf_token" value="{{ csrf_token('logout') }}">
+                  <button type="submit" class="btn btn-error btn-sm w-full">Logout</button>
+                </form>
+              </li>
+            </ul>
+          </div>
+        {% else %}
+          <div class="flex gap-2">
+            <a href="{{ path('app_login') }}" class="btn btn-ghost">Login</a>
+            <a href="{{ path('app_register') }}" class="btn btn-primary">Register</a>
+          </div>
+        {% endif %}
       </div>
     </div>
-    {# =============== /NAVBAR =============== #}
 
     {# ===== Page body ===== #}
     <main class="flex-1">
@@ -114,19 +112,25 @@
       </nav>
     </footer>
 
-    {# ===== Search Modal (daisyUI) ===== #}
+    {# ===== Search Modal ===== #}
     <dialog id="searchModal" class="modal modal-top sm:modal-middle">
-      <div class="modal-box w-[95vw] max-w-3xl md:max-w-4xl p-0 border rounded-2xl overflow-hidden">
-        <div class="p-6 md:p-10">
+      {# BỎ overflow-hidden ở modal-box #}
+      <div class="modal-box w-[92vw] sm:w-[95vw] max-w-lg sm:max-w-3xl p-0 border rounded-2xl">
+        <div class="p-5 sm:p-8">
           <div class="flex justify-center">
             <button type="button" id="btnCloseSearch" class="btn btn-ghost btn-circle">✕</button>
           </div>
 
-          <form id="globalSearchForm" action="{{ path('catalog') }}" method="get" class="mt-6">
-            <div class="join w-full border rounded-full overflow-hidden">
+          <form id="globalSearchForm" action="{{ path('catalog') }}" method="get" class="mt-4 sm:mt-6">
+            {# BỎ overflow-hidden ở wrapper, dùng ring thay thế để nhìn như bo nhóm #}
+            <div
+              class="flex flex-col sm:flex-row gap-2 sm:gap-0 sm:ring-1 sm:ring-base-300 sm:rounded-full sm:items-stretch">
+
               {% if categories is defined %}
                 <select name="cat"
-                        class="select join-item rounded-l-full max-w-[260px] h-14 text-base focus:outline-none">
+                  class="select h-14 sm:h-14 rounded-full sm:rounded-l-full
+                        bg-base-100 sm:bg-transparent border border-base-300 sm:border-0
+                        sm:max-w-[220px] focus:outline-none">
                   <option value="">CATEGORY</option>
                   {% for c in categories %}
                     <option value="{{ c.id }}" {{ app.request.get('cat') == c.id ? 'selected' : '' }}>
@@ -137,41 +141,37 @@
               {% endif %}
 
               <input id="globalSearchQuery" name="q" value="{{ app.request.get('q') }}"
-                     type="text"
-                     class="input join-item w-full h-14 text-base focus:outline-none"
-                     placeholder="WHAT ARE YOU LOOKING FOR ?" />
+                type="text"
+                class="input h-14 sm:h-14 rounded-full sm:rounded-none
+                      bg-base-100 sm:bg-transparent border border-base-300 sm:border-0
+                      flex-1 focus:outline-none"
+                placeholder="WHAT ARE YOU LOOKING FOR ?" />
 
-              <button class="btn join-item h-14 px-8 rounded-r-full text-white border-0
-                             bg-gradient-to-r from-rose-500 to-fuchsia-500">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6"
-                     viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                     stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <button
+                class="btn h-14 sm:h-14 w-full sm:w-auto rounded-full sm:rounded-r-full
+                      text-white border-0 bg-gradient-to-r from-rose-500 to-fuchsia-500">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 sm:h-6 sm:w-6"
+                    viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                    stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                   <circle cx="11" cy="11" r="8"></circle>
                   <path d="m21 21-4.3-4.3"></path>
                 </svg>
+                <span class="sm:hidden ml-2">Search</span>
               </button>
             </div>
 
-            <div class="mt-8">
-              <p class="text-xs font-semibold tracking-wide text-base-content/60">POPULAR SEARCH:</p>
-              <div class="mt-4 flex flex-wrap gap-3">
+            <div class="mt-5 sm:mt-8">
+              <p class="text-[11px] sm:text-xs font-semibold tracking-wide text-base-content/60">POPULAR SEARCH:</p>
+              <div class="mt-3 flex flex-wrap gap-2 sm:gap-3">
                 {% set tags = ['Keyboard','Mouse','Consoles','Headphone'] %}
                 {% for t in tags %}
-                  <a href="#" class="badge badge-ghost px-5 py-3 text-sm" data-fill-q="{{ t }}">{{ t }}</a>
+                  <a href="#" class="badge badge-ghost px-4 py-2 text-xs sm:text-sm" data-fill-q="{{ t }}">{{ t }}</a>
                 {% endfor %}
               </div>
             </div>
 
-            <div class="mt-4 flex items-center justify-end gap-3">
-              <button id="btnAdvancedSearch" type="button" class="btn btn-outline btn-sm">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-2" viewBox="0 0 24 24" fill="none"
-                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                  <line x1="4" y1="21" x2="4" y2="14"/><line x1="4" y1="10" x2="4" y2="3"/>
-                  <line x1="12" y1="21" x2="12" y2="12"/><line x1="12" y1="8" x2="12" y2="3"/>
-                  <line x1="20" y1="21" x2="20" y2="16"/><line x1="20" y1="12" x2="20" y2="3"/>
-                  <line x1="1" y1="14" x2="7" y2="14"/><line x1="9" y1="8" x2="15" y2="8"/>
-                  <line x1="17" y1="16" x2="23" y2="16"/>
-                </svg>
+            <div class="mt-4 flex items-center justify-end">
+              <button id="btnAdvancedSearch" type="button" class="btn btn-outline btn-xs sm:btn-sm">
                 Advanced search
               </button>
             </div>
@@ -180,138 +180,93 @@
       </div>
     </dialog>
 
-    {# Back to top #}
+    {# ===== Back to top ===== #}
     <button id="btnBackToTop"
             class="btn btn-primary btn-circle fixed bottom-6 right-6 z-50 opacity-0 pointer-events-none transition"
             aria-label="Back to top">↑</button>
 
-    {# ===== Scripts cuối body (KHÔNG gọi parent() ở base) ===== #}
+    {# ===== JS cuối trang ===== #}
     {% block javascripts_bottom %}
       <script>
+      document.addEventListener('DOMContentLoaded', () => {
         // Back-to-top
-        (() => {
-          const btn = document.getElementById('btnBackToTop');
-          const showAt = 350;
-          const toggle = () => (window.scrollY > showAt)
-            ? btn.classList.remove('opacity-0','pointer-events-none')
-            : btn.classList.add('opacity-0','pointer-events-none');
-          window.addEventListener('scroll', toggle, { passive:true });
-          toggle();
-          btn.addEventListener('click', () => window.scrollTo({ top:0, behavior:'smooth' }));
-        })();
+        const btn = document.getElementById('btnBackToTop');
+        const showAt = 350;
+        const toggle = () => (window.scrollY > showAt)
+          ? btn.classList.remove('opacity-0','pointer-events-none')
+          : btn.classList.add('opacity-0','pointer-events-none');
+        window.addEventListener('scroll', toggle, { passive:true });
+        toggle();
+        btn.addEventListener('click', () => window.scrollTo({ top:0, behavior:'smooth' }));
 
-        // Search Modal + quick tags
-        document.addEventListener('DOMContentLoaded', () => {
-          const openBtn  = document.getElementById('btnOpenSearch');
-          const closeBtn = document.getElementById('btnCloseSearch');
-          const modal    = document.getElementById('searchModal');
-          const form     = document.getElementById('globalSearchForm');
-          const q        = document.getElementById('globalSearchQuery');
+        // Search Modal
+        const modal = document.getElementById('searchModal');
+        const openBtn = document.getElementById('btnOpenSearch');
+        const closeBtn = document.getElementById('btnCloseSearch');
+        const form = document.getElementById('globalSearchForm');
+        const q = document.getElementById('globalSearchQuery');
 
-          function openModal() {
-            if (!modal) return;
-            if (typeof modal.showModal === 'function') modal.showModal();
-            else modal.setAttribute('open','');
-            setTimeout(() => q?.focus(), 60);
-          }
-          function closeModal() {
-            if (!modal) return;
-            try { modal.close(); } catch(_) { modal.removeAttribute('open'); }
-          }
+        const openModal = () => {
+          if (typeof modal.showModal === 'function') modal.showModal();
+          else modal.setAttribute('open','');
+          setTimeout(() => q?.focus(), 50);
+        };
+        const closeModal = () => { try { modal.close(); } catch(_) { modal.removeAttribute('open'); } };
 
-          openBtn?.addEventListener('click', (e) => { e.preventDefault(); openModal(); });
-          closeBtn?.addEventListener('click', (e) => { e.preventDefault(); closeModal(); });
+        openBtn?.addEventListener('click', (e) => { e.preventDefault(); openModal(); });
+        closeBtn?.addEventListener('click', (e) => { e.preventDefault(); closeModal(); });
+        modal?.addEventListener('click', (e) => {
+          const box = modal.querySelector('.modal-box');
+          if (box && !box.contains(e.target)) closeModal();
+        });
+        document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeModal(); });
 
-          modal?.addEventListener('click', (e) => {
-            const box = modal.querySelector('.modal-box');
-            if (box && !box.contains(e.target)) closeModal();
+        // Quick tags
+        modal?.querySelectorAll('[data-fill-q]').forEach(el => {
+          el.addEventListener('click', (ev) => {
+            ev.preventDefault();
+            if (q) q.value = el.dataset.fillQ || '';
+            form?.submit();
           });
-          document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeModal(); });
+        });
+      });
+      </script>
 
-          modal?.querySelectorAll('[data-fill-q]').forEach(el => {
-            el.addEventListener('click', (ev) => {
-              ev.preventDefault();
-              if (q) q.value = el.dataset.fillQ || '';
-              form?.submit();
+      {# Toast thông báo #}
+      {% set shopStyle = {
+        'shop.success': 'border-green-300 bg-green-50 text-green-800',
+        'shop.error':   'border-rose-300  bg-rose-50  text-rose-800',
+        'shop.warning': 'border-amber-300 bg-amber-50 text-amber-900',
+        'shop.info':    'border-sky-300   bg-sky-50   text-sky-800'
+      } %}
+      {% set flashes = app.flashes(['shop.success','shop.error','shop.warning','shop.info']) %}
+      {% if flashes is not empty %}
+        <div id="toasts-shop"
+            class="fixed z-[90] top-[80px] left-1/2 -translate-x-1/2 w-full max-w-md flex flex-col gap-2 px-4">
+          {% for type, messages in flashes %}
+            {% for message in messages %}
+              <div class="toast-item flex items-center justify-between gap-3 rounded-md border shadow
+                          px-4 py-3 backdrop-blur-sm
+                          {{ shopStyle[type]|default('border-base-300 bg-base-100 text-base-content') }}
+                          transition-all duration-300 ease-out opacity-0 -translate-y-2">
+                <span class="block text-sm">{{ message|raw }}</span>
+                <button type="button" class="btn btn-ghost btn-xs">✕</button>
+              </div>
+            {% endfor %}
+          {% endfor %}
+        </div>
+        <script>
+          (() => {
+            const items = Array.from(document.querySelectorAll('#toasts-shop .toast-item'));
+            items.forEach((el, i) => {
+              requestAnimationFrame(() => { el.style.opacity='1'; el.style.transform='translateY(0)'; });
+              const t = setTimeout(() => close(el), 3500 + i*120);
+              el.querySelector('button')?.addEventListener('click', () => { clearTimeout(t); close(el); });
             });
-          });
-
-          // Advanced search giữ nguyên query hiện tại
-          const adv = document.getElementById('btnAdvancedSearch');
-          adv?.addEventListener('click', () => {
-            const params = new URLSearchParams(new FormData(form));
-            const base = form.getAttribute('action') || '{{ path("catalog") }}';
-            window.location.href = base + (params.toString() ? ('?' + params.toString()) : '');
-          });
-        });
-      </script>
-
-      {# TinyMCE CDN + init: chỉ chạy khi trang có textarea.tinymce #}
-      <script src="https://cdn.tiny.cloud/1/no-api-key/tinymce/7/tinymce.min.js" referrerpolicy="origin"></script>
-      <script>
-        document.addEventListener('DOMContentLoaded', () => {
-          const el = document.querySelector('textarea.tinymce, textarea[name="product[description]"]');
-          if (!el || !window.tinymce) return;
-          tinymce.init({
-            target: el,
-            branding: false,
-            height: 520,
-            menubar: 'file edit view insert format table tools help',
-            plugins: 'autoresize code lists link image table media paste fullscreen',
-            toolbar: [
-              'undo redo | blocks fontfamily fontsize | bold italic underline strikethrough forecolor backcolor |',
-              'alignleft aligncenter alignright alignjustify | outdent indent | numlist bullist | table image link media |',
-              'removeformat | code fullscreen'
-            ].join(' '),
-            automatic_uploads: true,
-            images_upload_url: '{{ path("editor_image_upload") }}',
-            images_upload_credentials: true,
-            images_file_types: 'jpg,jpeg,png,gif,webp',
-            paste_data_images: true,
-            content_style: `
-              body { font-family: ui-sans-serif,system-ui,-apple-system, Segoe UI, Roboto,'Helvetica Neue', Arial; }
-              img { max-width: 100%; height: auto; }
-              table { width: 100%; border-collapse: collapse; }
-              td, th { border: 1px solid #e5e7eb; padding: 6px; }
-            `,
-          });
-        });
-      </script>
-{# ===== Site toasts (shop.*) ===== #}
-  {% set shopStyle = {
-    'shop.success': 'border-green-300 bg-green-50 text-green-800',
-    'shop.error':   'border-rose-300  bg-rose-50  text-rose-800',
-    'shop.warning': 'border-amber-300 bg-amber-50 text-amber-900',
-    'shop.info':    'border-sky-300   bg-sky-50   text-sky-800'
-  } %}
-  {% set shop_flashes = app.flashes(['shop.success','shop.error','shop.warning','shop.info']) %}
-  {% if shop_flashes is not empty %}
-    <div id="toasts-shop"
-        class="fixed z-[90] top-[80px] left-1/2 -translate-x-1/2 w-full max-w-md flex flex-col gap-2 px-4">
-      {% for type, messages in shop_flashes %}
-        {% for message in messages %}
-          <div class="toast-item flex items-center justify-between gap-3 rounded-md border shadow
-                      px-4 py-3 backdrop-blur-sm
-                      {{ shopStyle[type]|default('border-base-300 bg-base-100 text-base-content') }}
-                      transition-all duration-300 ease-out opacity-0 -translate-y-2">
-            <span class="block leading-snug break-words text-sm">{{ message|raw }}</span>
-            <button type="button" class="btn btn-ghost btn-xs">✕</button>
-          </div>
-        {% endfor %}
-      {% endfor %}
-    </div>
-    <script>
-      (function () {
-        const items = Array.from(document.querySelectorAll('#toasts-shop .toast-item'));
-        items.forEach((el, idx) => {
-          requestAnimationFrame(() => { el.style.opacity = '1'; el.style.transform = 'translateY(0)'; });
-          const t = setTimeout(() => close(el), 3500 + idx * 120);
-          el.querySelector('button')?.addEventListener('click', () => { clearTimeout(t); close(el); });
-        });
-        function close(el){ el.style.opacity = '0'; el.style.transform = 'translateY(-8px)'; setTimeout(() => el.remove(), 200); }
-      })();
-    </script>
-  {% endif %}
+            function close(el){ el.style.opacity='0'; el.style.transform='translateY(-8px)'; setTimeout(()=>el.remove(),200); }
+          })();
+        </script>
+      {% endif %}
     {% endblock %}
   </body>
 </html>

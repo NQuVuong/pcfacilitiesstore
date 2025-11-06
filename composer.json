@@ -77,13 +77,15 @@
         "symfony/polyfill-php82": "*"
     },
     "scripts": {
+        "auto-scripts": {
+            "assets:install %PUBLIC_DIR%": "symfony-cmd",
+            "cache:clear": "symfony-cmd"
+        },
         "post-install-cmd": [
-            "@php bin/console assets:install --env=prod || true",
-            "@php bin/console cache:clear --no-warmup --env=prod || true"
+            "@auto-scripts"
         ],
         "post-update-cmd": [
-            "@php bin/console assets:install --env=prod || true",
-            "@php bin/console cache:clear --no-warmup --env=prod || true"
+            "@auto-scripts"
         ]
     },
     "conflict": {
