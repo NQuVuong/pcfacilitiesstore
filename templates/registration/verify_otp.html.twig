@@ -1,0 +1,87 @@
+{% extends 'registration/base.html.twig' %}
+{% block title %}Verify Account{% endblock %}
+
+{% block body %}
+<div class="min-h-screen flex items-center justify-center px-4">
+  <div class="w-full max-w-md">
+
+    <h1 class="text-2xl font-bold text-center mb-3">Verify Your Account</h1>
+    <p class="text-center text-gray-600 mb-2">
+      A verification code has been sent to <b>{{ email }}</b>.
+    </p>
+
+    <!-- Code Expiration Countdown -->
+    <p id="countdown" class="text-center text-sm text-violet-600 mb-6">
+      Code expires in: <span id="timer">10:00</span>
+    </p>
+
+    <div class="bg-white rounded-2xl shadow-sm border p-7">
+
+      <form method="post" class="space-y-5">
+        <div>
+          <label class="block text-sm font-medium text-gray-900">Verification Code (6 digits)</label>
+          <input 
+            name="otp"
+            type="text"
+            maxlength="6"
+            required
+            pattern="\d*"
+            class="mt-2 block w-full rounded-lg border border-gray-300 px-3 py-2.5 text-center text-lg tracking-[0.3em]"
+          />
+        </div>
+
+        <button type="submit"
+                class="w-full rounded-lg bg-violet-600 px-4 py-2.5 text-white font-semibold hover:bg-violet-700">
+          Verify
+        </button>
+      </form>
+
+      <!-- Resend Button -->
+      <form method="post" class="mt-5 text-center">
+        <button 
+          id="resend-btn" 
+          type="submit" 
+          name="resend"
+          class="text-violet-600 hover:underline font-medium disabled:text-gray-400 disabled:no-underline"
+          disabled
+        >
+          Resend code (available in <span id="resend-timer">30</span>s)
+        </button>
+      </form>
+
+    </div>
+  </div>
+</div>
+
+<!-- JavaScript: Countdown & Resend Timer -->
+<script>
+// ===== OTP Expiration Countdown (10 minutes) =====
+let otpExpireSeconds = 600;
+const otpTimerText = document.getElementById("timer");
+
+setInterval(() => {
+    const minutes = String(Math.floor(otpExpireSeconds / 60)).padStart(2, '0');
+    const seconds = String(otpExpireSeconds % 60).padStart(2, '0');
+    otpTimerText.textContent = `${minutes}:${seconds}`;
+
+    if (otpExpireSeconds > 0) otpExpireSeconds--;
+}, 1000);
+
+// ===== Resend Button Cooldown (30 seconds) =====
+let resendCooldown = 30;
+const resendBtn = document.getElementById("resend-btn");
+const resendTimerText = document.getElementById("resend-timer");
+
+const cooldownInterval = setInterval(() => {
+    resendCooldown--;
+    resendTimerText.textContent = resendCooldown;
+
+    if (resendCooldown <= 0) {
+        resendBtn.disabled = false;
+        resendBtn.textContent = "Resend code";
+        clearInterval(cooldownInterval);
+    }
+}, 1000);
+</script>
+
+{% endblock %}

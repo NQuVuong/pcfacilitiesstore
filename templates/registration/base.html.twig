@@ -1,3 +1,4 @@
+{# templates/registration/base.html.twig #}
 <!doctype html>
 <html lang="en">
 <head>
@@ -7,6 +8,63 @@
   <script src="https://cdn.tailwindcss.com"></script>
 </head>
 <body class="bg-gray-50">
+  {# page content #}
   {% block body %}{% endblock %}
+
+  {# ===== Global flash toasts (center top) ===== #}
+  <div id="flash-root"
+       class="fixed inset-x-0 top-4 flex justify-center z-50 pointer-events-none">
+    <div class="w-full max-w-md px-4 space-y-2">
+      {% set flashTypes = {
+        'shop.success': 'bg-emerald-600 text-white',
+        'shop.error':   'bg-rose-600 text-white',
+        'shop.info':    'bg-sky-600 text-white'
+      } %}
+
+      {% for type, classes in flashTypes %}
+        {% for message in app.flashes(type) %}
+          <div class="flash-item pointer-events-auto rounded-xl shadow-lg px-4 py-3 text-sm
+                      {{ classes }} transition transform duration-300">
+            {{ message }}
+          </div>
+        {% endfor %}
+      {% endfor %}
+    </div>
+  </div>
+
+  {# ===== Lucide icons + password eye toggle (for all auth pages) ===== #}
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      // render icons
+      if (window.lucide) {
+        lucide.createIcons();
+      }
+
+      // auto-hide flash messages
+      document.querySelectorAll('.flash-item').forEach((el) => {
+        setTimeout(() => {
+          el.classList.add('opacity-0', 'translate-y-2');
+          el.addEventListener('transitionend', () => el.remove());
+        }, 3500); // 3.5s
+      });
+    });
+
+    // Toggle show/hide for all buttons with [data-eye]
+    document.addEventListener('click', (e) => {
+      const btn = e.target.closest('[data-eye]');
+      if (!btn) return;
+
+      const input  = btn.parentElement.querySelector('input[type="password"], input[type="text"]');
+      const openI  = btn.querySelector('[data-eye-open]');
+      const closeI = btn.querySelector('[data-eye-closed]');
+      if (!input || !openI || !closeI) return;
+
+      const willShow = input.type === 'password';
+      input.type = willShow ? 'text' : 'password';
+      openI.classList.toggle('hidden',  willShow);
+      closeI.classList.toggle('hidden', !willShow);
+    });
+  </script>
 </body>
 </html>

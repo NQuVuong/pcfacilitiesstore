@@ -1,0 +1,193 @@
+{% extends 'base.html.twig' %}
+{% block title %}Admin Dashboard{% endblock %}
+
+{% block body %}
+<div class="max-w-7xl mx-auto px-4 lg:px-8 py-6 space-y-6">
+
+  <div class="flex flex-col gap-2 sm:flex-row sm:items-baseline sm:justify-between">
+    <div>
+      <h1 class="text-2xl font-bold tracking-tight">Dashboard</h1>
+      <p class="text-sm text-base-content/60">
+        Tổng quan doanh thu và hiệu suất cửa hàng.
+      </p>
+    </div>
+  </div>
+
+  {# ===== CARDS TỔNG QUAN ===== #}
+  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+    <div class="card bg-base-100 border shadow-sm">
+      <div class="card-body py-4">
+        <p class="text-xs font-medium text-base-content/60 uppercase">Doanh thu hôm nay</p>
+        <p class="mt-2 text-2xl font-semibold text-primary">
+          {{ revenueToday|number_format(0, '.', ',') }} ₫
+        </p>
+      </div>
+    </div>
+
+    <div class="card bg-base-100 border shadow-sm">
+      <div class="card-body py-4">
+        <p class="text-xs font-medium text-base-content/60 uppercase">Doanh thu tuần này</p>
+        <p class="mt-2 text-2xl font-semibold text-primary">
+          {{ revenueWeek|number_format(0, '.', ',') }} ₫
+        </p>
+      </div>
+    </div>
+
+    <div class="card bg-base-100 border shadow-sm">
+      <div class="card-body py-4">
+        <p class="text-xs font-medium text-base-content/60 uppercase">Doanh thu tháng này</p>
+        <p class="mt-2 text-2xl font-semibold text-primary">
+          {{ revenueMonth|number_format(0, '.', ',') }} ₫
+        </p>
+      </div>
+    </div>
+
+    <div class="card bg-base-100 border shadow-sm">
+      <div class="card-body py-4">
+        <p class="text-xs font-medium text-base-content/60 uppercase">Đơn hàng / Khách hàng</p>
+        <p class="mt-2 text-xl font-semibold">
+          {{ totalOrders }} <span class="text-sm text-base-content/60">orders</span>
+        </p>
+        <p class="text-sm text-base-content/70">
+          {{ totalCustomers }} customers
+        </p>
+      </div>
+    </div>
+  </div>
+
+  {# ===== BIỂU ĐỒ DOANH THU & LỜI LỖ ===== #}
+  <div class="card bg-base-100 border shadow-sm">
+    <div class="card-body">
+      <div class="flex items-center justify-between mb-2">
+        <h2 class="card-title text-base md:text-lg">Doanh thu & Lợi nhuận (7 ngày gần nhất)</h2>
+      </div>
+      <div class="w-full overflow-x-auto">
+        <canvas id="revenueChart" class="w-full max-h-[320px]"></canvas>
+      </div>
+    </div>
+  </div>
+
+  {# ===== HAI BẢNG: TOP BÁN CHẠY & TOP XEM NHIỀU ===== #}
+  <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+    <div class="card bg-base-100 border shadow-sm">
+      <div class="card-body">
+        <h2 class="card-title text-base md:text-lg">Top sản phẩm bán nhiều</h2>
+        <div class="overflow-x-auto">
+          <table class="table table-sm">
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Sản phẩm</th>
+                <th class="text-right">SL</th>
+                <th class="text-right">Doanh thu</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for p in topSelling %}
+                <tr>
+                  <td>{{ loop.index }}</td>
+                  <td class="truncate max-w-[180px]">{{ p.name }}</td>
+                  <td class="text-right">{{ p.qty }}</td>
+                  <td class="text-right">
+                    {{ p.revenue|number_format(0, '.', ',') }} ₫
+                  </td>
+                </tr>
+              {% else %}
+                <tr>
+                  <td colspan="4" class="text-center text-sm text-base-content/60">
+                    Chưa có dữ liệu.
+                  </td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <div class="card bg-base-100 border shadow-sm">
+      <div class="card-body">
+        <h2 class="card-title text-base md:text-lg">Top sản phẩm xem nhiều</h2>
+        <div class="overflow-x-auto">
+          <table class="table table-sm">
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Sản phẩm</th>
+                <th class="text-right">Lượt xem</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% if topViewed is defined and topViewed is not empty %}
+                {% for p in topViewed %}
+                  <tr>
+                    <td>{{ loop.index }}</td>
+                    <td class="truncate max-w-[180px]">{{ p.name }}</td>
+                    <td class="text-right">{{ p.views }}</td>
+                  </tr>
+                {% endfor %}
+              {% else %}
+                <tr>
+                  <td colspan="3" class="text-center text-sm text-base-content/60">
+                    Chưa có dữ liệu hoặc chưa bật tracking lượt xem.
+                  </td>
+                </tr>
+              {% endif %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+{% endblock %}
+
+{% block javascripts_bottom %}
+  {{ parent() }}
+
+  {# Chart.js CDN #}
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const ctx = document.getElementById('revenueChart');
+      if (!ctx) return;
+
+      const labels  = {{ chartLabels|json_encode|raw }};
+      const revenue = {{ chartRevenue|json_encode|raw }};
+      const profit  = {{ chartProfit|json_encode|raw }};
+
+      new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: labels,
+          datasets: [
+            {
+              label: 'Revenue',
+              data: revenue,
+              borderWidth: 2,
+              tension: 0.3
+            },
+            {
+              label: 'Profit',
+              data: profit,
+              borderWidth: 2,
+              borderDash: [4, 4],
+              tension: 0.3
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { position: 'top' }
+          },
+          scales: {
+            y: { beginAtZero: true }
+          }
+        }
+      });
+    });
+  </script>
+{% endblock %}

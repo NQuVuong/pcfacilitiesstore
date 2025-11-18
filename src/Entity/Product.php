@@ -37,23 +37,29 @@ class Product
     private ?int $Quantity = null;
 
     #[ORM\OneToMany(mappedBy: 'product', targetEntity: Price::class, orphanRemoval: true)]
-    #[ORM\OrderBy(['createdAt' => 'DESC'])] 
+    #[ORM\OrderBy(['createdAt' => 'DESC'])]
     private Collection $prices;
+
     #[ORM\OneToMany(mappedBy: 'product', targetEntity: ProductImage::class, cascade: ['persist','remove'], orphanRemoval: true)]
     #[ORM\OrderBy(['position' => 'ASC', 'id' => 'ASC'])]
     private Collection $images;
-     #[ORM\Column(type: 'text', nullable: true)]
+
+    #[ORM\Column(type: 'text', nullable: true)]
     private ?string $description = null;
 
     #[ORM\Column(type: 'string', length: 180, unique: true)]
     private string $slug = '';
 
     #[ORM\ManyToOne(targetEntity: Supplier::class, inversedBy: 'products')]
-    #[ORM\JoinColumn(nullable: true)] // Đặt là 'true' để sản phẩm cũ không bị lỗi
+    #[ORM\JoinColumn(nullable: true)]
     private ?Supplier $supplier = null;
 
     #[ORM\Column(type: 'json', nullable: true)]
     private ?array $specs = [];
+
+    // NEW: views
+    #[ORM\Column(type: 'integer', options: ['default' => 0])]
+    private int $views = 0;
 
     public function __construct()
     {
@@ -61,79 +67,28 @@ class Product
         $this->images = new ArrayCollection();
     }
 
-    public function getId(): ?int
-    {
-        return $this->id;
-    }
+    public function getId(): ?int { return $this->id; }
 
-    public function getName(): ?string
-    {
-        return $this->name;
-    }
+    public function getName(): ?string { return $this->name; }
+    public function setName(string $name): static { $this->name = $name; return $this; }
 
-    public function setName(string $name): static
-    {
-        $this->name = $name;
-        return $this;
-    }
+    public function getCategory(): ?Category { return $this->category; }
+    public function setCategory(?Category $category): static { $this->category = $category; return $this; }
 
-    public function getCategory(): ?Category 
-    { 
-        return $this->category; 
-    }
-    public function setCategory(?Category $category): static 
-    { 
-        $this->category = $category; 
-        return $this; 
-    }
+    public function getBrand(): ?Brand { return $this->brand; }
+    public function setBrand(?Brand $brand): static { $this->brand = $brand; return $this; }
 
-    public function getBrand(): ?Brand 
-    { 
-        return $this->brand; 
-    }
-    public function setBrand(?Brand $brand): static 
-    { 
-        $this->brand = $brand; 
-        return $this; 
-    }
-    public function getCreated(): ?\DateTimeInterface
-    {
-        return $this->created;
-    }
+    public function getCreated(): ?\DateTimeInterface { return $this->created; }
+    public function setCreated(\DateTimeInterface $created): static { $this->created = $created; return $this; }
 
-    public function setCreated(\DateTimeInterface $created): static
-    {
-        $this->created = $created;
-        return $this;
-    }
+    public function getImage(): ?string { return $this->image; }
+    public function setImage(?string $image): static { $this->image = $image; return $this; }
 
-    public function getImage(): ?string
-    {
-        return $this->image;
-    }
-
-    public function setImage(?string $image): static
-    {
-        $this->image = $image;
-        return $this;
-    }
-
-    public function getQuantity(): ?int
-    {
-        return $this->Quantity;
-    }
-
-    public function setQuantity(int $Quantity): static
-    {
-        $this->Quantity = $Quantity;
-        return $this;
-    }
+    public function getQuantity(): ?int { return $this->Quantity; }
+    public function setQuantity(int $Quantity): static { $this->Quantity = $Quantity; return $this; }
 
     /** @return Collection<int, Price> */
-    public function getPrices(): Collection
-    {
-        return $this->prices;
-    }
+    public function getPrices(): Collection { return $this->prices; }
 
     public function addPrice(Price $price): self
     {
@@ -154,17 +109,15 @@ class Product
         return $this;
     }
 
-    /** Giá xuất hiện tại (bản ghi Price mới nhất) */
     public function getCurrentExportPrice(): ?float
     {
-        $latest = $this->prices->first(); // nhờ OrderBy DESC
+        $latest = $this->prices->first();
         return $latest ? $latest->getExportPrice() : null;
     }
 
-    /** Giá nhập gốc (bản ghi Price cũ nhất) */
     public function getOriginalImportPrice(): ?float
     {
-        $oldest = $this->prices->last(); // nhờ OrderBy DESC
+        $oldest = $this->prices->last();
         return $oldest ? $oldest->getImportPrice() : null;
     }
 
@@ -179,6 +132,7 @@ class Product
         }
         return $this;
     }
+
     public function removeImage(ProductImage $image): self
     {
         if ($this->images->removeElement($image)) {
@@ -188,30 +142,21 @@ class Product
         }
         return $this;
     }
+
     public function getDescription(): ?string { return $this->description; }
     public function setDescription(?string $d): self { $this->description = $d; return $this; }
 
     public function getSlug(): string { return $this->slug; }
     public function setSlug(string $slug): self { $this->slug = $slug; return $this; }
-    public function getSupplier(): ?Supplier
-    {
-        return $this->supplier;
-    }
 
-    public function setSupplier(?Supplier $supplier): static
-    {
-        $this->supplier = $supplier;
-        return $this;
-    }
-    public function getSpecs(): array
-    {
-        return $this->specs ?? [];
-    }
+    public function getSupplier(): ?Supplier { return $this->supplier; }
+    public function setSupplier(?Supplier $supplier): static { $this->supplier = $supplier; return $this; }
 
-    public function setSpecs(?array $specs): self
-    {
-        $this->specs = $specs;
-        return $this;
-    }
+    public function getSpecs(): array { return $this->specs ?? []; }
+    public function setSpecs(?array $specs): self { $this->specs = $specs; return $this; }
+
+    // NEW: views getter / setter
+    public function getViews(): int { return $this->views; }
+    public function setViews(int $views): self { $this->views = max(0, $views); return $this; }
+    public function increaseViews(): self { $this->views++; return $this; }
 }
-

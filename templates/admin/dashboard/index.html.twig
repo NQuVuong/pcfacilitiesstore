@@ -1,0 +1,373 @@
+{% extends 'admin.html.twig' %}
+
+{% block title %}Dashboard - PC Store{% endblock %}
+
+{% block body %}
+<div class="p-6 space-y-6">
+  <div class="flex items-center justify-between">
+    <h1 class="text-2xl font-bold">Dashboard</h1>
+  </div>
+
+  {# ===== TOP STATS ===== #}
+  <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+    <div class="card bg-base-100 shadow border">
+      <div class="card-body py-4">
+        <p class="text-xs uppercase tracking-wide text-base-content/60">Revenue today</p>
+        <p class="text-2xl font-bold mt-2">
+          {{ todayRevenue|number_format(0, '.', ',') }} ₫
+        </p>
+      </div>
+    </div>
+    <div class="card bg-base-100 shadow border">
+      <div class="card-body py-4">
+        <p class="text-xs uppercase tracking-wide text-base-content/60">Revenue last 7 days</p>
+        <p class="text-2xl font-bold mt-2">
+          {{ weekRevenue|number_format(0, '.', ',') }} ₫
+        </p>
+      </div>
+    </div>
+    <div class="card bg-base-100 shadow border">
+      <div class="card-body py-4">
+        <p class="text-xs uppercase tracking-wide text-base-content/60">Revenue this month</p>
+        <p class="text-2xl font-bold mt-2">
+          {{ monthRevenue|number_format(0, '.', ',') }} ₫
+        </p>
+      </div>
+    </div>
+    <div class="card bg-base-100 shadow border">
+      <div class="card-body py-4">
+        <p class="text-xs uppercase tracking-wide text-base-content/60">Orders today</p>
+        <p class="text-2xl font-bold mt-2">
+          {{ ordersToday }}
+        </p>
+      </div>
+    </div>
+  </div>
+
+  {# ===== SECONDARY STATS (ORDERS + VISITS) ===== #}
+  <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+    <div class="card bg-base-100 shadow border">
+      <div class="card-body py-4">
+        <p class="text-xs uppercase tracking-wide text-base-content/60">Total orders</p>
+        <p class="text-2xl font-bold mt-2">
+          {{ totalOrders }}
+        </p>
+      </div>
+    </div>
+    <div class="card bg-base-100 shadow border">
+      <div class="card-body py-4">
+        <p class="text-xs uppercase tracking-wide text-base-content/60">Total visits</p>
+        <p class="text-2xl font-bold mt-2">
+          {{ totalVisits }}
+        </p>
+      </div>
+    </div>
+    <div class="card bg-base-100 shadow border">
+      <div class="card-body py-4">
+        <p class="text-xs uppercase tracking-wide text-base-content/60">Visits today</p>
+        <p class="text-2xl font-bold mt-2">
+          {{ todayVisits }}
+        </p>
+      </div>
+    </div>
+  </div>
+
+  {# ===== CHARTS: REVENUE + VISITS ===== #}
+  <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+    <div class="card bg-base-100 shadow border">
+      <div class="card-body">
+        <div class="flex items-center justify-between mb-2">
+          <h2 class="text-sm font-semibold">Revenue last 7 days</h2>
+        </div>
+        <div class="h-64">
+          <canvas id="revenueChart" class="w-full h-full"></canvas>
+        </div>
+      </div>
+    </div>
+    <div class="card bg-base-100 shadow border">
+      <div class="card-body">
+        <div class="flex items-center justify-between mb-2">
+          <h2 class="text-sm font-semibold">Visits last 7 days</h2>
+        </div>
+        <div class="h-64">
+          <canvas id="visitChart" class="w-full h-full"></canvas>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  {# ===== ORDER STATUS + BRAND + LOW STOCK ===== #}
+  <div class="grid grid-cols-1 xl:grid-cols-3 gap-6">
+    <div class="card bg-base-100 shadow border">
+      <div class="card-body">
+        <h2 class="text-sm font-semibold mb-2">Order status</h2>
+        <div class="h-60">
+          <canvas id="statusChart" class="w-full h-full"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <div class="card bg-base-100 shadow border">
+      <div class="card-body">
+        <h2 class="text-sm font-semibold mb-2">Products by brand</h2>
+        <div class="h-60">
+          <canvas id="brandChart" class="w-full h-full"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <div class="card bg-base-100 shadow border">
+      <div class="card-body">
+        <h2 class="text-sm font-semibold mb-2">Low stock products (≤ 5)</h2>
+        <div class="overflow-x-auto">
+          <table class="table table-sm">
+            <thead>
+            <tr>
+              <th>#</th>
+              <th>Product</th>
+              <th class="text-right">Qty</th>
+            </tr>
+            </thead>
+            <tbody>
+            {% for p in lowStock %}
+              <tr>
+                <td>{{ loop.index }}</td>
+                <td>{{ p.name }}</td>
+                <td class="text-right">{{ p.quantity }}</td>
+              </tr>
+            {% else %}
+              <tr>
+                <td colspan="3" class="text-center text-xs text-base-content/60">No low stock.</td>
+              </tr>
+            {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  {# ===== BOTTOM: BEST SELLERS + MOST VISITED PAGES + BROWSERS ===== #}
+  <div class="grid grid-cols-1 xl:grid-cols-3 gap-6">
+    <div class="card bg-base-100 shadow border">
+      <div class="card-body">
+        <h2 class="text-sm font-semibold mb-2">Top 5 best-selling products</h2>
+        <div class="overflow-x-auto">
+          <table class="table table-sm">
+            <thead>
+            <tr>
+              <th>#</th>
+              <th>Product</th>
+              <th class="text-right">Qty</th>
+              <th class="text-right">Revenue</th>
+            </tr>
+            </thead>
+            <tbody>
+            {% for row in bestSellers %}
+              <tr>
+                <td>{{ loop.index }}</td>
+                <td>{{ row.productName }}</td>
+                <td class="text-right">{{ row.qty }}</td>
+                <td class="text-right">{{ row.revenue|number_format(0,'.',',') }} ₫</td>
+              </tr>
+            {% else %}
+              <tr>
+                <td colspan="4" class="text-center text-xs text-base-content/60">No data.</td>
+              </tr>
+            {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <div class="card bg-base-100 shadow border">
+      <div class="card-body">
+        <h2 class="text-sm font-semibold mb-2">Most visited pages</h2>
+        <div class="overflow-x-auto">
+          <table class="table table-sm">
+            <thead>
+            <tr>
+              <th>#</th>
+              <th>Path</th>
+              <th class="text-right">Visits</th>
+            </tr>
+            </thead>
+            <tbody>
+            {% for row in topPages %}
+              <tr>
+                <td>{{ loop.index }}</td>
+                <td class="max-w-[180px] truncate" title="{{ row.path }}">{{ row.path }}</td>
+                <td class="text-right">{{ row.visits }}</td>
+              </tr>
+            {% else %}
+              <tr>
+                <td colspan="3" class="text-center text-xs text-base-content/60">No data.</td>
+              </tr>
+            {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <div class="card bg-base-100 shadow border">
+      <div class="card-body">
+        <h2 class="text-sm font-semibold mb-2">Browsers</h2>
+        <div class="overflow-x-auto">
+          <table class="table table-sm">
+            <thead>
+            <tr>
+              <th>#</th>
+              <th>Browser</th>
+              <th class="text-right">Visits</th>
+            </tr>
+            </thead>
+            <tbody>
+            {% for row in topBrowsers %}
+              <tr>
+                <td>{{ loop.index }}</td>
+                <td>{{ row.browser }}</td>
+                <td class="text-right">{{ row.visits }}</td>
+              </tr>
+            {% else %}
+              <tr>
+                <td colspan="3" class="text-center text-xs text-base-content/60">No data.</td>
+              </tr>
+            {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script>
+  (function () {
+    const revenueLabels  = {{ chartDays|json_encode|raw }};
+    const revenueData    = {{ chartRevenue|json_encode|raw }};
+    const visitLabels    = {{ visitDays|json_encode|raw }};
+    const visitData      = {{ visitCounts|json_encode|raw }};
+    const statusLabels   = {{ statusLabels|json_encode|raw }};
+    const statusCounts   = {{ statusCounts|json_encode|raw }};
+    const brandLabels    = {{ brandLabels|json_encode|raw }};
+    const brandCount     = {{ brandCount|json_encode|raw }};
+
+    const commonOptions = {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: {
+          position: 'bottom',
+          labels: {
+            boxWidth: 12,
+            font: { size: 11 }
+          }
+        }
+      },
+      scales: {
+        x: {
+          ticks: { maxRotation: 0, font: { size: 11 } }
+        },
+        y: {
+          ticks: {
+            font: { size: 11 },
+            callback: function (value) { return value.toLocaleString('vi-VN'); }
+          }
+        }
+      }
+    };
+
+    const revCtx = document.getElementById('revenueChart');
+    if (revCtx) {
+      new Chart(revCtx, {
+        type: 'line',
+        data: {
+          labels: revenueLabels,
+          datasets: [{
+            label: 'Revenue (₫)',
+            data: revenueData,
+            borderWidth: 2,
+            tension: 0.3,
+            pointRadius: 3
+          }]
+        },
+        options: commonOptions
+      });
+    }
+
+    const visitCtx = document.getElementById('visitChart');
+    if (visitCtx) {
+      new Chart(visitCtx, {
+        type: 'line',
+        data: {
+          labels: visitLabels,
+          datasets: [{
+            label: 'Visits',
+            data: visitData,
+            borderWidth: 2,
+            tension: 0.3,
+            pointRadius: 3
+          }]
+        },
+        options: commonOptions
+      });
+    }
+
+    const statusCtx = document.getElementById('statusChart');
+    if (statusCtx) {
+      new Chart(statusCtx, {
+        type: 'doughnut',
+        data: {
+          labels: statusLabels,
+          datasets: [{
+            data: statusCounts
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: {
+              position: 'bottom',
+              labels: {
+                boxWidth: 12,
+                font: { size: 11 }
+              }
+            }
+          }
+        }
+      });
+    }
+
+    const brandCtx = document.getElementById('brandChart');
+    if (brandCtx) {
+      new Chart(brandCtx, {
+        type: 'bar',
+        data: {
+          labels: brandLabels,
+          datasets: [{
+            label: 'Products',
+            data: brandCount
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { display: false } },
+          scales: {
+            x: {
+              ticks: { maxRotation: 60, minRotation: 60, font: { size: 10 } }
+            },
+            y: {
+              ticks: { stepSize: 1, font: { size: 11 } }
+            }
+          }
+        }
+      });
+    }
+  })();
+</script>
+{% endblock %}

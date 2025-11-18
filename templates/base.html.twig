@@ -70,7 +70,7 @@
               <li><a href="{{ path('app_orders_index') }}">My Orders</a></li>
               <li><a href="{{ path('account_profile') }}">Profile</a></li>
               {% if is_granted('ROLE_STAFF') or is_granted('ROLE_ADMIN') %}
-                <li><a href="{{ path('app_admin') }}">Dashboard</a></li>
+                <li><a href="{{ path('app_admin_dashboard') }}">Dashboard</a></li>
               {% endif %}
               <li class="mt-2">
                 <form method="post" action="{{ path('app_logout') }}">
@@ -267,6 +267,29 @@
           })();
         </script>
       {% endif %}
+      {# Lucide icons #}
+      <script src="https://unpkg.com/lucide@latest"></script>
+      <script>
+        // render icons
+        document.addEventListener('DOMContentLoaded', () => {
+          if (window.lucide) lucide.createIcons();
+        });
+
+        // toggle show/hide password cho tất cả button [data-eye]
+        document.addEventListener('click', (e) => {
+          const btn = e.target.closest('[data-eye]');
+          if (!btn) return;
+          const input  = btn.parentElement.querySelector('input[type="password"], input[type="text"]');
+          const openI  = btn.querySelector('[data-eye-open]');
+          const closeI = btn.querySelector('[data-eye-closed]');
+          if (!input || !openI || !closeI) return;
+
+          const willShow = (input.type === 'password');
+          input.type = willShow ? 'text' : 'password';
+          openI.classList.toggle('hidden',  willShow);
+          closeI.classList.toggle('hidden', !willShow);
+        });
+      </script>
     {% endblock %}
   </body>
 </html>

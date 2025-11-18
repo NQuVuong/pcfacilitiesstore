@@ -4,7 +4,6 @@
 {% block body %}
 <div class="min-h-screen flex items-center justify-center px-4">
   <div class="w-full max-w-md">
-
     <div class="flex flex-col items-center mb-6">
       <div class="h-10 w-10 rounded-2xl bg-violet-600/10 flex items-center justify-center mb-3">
         <svg class="h-6 w-6 text-violet-600" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="10"/></svg>
@@ -14,7 +13,6 @@
 
     <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-7">
       {{ form_errors(registrationForm) }}
-
       {{ form_start(registrationForm, { attr: { class: 'space-y-5' } }) }}
 
         <div>
@@ -28,19 +26,20 @@
         </div>
 
         <div>
-          <label class="block text-sm font-medium text-gray-900">Gender</label>
-          {{ form_widget(registrationForm.gender, {
-            attr: { class: 'mt-2 select select-bordered w-full' }
-          }) }}
-        </div>
-
-        <div>
           <label class="block text-sm font-medium text-gray-900">Password</label>
-          {{ form_widget(registrationForm.plainPassword, {
-            attr: {
-              class: 'mt-2 block w-full rounded-lg border border-gray-200 px-3.5 py-2.5 text-gray-900 placeholder-gray-400 focus:ring-2 focus:ring-violet-500 focus:border-violet-500'
-            }
-          }) }}
+          <div class="relative">
+            {{ form_widget(registrationForm.plainPassword, {
+              attr: {
+                class: 'mt-2 block w-full rounded-lg border border-gray-200 px-3.5 py-2.5 pr-10 text-gray-900 placeholder-gray-400 focus:ring-2 focus:ring-violet-500 focus:border-violet-500'
+              }
+            }) }}
+            <button type="button"
+                    class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                    data-eye>
+              <i data-lucide="eye" class="w-5 h-5" data-eye-open></i>
+              <i data-lucide="eye-off" class="w-5 h-5 hidden" data-eye-closed></i>
+            </button>
+          </div>
           <div class="text-sm text-red-600 mt-1">{{ form_errors(registrationForm.plainPassword) }}</div>
         </div>
 
@@ -66,4 +65,5 @@
     </p>
   </div>
 </div>
+
 {% endblock %}

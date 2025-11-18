@@ -18,6 +18,7 @@ security:
       lazy: true
       provider: app_user_provider
       access_denied_handler: App\Security\AccessDeniedHandler
+      user_checker: App\Security\UserChecker
 
       form_login:
         login_path: app_login
@@ -44,6 +45,10 @@ security:
     - { path: '^/payment/momo/ipn$', roles: PUBLIC_ACCESS }
     - { path: '^/login$',            roles: PUBLIC_ACCESS }
     - { path: '^/register$',         roles: PUBLIC_ACCESS }
+    - { path: ^/verify-email, roles: PUBLIC_ACCESS }
+    - { path: ^/resend-verification, roles: PUBLIC_ACCESS }
+    - { path: ^/forgot-password, roles: PUBLIC_ACCESS }
+    - { path: ^/reset-password, roles: PUBLIC_ACCESS }
 
     # Trang chi tiết sản phẩm công khai: /product/{slug}
     # (loại trừ các route quản trị như add/new/edit/delete/editor-upload)

@@ -39,32 +39,32 @@ class AdminUserController extends AbstractController
 
         if ($form->isSubmitted()) {
             if (!$form->isValid()) {
-                // show lỗi ngay trên form
                 $this->addFlash('admin_error', 'Vui lòng kiểm tra lại các trường bị lỗi.');
             } else {
                 try {
-                    // Chuẩn hoá email (tránh trùng hoa/thường)
-                    $user->setEmail(mb_strtolower((string)$user->getEmail()));
+                    // Normalize email
+                    $user->setEmail(mb_strtolower((string) $user->getEmail()));
 
-                    // Mật khẩu
-                    $plain = (string)$form->get('plainPassword')->getData();
+                    // Password
+                    $plain = (string) $form->get('plainPassword')->getData();
                     $user->setPassword($hasher->hashPassword($user, $plain));
 
-                    // Role mặc định: staff
+                    // Default role: staff
                     $user->setRoles(['ROLE_STAFF']);
+
+                    // Staff accounts created by admin are trusted -> mark as verified
+                    $user->setIsVerified(true);
 
                     $em->persist($user);
                     $em->flush();
 
-                    $this->addFlash('admin_success', 'Đã tạo tài khoản Staff: '.$user->getEmail());
+                    $this->addFlash('admin_success', 'Đã tạo tài khoản Staff: ' . $user->getEmail());
 
-                    // quay về danh sách để thấy kết quả
                     return $this->redirectToRoute('admin_user_index');
                 } catch (UniqueConstraintViolationException $e) {
                     $this->addFlash('admin_error', 'Email đã tồn tại.');
                 } catch (\Throwable $e) {
-                    // tránh “nuốt” lỗi im lặng
-                    $this->addFlash('admin_error', 'Không thể tạo tài khoản: '.$e->getMessage());
+                    $this->addFlash('admin_error', 'Không thể tạo tài khoản: ' . $e->getMessage());
                 }
             }
         }

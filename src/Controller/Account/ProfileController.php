@@ -5,11 +5,13 @@ namespace App\Controller\Account;
 use App\Entity\User;
 use App\Form\Account\ProfileFormType;
 use App\Form\Account\ProfileAvatarType;
+use App\Form\Account\ChangePasswordType;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\File\Exception\FileException;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\String\Slugger\SluggerInterface;
 
@@ -22,52 +24,58 @@ class ProfileController extends AbstractController
         EntityManagerInterface $em,
         SluggerInterface $slugger,
     ): Response {
-        /** @var User $user */
+        /** @var User|null $user */
         $user = $this->getUser();
         if (!$user) {
             return $this->redirectToRoute('app_login');
         }
 
-        // --- Form thông tin cá nhân ---
+        // Profile form
         $profileForm = $this->createForm(ProfileFormType::class, $user);
         $profileForm->handleRequest($request);
 
         if ($profileForm->isSubmitted() && $profileForm->isValid()) {
             $em->flush();
-            $this->addFlash('shop.success', 'Cập nhật thông tin cá nhân thành công.');
+            $this->addFlash('shop.success', 'Profile updated successfully.');
             return $this->redirectToRoute('account_profile');
         }
 
-        // --- Form avatar (tách form riêng) ---
+        // Avatar form (separate form)
         $avatarForm = $this->createForm(ProfileAvatarType::class);
         $avatarForm->handleRequest($request);
 
         if ($avatarForm->isSubmitted() && $avatarForm->isValid()) {
             $file = $avatarForm->get('avatarFile')->getData();
+
             if ($file) {
-                $safeName = $slugger->slug(pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME))->lower();
-                $newName  = sprintf('%s-%s.%s',
+                $safeName = $slugger
+                    ->slug(pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME))
+                    ->lower();
+
+                $newName = sprintf(
+                    '%s-%s.%s',
                     $safeName,
                     uniqid(),
                     $file->guessExtension() ?: 'bin'
                 );
 
                 $uploadsDir = $this->getParameter('kernel.project_dir') . '/public/uploads/avatars';
+
                 try {
                     $file->move($uploadsDir, $newName);
                 } catch (FileException $e) {
-                    $this->addFlash('shop.error', 'Upload avatar thất bại: ' . $e->getMessage());
+                    $this->addFlash('shop.error', 'Failed to upload avatar: ' . $e->getMessage());
                     return $this->redirectToRoute('account_profile');
                 }
 
                 $user->setAvatar($newName);
                 $em->flush();
 
-                $this->addFlash('shop.success', 'Ảnh đại diện đã được cập nhật.');
+                $this->addFlash('shop.success', 'Avatar updated.');
                 return $this->redirectToRoute('account_profile');
             }
 
-            $this->addFlash('shop.info', 'Không có file nào được chọn.');
+            $this->addFlash('shop.info', 'No file selected.');
             return $this->redirectToRoute('account_profile');
         }
 
@@ -75,6 +83,39 @@ class ProfileController extends AbstractController
             'profile_form' => $profileForm->createView(),
             'avatar_form'  => $avatarForm->createView(),
             'user'         => $user,
+        ]);
+    }
+
+    #[Route('/change-password', name: 'change_password', methods: ['GET', 'POST'])]
+    public function changePassword(
+        Request $request,
+        UserPasswordHasherInterface $hasher,
+        EntityManagerInterface $em
+    ): Response {
+        $this->denyAccessUnlessGranted('IS_AUTHENTICATED_FULLY');
+
+        $form = $this->createForm(ChangePasswordType::class);
+        $form->handleRequest($request);
+
+        if ($form->isSubmitted() && $form->isValid()) {
+            /** @var User $user */
+            $user = $this->getUser();
+
+            $current = (string) $form->get('currentPassword')->getData();
+            if (!$hasher->isPasswordValid($user, $current)) {
+                $this->addFlash('shop.error', 'Current password is incorrect.');
+            } else {
+                $new = (string) $form->get('newPassword')->getData();
+                $user->setPassword($hasher->hashPassword($user, $new));
+                $em->flush();
+
+                $this->addFlash('shop.success', 'Password changed successfully.');
+                return $this->redirectToRoute('account_profile');
+            }
+        }
+
+        return $this->render('account/change_password.html.twig', [
+            'form' => $form->createView(),
         ]);
     }
 }

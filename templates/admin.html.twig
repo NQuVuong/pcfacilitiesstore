@@ -23,9 +23,26 @@
     </div>
     <ul class="menu p-3 w-full">
 
-      {# Staff menu (Staff & Admin đều có thể thấy phần Store) #}
+       {# ===== Overview (Dashboard + Revenue) – Staff & Admin đều thấy ===== #}
       {% if is_granted('ROLE_STAFF') or is_granted('ROLE_ADMIN') %}
-        <li class="menu-title">Store</li>
+        <li class="menu-title">Overview</li>
+        <li>
+          <a class="{{ _r == 'app_admin_dashboard' ? 'active' }}"
+            href="{{ path('app_admin_dashboard') }}">
+            Dashboard
+          </a>
+        </li>
+        <li>
+          <a class="{{ _r == 'app_admin_revenue' ? 'active' }}"
+            href="{{ path('app_admin_revenue') }}">
+            Revenue
+          </a>
+        </li>
+      {% endif %}
+
+      {# Staff menu (Store) #}
+      {% if is_granted('ROLE_STAFF') or is_granted('ROLE_ADMIN') %}
+        <li class="menu-title mt-2">Store</li>
         <li><a class="{{ _r starts with 'app_product_' ? 'active' }}" href="{{ path('app_product_index') }}">Products</a></li>
         <li><a class="{{ _r starts with 'brand_' ? 'active' }}" href="{{ path('brand_index') }}">Brands</a></li>
         <li><a class="{{ _r starts with 'price_' ? 'active' }}" href="{{ path('price_index') }}">Set Prices</a></li>
