@@ -1,3 +1,7 @@
 framework:
     mailer:
         dsn: '%env(MAILER_DSN)%'
+        envelope:
+            sender: 'nguyenquocvuong9696@gmail.com'
+        message_bus: false
+        

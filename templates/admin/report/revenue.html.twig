@@ -1,0 +1,205 @@
+{% extends 'admin.html.twig' %}
+
+{% block title %}Revenue dashboard{% endblock %}
+
+{% block body %}
+<div class="p-6 space-y-6">
+  <h1 class="text-2xl font-bold mb-4">Revenue overview</h1>
+
+  {# ==== Hàng 1: doanh thu theo ngày / tuần / tháng ==== #}
+  <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+    <div class="card bg-base-100 shadow border">
+      <div class="card-body">
+        <p class="text-sm text-base-content/60">Today revenue</p>
+        <p class="text-2xl font-semibold">
+          {{ todayRevenue|number_format(0, '.', ',') }} ₫
+        </p>
+        <p class="text-xs text-base-content/60">{{ todayOrders }} orders</p>
+      </div>
+    </div>
+
+    <div class="card bg-base-100 shadow border">
+      <div class="card-body">
+        <p class="text-sm text-base-content/60">This week</p>
+        <p class="text-2xl font-semibold">
+          {{ weekRevenue|number_format(0, '.', ',') }} ₫
+        </p>
+        <p class="text-xs text-base-content/60">{{ weekOrders }} orders</p>
+      </div>
+    </div>
+
+    <div class="card bg-base-100 shadow border">
+      <div class="card-body">
+        <p class="text-sm text-base-content/60">This month</p>
+        <p class="text-2xl font-semibold">
+          {{ monthRevenue|number_format(0, '.', ',') }} ₫
+        </p>
+        <p class="text-xs text-base-content/60">{{ monthOrders }} orders</p>
+      </div>
+    </div>
+  </div>
+
+  {# ==== Hàng 2: tổng revenue / cost / profit toàn hệ thống ==== #}
+  <div class="card bg-base-100 shadow border">
+    <div class="card-body flex flex-wrap gap-6 items-center">
+      <div>
+        <p class="text-sm text-base-content/60">Total revenue (all time)</p>
+        <p class="text-xl font-semibold">
+          {{ profitSummary.revenue|number_format(0,'.',',') }} ₫
+        </p>
+      </div>
+      <div>
+        <p class="text-sm text-base-content/60">Total cost</p>
+        <p class="text-xl font-semibold">
+          {{ profitSummary.cost|number_format(0,'.',',') }} ₫
+        </p>
+      </div>
+      <div>
+        <p class="text-sm text-base-content/60">Total profit</p>
+        {% set totalProfit = profitSummary.profit %}
+        <p class="text-xl font-semibold {{ totalProfit >= 0 ? 'text-green-600' : 'text-red-600' }}">
+          {{ totalProfit|number_format(0,'.',',') }} ₫
+        </p>
+      </div>
+    </div>
+  </div>
+
+  {# ==== Hàng 3: Cost / Profit riêng tháng này ==== #}
+  <div class="grid gap-4 md:grid-cols-2">
+    <div class="stats shadow">
+      <div class="stat">
+        <div class="stat-title">Cost this month</div>
+        <div class="stat-value text-error">
+          {{ monthCost|number_format(0, '.', ',') }} ₫
+        </div>
+      </div>
+    </div>
+
+    <div class="stats shadow">
+      <div class="stat">
+        <div class="stat-title">Profit this month</div>
+        <div class="stat-value text-success">
+          {{ monthProfit|number_format(0, '.', ',') }} ₫
+        </div>
+      </div>
+    </div>
+  </div>
+
+  {# ==== Hàng 4: Chart + top sản phẩm ==== #}
+  <div class="grid gap-8 lg:grid-cols-2">
+    <div class="bg-base-100 rounded-xl shadow p-4">
+      <h2 class="font-semibold mb-3">Revenue / Cost / Profit (last 6 months)</h2>
+      <canvas id="profitChart" class="w-full h-64"></canvas>
+    </div>
+
+    <div class="bg-base-100 rounded-xl shadow p-4">
+      <div class="flex items-center justify-between mb-3">
+        <h2 class="font-semibold text-sm">Top 5 best-selling products</h2>
+      </div>
+      <div class="overflow-x-auto">
+        <table class="table table-sm">
+          <thead>
+          <tr>
+            <th>#</th>
+            <th>Product</th>
+            <th class="text-right">Qty</th>
+            <th class="text-right">Revenue</th>
+          </tr>
+          </thead>
+          <tbody>
+          {% for row in topProducts %}
+            <tr>
+              <td>{{ loop.index }}</td>
+              <td>{{ row.productName }}</td>
+              <td class="text-right">{{ row.qty }}</td>
+              <td class="text-right">
+                {{ row.revenue|number_format(0,'.',',') }} ₫
+              </td>
+            </tr>
+          {% else %}
+            <tr>
+              <td colspan="4" class="text-center text-sm text-base-content/60">
+                No data
+              </td>
+            </tr>
+          {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  {# ==== Hàng 5: 5 sản phẩm mới nhất ==== #}
+  <div class="bg-base-100 rounded-xl shadow p-4">
+    <h2 class="font-semibold text-sm mb-2">Newest products</h2>
+    <div class="overflow-x-auto">
+      <table class="table table-sm">
+        <thead>
+        <tr>
+          <th>#</th>
+          <th>Product</th>
+          <th>Brand</th>
+          <th>Category</th>
+          <th>Created</th>
+        </tr>
+        </thead>
+        <tbody>
+        {% for p in topNewest %}
+          <tr>
+            <td>{{ loop.index }}</td>
+            <td>{{ p.name }}</td>
+            <td>{{ p.brand ? p.brand.name : '-' }}</td>
+            <td>{{ p.category ? p.category.name : '-' }}</td>
+            <td>{{ p.created ? p.created|date('Y-m-d') : '-' }}</td>
+          </tr>
+        {% else %}
+          <tr>
+            <td colspan="5" class="text-center text-sm text-base-content/60">No data</td>
+          </tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+</div>
+
+{# ==== Chart.js ==== #}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script>
+(function () {
+    const labels   = {{ profitLabels|json_encode|raw }};
+    const revenues = {{ profitRevenues|json_encode|raw }};
+    const costs    = {{ profitCosts|json_encode|raw }};
+    const profits  = {{ profitProfits|json_encode|raw }};
+
+    const ctx2 = document.getElementById('profitChart');
+    if (!ctx2) return;
+
+    new Chart(ctx2, {
+        type: 'bar',
+        data: {
+            labels: labels,
+            datasets: [
+                { label: 'Revenue (₫)', data: revenues },
+                { label: 'Cost (₫)',    data: costs },
+                { label: 'Profit (₫)',  data: profits }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                y: {
+                    ticks: {
+                        callback: function (value) {
+                            return value.toLocaleString('vi-VN');
+                        }
+                    }
+                }
+            }
+        }
+    });
+})();
+</script>
+{% endblock %}

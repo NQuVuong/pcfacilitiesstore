@@ -5,6 +5,7 @@ namespace App\Controller;
 use App\Entity\Price;
 use App\Entity\Product;
 use App\Entity\ProductImage;
+use App\Entity\PageView;
 use App\Form\ProductType;
 use App\Repository\ProductRepository;
 use Doctrine\ORM\EntityManagerInterface;
@@ -47,18 +48,15 @@ class ProductController extends AbstractController
         $form->handleRequest($req);
 
         if ($form->isSubmitted() && $form->isValid()) {
-            // created
             if ($p->getCreated() === null) {
                 $p->setCreated(new \DateTime());
             }
 
-            // SLUG (tạo duy nhất từ name)
             if (!$p->getSlug()) {
                 $base = $slugger->slug((string) $p->getName())->lower();
                 $p->setSlug($this->uniqueSlug((string)$base));
             }
 
-            // MAIN IMAGE
             /** @var UploadedFile|null $imgFile */
             $imgFile = $form->get('file')->getData();
             if ($imgFile instanceof UploadedFile) {
@@ -67,7 +65,6 @@ class ProductController extends AbstractController
                 $p->setImage($form->get('image')->getData());
             }
 
-            // GALLERY IMAGES (multiple)
             /** @var UploadedFile[] $galleryFiles */
             $galleryFiles = $form->get('galleryFiles')->getData() ?? [];
             foreach ($galleryFiles as $gf) {
@@ -77,7 +74,6 @@ class ProductController extends AbstractController
                 $this->em->persist($gi);
             }
 
-            // DESCRIPTION IMAGES (optional) -> chèn <img> vào description
             $descImgs = $form->has('descImages') ? ($form->get('descImages')->getData() ?? []) : [];
             if ($descImgs) {
                 $html = $p->getDescription() ?? '';
@@ -89,9 +85,6 @@ class ProductController extends AbstractController
                 $p->setDescription($html);
             }
 
-            $this->repo->add($p, true);
-
-            // IMPORT PRICE (create a Price row if provided)
             if ($form->has('importPrice')) {
                 $ip = $form->get('importPrice')->getData();
                 if ($ip !== null && $ip !== '') {
@@ -103,6 +96,8 @@ class ProductController extends AbstractController
                     $this->em->flush();
                 }
             }
+
+            $this->repo->add($p, true);
 
             $this->addFlash('admin.success', 'Product created.');
             return $this->redirectToRoute('app_product_index', [], Response::HTTP_SEE_OTHER);
@@ -127,25 +122,21 @@ class ProductController extends AbstractController
                 $p->setCreated(new \DateTime());
             }
 
-            // SLUG (đổi nếu tên đổi)
             if (!$p->getSlug() || $p->getName() !== $oldName) {
                 $base = $slugger->slug((string) $p->getName())->lower();
                 $p->setSlug($this->uniqueSlug((string)$base, $p->getId()));
             }
 
-            // MAIN IMAGE (optional replace)
             /** @var UploadedFile|null $imgFile */
             $imgFile = $form->get('file')->getData();
             if ($imgFile instanceof UploadedFile) {
                 $p->setImage($this->uploadImage($imgFile, $slugger));
             } else {
-                // Giữ nguyên, nhưng nếu field image có text thì cập nhật
                 if ($form->get('image')->getData()) {
                     $p->setImage($form->get('image')->getData());
                 }
             }
 
-            // GALLERY IMAGES (append)
             /** @var UploadedFile[] $galleryFiles */
             $galleryFiles = $form->get('galleryFiles')->getData() ?? [];
             foreach ($galleryFiles as $gf) {
@@ -155,7 +146,6 @@ class ProductController extends AbstractController
                 $this->em->persist($gi);
             }
 
-            // DESCRIPTION IMAGES (append)
             $descImgs = $form->has('descImages') ? ($form->get('descImages')->getData() ?? []) : [];
             if ($descImgs) {
                 $html = $p->getDescription() ?? '';
@@ -167,7 +157,6 @@ class ProductController extends AbstractController
                 $p->setDescription($html);
             }
 
-            // IMPORT PRICE on edit (append a new Price record if provided)
             if ($form->has('importPrice')) {
                 $ip = $form->get('importPrice')->getData();
                 if ($ip !== null && $ip !== '') {
@@ -211,45 +200,83 @@ class ProductController extends AbstractController
         return $this->createAction($request, $slugger);
     }
 
-    /** Trang chi tiết — PUBLIC — dùng slug.
-     *  Requirements tránh đụng /add, /edit, /delete, /new
-     */
-    #[Route('/{slug}', name:'product_detail',
-    requirements:['slug'=>'(?!add$|edit$|delete$|new$|editor-upload$).*'], methods:['GET'])]
-    public function show(#[MapEntity(mapping: ['slug' => 'slug'])] Product $p): Response
+    /** Trang chi tiết — PUBLIC — dùng slug. */
+    #[Route(
+        '/{slug}',
+        name: 'product_detail',
+        requirements: ['slug' => '(?!add$|edit$|delete$|new$|editor-upload$).*'],
+        methods: ['GET']
+    )]
+    public function show(Request $request, #[MapEntity(mapping: ['slug' => 'slug'])] Product $p): Response
     {
+        // Track page view
+        $visit = new PageView();
+        $visit->setPath($request->getPathInfo());
+        $visit->setProduct($p);
+        $visit->setBrowser($this->detectBrowser($request->headers->get('User-Agent', '')));
+
+        $this->em->persist($visit);
+        $this->em->flush();
+
         return $this->render('detail.html.twig', ['p' => $p]);
     }
-        // ================= helpers =================
 
-        private function uploadImage(UploadedFile $imgFile, SluggerInterface $slugger): ?string
-        {
-            $originalFilename = pathinfo($imgFile->getClientOriginalName(), PATHINFO_FILENAME);
-            $safeFilename     = $slugger->slug($originalFilename)->lower();
-            $newFilename      = $safeFilename.'-'.uniqid().'.'.$imgFile->guessExtension();
+    // ================= helpers =================
 
-            try {
-                $imgFile->move($this->getParameter('image_dir'), $newFilename);
-            } catch (FileException $e) {
-                throw $e;
+    private function uploadImage(UploadedFile $imgFile, SluggerInterface $slugger): ?string
+    {
+        $originalFilename = pathinfo($imgFile->getClientOriginalName(), PATHINFO_FILENAME);
+        $safeFilename     = $slugger->slug($originalFilename)->lower();
+        $newFilename      = $safeFilename.'-'.uniqid().'.'.$imgFile->guessExtension();
+
+        try {
+            $imgFile->move($this->getParameter('image_dir'), $newFilename);
+        } catch (FileException $e) {
+            throw $e;
+        }
+        return $newFilename;
+    }
+
+    /** Tạo slug duy nhất, tránh trùng với sản phẩm khác */
+    private function uniqueSlug(string $base, ?int $ignoreId = null): string
+    {
+        $slug = $base;
+        $i = 1;
+        while (true) {
+            $found = $this->repo->findOneBy(['slug' => $slug]);
+            if (!$found || ($ignoreId !== null && $found->getId() === $ignoreId)) {
+                return $slug;
             }
-            return $newFilename;
+            $slug = $base.'-'.$i++;
+        }
+    }
+
+    private function detectBrowser(?string $ua): string
+    {
+        $ua = strtolower($ua ?? '');
+
+        if (str_contains($ua, 'edg')) {
+            return 'Edge';
+        }
+        if (str_contains($ua, 'chrome')) {
+            return 'Chrome';
+        }
+        if (str_contains($ua, 'firefox')) {
+            return 'Firefox';
+        }
+        if (str_contains($ua, 'safari')) {
+            return 'Safari';
+        }
+        if (str_contains($ua, 'opera') || str_contains($ua, 'opr/')) {
+            return 'Opera';
+        }
+        if (str_contains($ua, 'msie') || str_contains($ua, 'trident')) {
+            return 'IE';
         }
 
-        /** Tạo slug duy nhất, tránh trùng với sản phẩm khác */
-        private function uniqueSlug(string $base, ?int $ignoreId = null): string
-        {
-            $slug = $base;
-            $i = 1;
-            while (true) {
-                $found = $this->repo->findOneBy(['slug' => $slug]);
-                if (!$found || ($ignoreId !== null && $found->getId() === $ignoreId)) {
-                    return $slug;
-                }
-                $slug = $base.'-'.$i++;
-            }
-        }
-        
+        return 'Other';
+    }
+
     #[Route('/editor-upload', name: 'editor_image_upload', methods: ['POST'])]
     #[IsGranted('ROLE_STAFF')]
     public function editorUpload(Request $request, SluggerInterface $slugger): JsonResponse
