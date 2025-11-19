@@ -31,10 +31,24 @@ class ProductController extends AbstractController
     /** Admin product list */
     #[Route('/', name: 'app_product_index')]
     #[IsGranted('ROLE_STAFF')]
-    public function index(): Response
+    public function index(Request $request): Response
     {
+        $page    = max(1, (int) $request->query->get('page', 1));
+        $perPage = 12;
+
+        $allProducts = $this->repo->findBy([], ['id' => 'DESC']);
+        $total       = \count($allProducts);
+        $pageCount   = (int) ceil($total / $perPage);
+        $page        = min($page, max(1, $pageCount));
+
+        $offset   = ($page - 1) * $perPage;
+        $products = \array_slice($allProducts, $offset, $perPage);
+
         return $this->render('product/index.html.twig', [
-            'products' => $this->repo->findAll(),
+            'products'  => $products,
+            'page'      => $page,
+            'pageCount' => $pageCount,
+            'total'     => $total,
         ]);
     }
 
@@ -52,13 +66,11 @@ class ProductController extends AbstractController
                 $p->setCreated(new \DateTime());
             }
 
-            // SLUG
             if (!$p->getSlug()) {
                 $base = $slugger->slug((string) $p->getName())->lower();
                 $p->setSlug($this->uniqueSlug((string)$base));
             }
 
-            // MAIN IMAGE
             /** @var UploadedFile|null $imgFile */
             $imgFile = $form->get('file')->getData();
             if ($imgFile instanceof UploadedFile) {
@@ -67,7 +79,6 @@ class ProductController extends AbstractController
                 $p->setImage($form->get('image')->getData());
             }
 
-            // GALLERY
             /** @var UploadedFile[] $galleryFiles */
             $galleryFiles = $form->get('galleryFiles')->getData() ?? [];
             foreach ($galleryFiles as $gf) {
@@ -77,7 +88,6 @@ class ProductController extends AbstractController
                 $this->em->persist($gi);
             }
 
-            // DESC IMAGES
             $descImgs = $form->has('descImages') ? ($form->get('descImages')->getData() ?? []) : [];
             if ($descImgs) {
                 $html = $p->getDescription() ?? '';
@@ -91,7 +101,6 @@ class ProductController extends AbstractController
 
             $this->repo->add($p, true);
 
-            // IMPORT PRICE row (optional)
             if ($form->has('importPrice')) {
                 $ip = $form->get('importPrice')->getData();
                 if ($ip !== null && $ip !== '') {
@@ -127,13 +136,11 @@ class ProductController extends AbstractController
                 $p->setCreated(new \DateTime());
             }
 
-            // SLUG (update if name changes)
             if (!$p->getSlug() || $p->getName() !== $oldName) {
                 $base = $slugger->slug((string) $p->getName())->lower();
                 $p->setSlug($this->uniqueSlug((string)$base, $p->getId()));
             }
 
-            // MAIN IMAGE
             /** @var UploadedFile|null $imgFile */
             $imgFile = $form->get('file')->getData();
             if ($imgFile instanceof UploadedFile) {
@@ -144,7 +151,6 @@ class ProductController extends AbstractController
                 }
             }
 
-            // GALLERY APPEND
             /** @var UploadedFile[] $galleryFiles */
             $galleryFiles = $form->get('galleryFiles')->getData() ?? [];
             foreach ($galleryFiles as $gf) {
@@ -154,7 +160,6 @@ class ProductController extends AbstractController
                 $this->em->persist($gi);
             }
 
-            // DESC IMAGES
             $descImgs = $form->has('descImages') ? ($form->get('descImages')->getData() ?? []) : [];
             if ($descImgs) {
                 $html = $p->getDescription() ?? '';
@@ -166,7 +171,6 @@ class ProductController extends AbstractController
                 $p->setDescription($html);
             }
 
-            // IMPORT PRICE on edit
             if ($form->has('importPrice')) {
                 $ip = $form->get('importPrice')->getData();
                 if ($ip !== null && $ip !== '') {
@@ -202,7 +206,6 @@ class ProductController extends AbstractController
         return $this->redirectToRoute('app_product_index', [], Response::HTTP_SEE_OTHER);
     }
 
-    /** Alias */
     #[Route('/new', name: 'product_new')]
     #[IsGranted('ROLE_STAFF')]
     public function new(Request $request, SluggerInterface $slugger): Response
@@ -218,7 +221,6 @@ class ProductController extends AbstractController
         #[MapEntity(mapping: ['slug' => 'slug'])] Product $p,
         ProductReviewRepository $reviewRepo
     ): Response {
-        // === Recently viewed tracking (giữ ngắn gọn) ===
         $session = $request->getSession();
         $ids = $session->get('recent_products', []);
         $currentId = $p->getId();
@@ -228,7 +230,6 @@ class ProductController extends AbstractController
         $ids = array_slice(array_unique($ids), 0, 10);
         $session->set('recent_products', $ids);
 
-        // === Related products (same category, exclude current) ===
         $relatedProducts = [];
         if ($p->getCategory()) {
             $all = $this->repo->findTopByCategory($p->getCategory(), 12);
@@ -239,7 +240,6 @@ class ProductController extends AbstractController
             }
         }
 
-        // === Reviews & average rating ===
         $reviews = $reviewRepo->findBy(['product' => $p], ['createdAt' => 'DESC']);
         $averageRating = null;
         if ($reviews) {
@@ -274,7 +274,6 @@ class ProductController extends AbstractController
         return $newFilename;
     }
 
-    /** Unique slug */
     private function uniqueSlug(string $base, ?int $ignoreId = null): string
     {
         $slug = $base;

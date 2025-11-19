@@ -66,21 +66,34 @@
   {% endfor %}
 {% endif %}
 
-{# ===== Recently viewed (BOTTOM) ===== #}
-{% if recentProducts is defined and recentProducts|length > 0 %}
-  <section class="bg-base-100 border-t border-base-200">
-    <div class="max-w-7xl mx-auto px-4 lg:px-8 py-6 lg:py-8">
-      <div class="flex items-center justify-between mb-3">
-        <h2 class="text-base md:text-lg font-semibold">Recently viewed</h2>
-      </div>
+{# ==== Recently viewed ==== #}
+{% if recentProducts is defined %}
+<section class="bg-base-100 mt-8">
+  <div class="max-w-7xl mx-auto px-4 lg:px-8 py-6">
+    <div class="flex items-center justify-between mb-4">
+      <h2 class="text-lg font-semibold">Recently viewed</h2>
 
-      <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
+      {# View more -> sang Profile (ở đó sau này show full danh sách đã xem) #}
+      <a href="{{ path('account_profile') }}"
+         class="text-sm font-medium text-primary hover:underline">
+        View more
+      </a>
+    </div>
+
+    {% if recentProducts is empty %}
+      <p class="text-sm text-base-content/60 italic">
+        You haven’t viewed any products yet.
+      </p>
+    {% else %}
+      {# GRID, TỰ XUỐNG HÀNG -> KHÔNG BỊ TRÀN #}
+      <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
         {% for p in recentProducts %}
-          {% include '_components/product-card.html.twig' with { p: p, specs_count: 2 } %}
+          {% include '_components/product-card.html.twig' with { p: p, specs_count: 3 } %}
         {% endfor %}
       </div>
-    </div>
-  </section>
+    {% endif %}
+  </div>
+</section>
 {% endif %}
 
 {% endblock %}
