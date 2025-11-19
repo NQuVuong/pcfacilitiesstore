@@ -16,7 +16,9 @@
     <div class="card-body">
       <h1 class="card-title">Order #{{ order.id }}</h1>
       <p><strong>User:</strong> {{ order.user.email }}</p>
-      <p><strong>Status:</strong> <span class="badge">{{ order.status|replace({'_': ' '})|capitalize }}</span></p>
+      <p><strong>Status:</strong>
+        <span class="badge">{{ order.status|replace({'_': ' '})|capitalize }}</span>
+      </p>
       <p><strong>Total:</strong> {{ order.total|number_format(0,'.',',') }} ₫</p>
       <p><strong>Payment Method:</strong> {{ order.paymentMethod|default('N/A') }}</p>
       <p><strong>MoMo Order ID:</strong> {{ order.momoOrderId|default('N/A') }}</p>
@@ -29,11 +31,13 @@
   {% if order.paymentMethod == 'MOMO' and order.status == 'REFUND_REQUESTED' %}
     <div class="card bg-base-100 shadow border-error border">
       <div class="card-body">
-        <h2 class="card-title text-error">Xác nhận Hoàn tiền (Refund)</h2>
-        <p>Hoàn lại <strong>{{ order.refundableRemaining|default(0)|number_format(0,'.',',') }} ₫</strong>.</p>
-        <form method="POST" action="{{ path('app_admin_order_refund', {id: order.id}) }}" onsubmit="return confirm('Hoàn tiền cho đơn #{{ order.id }}?');">
+        <h2 class="card-title text-error">Confirm Refund</h2>
+        <p>Refund <strong>{{ order.refundableRemaining|default(0)|number_format(0,'.',',') }} ₫</strong>.</p>
+        <form method="POST"
+              action="{{ path('app_admin_order_refund', {id: order.id}) }}"
+              onsubmit="return confirm('Refund order #{{ order.id }}?');">
           <input type="hidden" name="_token" value="{{ csrf_token('refund-order-' ~ order.id) }}">
-          <button type="submit" class="btn btn-error">Duyệt & Gửi MoMo</button>
+          <button type="submit" class="btn btn-error">Confirm & Send to MoMo</button>
         </form>
       </div>
     </div>
@@ -51,12 +55,12 @@
           </thead>
           <tbody>
             {% for item in order.items %}
-            <tr>
-              <td>{{ item.productName }}</td>
-              <td>{{ item.quantity }}</td>
-              <td>{{ item.unitPrice|number_format(0,'.',',') }} ₫</td>
-              <td>{{ item.lineTotal|number_format(0,'.',',') }} ₫</td>
-            </tr>
+              <tr>
+                <td>{{ item.productName }}</td>
+                <td>{{ item.quantity }}</td>
+                <td>{{ item.unitPrice|number_format(0,'.',',') }} ₫</td>
+                <td>{{ item.lineTotal|number_format(0,'.',',') }} ₫</td>
+              </tr>
             {% endfor %}
           </tbody>
         </table>

@@ -43,7 +43,7 @@ class OrderController extends AbstractController
         }
 
         if (!in_array($order->getStatus(), ['NEW', 'PENDING'], true)) {
-            $this->addFlash('shop.error', 'Đơn không thể thanh toán.');
+            $this->addFlash('shop.error', 'This order cannot be paid.');
             return $this->redirectToRoute('app_orders_index');
         }
 
@@ -71,16 +71,16 @@ class OrderController extends AbstractController
         }
 
         if (!$this->isCsrfTokenValid('cancel_order_'.$order->getId(), $request->request->get('_token'))) {
-            $this->addFlash('shop.error', 'Token không hợp lệ.');
+            $this->addFlash('shop.error', 'Invalid token.');
             return $this->redirectToRoute('app_orders_index');
         }
 
-        if ($order->getStatus() === 'PAID') {
-            $this->addFlash('shop.error', 'Đơn đã thanh toán, không thể huỷ.');
+        if ($order->getStatus() === 'PAID' || $order->getStatus() === 'COMPLETED') {
+            $this->addFlash('shop.error', 'Paid order cannot be cancelled.');
         } elseif ($order->getStatus() !== 'CANCELED') {
             $order->setStatus('CANCELED')->setPaidAt(null);
             $em->flush();
-            $this->addFlash('shop.success', 'Đã huỷ đơn #'.$order->getId());
+            $this->addFlash('shop.success', 'Order #'.$order->getId().' was cancelled.');
         }
 
         return $this->redirectToRoute('app_orders_index');
@@ -95,19 +95,62 @@ class OrderController extends AbstractController
         }
 
         if (!$this->isCsrfTokenValid('request_refund_'.$order->getId(), $request->request->get('_token'))) {
-            $this->addFlash('shop.error', 'Token không hợp lệ.');
+            $this->addFlash('shop.error', 'Invalid token.');
             return $this->redirectToRoute('app_orders_show', ['id' => $order->getId()]);
         }
 
-        if ($order->getStatus() !== 'PAID') {
-            $this->addFlash('shop.error', 'Không thể yêu cầu hoàn tiền cho đơn hàng này.');
+        if ($order->getStatus() !== 'PAID' && $order->getStatus() !== 'COMPLETED') {
+            $this->addFlash('shop.error', 'Cannot request refund for this order.');
             return $this->redirectToRoute('app_orders_show', ['id' => $order->getId()]);
         }
 
         $order->setStatus('REFUND_REQUESTED');
         $em->flush();
 
-        $this->addFlash('shop.success', 'Đã gửi yêu cầu hoàn tiền cho đơn hàng #'.$order->getId().'. Shop sẽ sớm liên hệ và xác nhận với bạn.');
+        $this->addFlash('shop.success',
+            'Refund request for order #'.$order->getId().' has been sent. We will contact you soon.');
+        return $this->redirectToRoute('app_orders_show', ['id' => $order->getId()]);
+    }
+
+    /**
+     * Customer confirms COD order has been delivered & paid.
+     */
+    #[Route('/{id}/confirm-delivered', name: 'app_orders_confirm_delivered', methods: ['POST'])]
+    public function confirmDelivered(Order $order, Request $req, EntityManagerInterface $em): Response
+    {
+        $this->denyAccessUnlessGranted('ROLE_USER');
+
+        if ($order->getUser() !== $this->getUser()) {
+            throw $this->createAccessDeniedException();
+        }
+
+        if (!$this->isCsrfTokenValid('confirm_delivered_'.$order->getId(), $req->request->get('_token'))) {
+            $this->addFlash('shop.error', 'Invalid token.');
+            return $this->redirectToRoute('app_orders_show', ['id' => $order->getId()]);
+        }
+
+        if ($order->getPaymentMethod() !== 'COD') {
+            $this->addFlash('shop.error', 'Only COD orders can be confirmed by the user.');
+            return $this->redirectToRoute('app_orders_show', ['id' => $order->getId()]);
+        }
+
+        // User can confirm once order is SHIPPING or DELIVERED
+        if (!in_array($order->getStatus(), ['SHIPPING', 'DELIVERED'], true)) {
+            $this->addFlash('shop.error', 'This order cannot be confirmed as delivered yet.');
+            return $this->redirectToRoute('app_orders_show', ['id' => $order->getId()]);
+        }
+
+        // Mark delivered
+        $order->setStatus('DELIVERED');
+
+        // Auto mark as paid
+        if ($order->getPaidAt() === null) {
+            $order->setPaidAt(new \DateTimeImmutable());
+        }
+
+        $em->flush();
+
+        $this->addFlash('shop.success', 'Thank you! Your order has been marked as delivered.');
         return $this->redirectToRoute('app_orders_show', ['id' => $order->getId()]);
     }
 }

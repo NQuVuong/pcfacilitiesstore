@@ -1,5 +1,8 @@
 security:
-  role_hierarchy: {}
+  role_hierarchy:
+    ROLE_ADMIN: [ROLE_STAFF]   # Admin tự động có quyền Staff
+    ROLE_STAFF: [ROLE_USER]
+
   password_hashers:
     Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface: 'auto'
 
@@ -7,7 +10,7 @@ security:
     app_user_provider:
       entity:
         class: App\Entity\User
-        property: email   # đăng nhập bằng email
+        property: email
 
   firewalls:
     dev:
@@ -25,19 +28,19 @@ security:
         check_path: app_login
         enable_csrf: true
         csrf_parameter: _csrf_token
-        csrf_token_id: authenticate     # {{ csrf_token('authenticate') }}
-        username_parameter: _username   # name="_username" trong form
-        password_parameter: _password   # name="_password" trong form
+        csrf_token_id: authenticate
+        username_parameter: _username
+        password_parameter: _password
         default_target_path: app_homepage
 
       remember_me:
         secret: '%kernel.secret%'
-        lifetime: 604800                # 7 ngày
+        lifetime: 604800
         path: /
         remember_me_parameter: _remember_me
 
       logout:
-        path: app_logout                # dùng route trong LoginController
+        path: app_logout
         target: app_homepage
 
   access_control:
@@ -45,23 +48,20 @@ security:
     - { path: '^/payment/momo/ipn$', roles: PUBLIC_ACCESS }
     - { path: '^/login$',            roles: PUBLIC_ACCESS }
     - { path: '^/register$',         roles: PUBLIC_ACCESS }
-    - { path: ^/verify-email, roles: PUBLIC_ACCESS }
+    - { path: ^/verify-email,        roles: PUBLIC_ACCESS }
     - { path: ^/resend-verification, roles: PUBLIC_ACCESS }
-    - { path: ^/forgot-password, roles: PUBLIC_ACCESS }
-    - { path: ^/reset-password, roles: PUBLIC_ACCESS }
+    - { path: ^/forgot-password,     roles: PUBLIC_ACCESS }
+    - { path: ^/reset-password,      roles: PUBLIC_ACCESS }
 
-    # Trang chi tiết sản phẩm công khai: /product/{slug}
-    # (loại trừ các route quản trị như add/new/edit/delete/editor-upload)
+    # Product detail: public GET
     - { path: '^/product/(?!add$|new$|edit$|delete$|editor-upload$)[^/]+$', methods: ['GET'], roles: PUBLIC_ACCESS }
 
-    # ===== STAFF-ONLY (Admin KHÔNG vào trang staff) =====
-    - { path: '^/admin/brands',            allow_if: "is_granted('ROLE_STAFF') and not is_granted('ROLE_ADMIN')" }
-    - { path: '^/admin/price',             allow_if: "is_granted('ROLE_STAFF') and not is_granted('ROLE_ADMIN')" }
-    - { path: '^/supplier',                allow_if: "is_granted('ROLE_STAFF') and not is_granted('ROLE_ADMIN')" }
-    - { path: '^/staff/category-requests', allow_if: "is_granted('ROLE_STAFF') and not is_granted('ROLE_ADMIN')" }
-
-    # Các route /product dành cho staff (index/add/edit/delete/upload)
-    - { path: '^/product$',                                   allow_if: "is_granted('ROLE_STAFF') and not is_granted('ROLE_ADMIN')" }
+    # ===== STAFF-ONLY (ADMIN KHÔNG DÙNG CÁC MÀN NÀY) =====
+    - { path: '^/admin/brands',             allow_if: "is_granted('ROLE_STAFF') and not is_granted('ROLE_ADMIN')" }
+    - { path: '^/admin/price',              allow_if: "is_granted('ROLE_STAFF') and not is_granted('ROLE_ADMIN')" }
+    - { path: '^/supplier',                 allow_if: "is_granted('ROLE_STAFF') and not is_granted('ROLE_ADMIN')" }
+    - { path: '^/staff/category-requests',  allow_if: "is_granted('ROLE_STAFF') and not is_granted('ROLE_ADMIN')" }
+    - { path: '^/product$',                 allow_if: "is_granted('ROLE_STAFF') and not is_granted('ROLE_ADMIN')" }
     - { path: '^/product/(add|new|edit|delete|editor-upload)', allow_if: "is_granted('ROLE_STAFF') and not is_granted('ROLE_ADMIN')" }
 
     # ===== ADMIN-ONLY =====
@@ -70,13 +70,13 @@ security:
     - { path: '^/admin/categories',        roles: 'ROLE_ADMIN' }
     - { path: '^/admin/category-requests', roles: 'ROLE_ADMIN' }
 
-    # Dashboard: Staff & Admin
+    # Dashboard & phần còn lại trong /admin: Staff + Admin đều vào
     - { path: '^/admin$', roles: ['ROLE_STAFF', 'ROLE_ADMIN'] }
     - { path: '^/admin/', roles: ['ROLE_STAFF', 'ROLE_ADMIN'] }
 
     # ===== Accounts =====
     - { path: '^/account', roles: 'IS_AUTHENTICATED_FULLY' }
-    
+
 when@test:
   security:
     password_hashers:

@@ -6,6 +6,7 @@ use App\Entity\User;
 use App\Form\Account\ProfileFormType;
 use App\Form\Account\ProfileAvatarType;
 use App\Form\Account\ChangePasswordType;
+use App\Repository\ProductRepository;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\File\Exception\FileException;
@@ -23,6 +24,7 @@ class ProfileController extends AbstractController
         Request $request,
         EntityManagerInterface $em,
         SluggerInterface $slugger,
+        ProductRepository $productRepo,
     ): Response {
         /** @var User|null $user */
         $user = $this->getUser();
@@ -40,7 +42,7 @@ class ProfileController extends AbstractController
             return $this->redirectToRoute('account_profile');
         }
 
-        // Avatar form (separate form)
+        // Avatar form
         $avatarForm = $this->createForm(ProfileAvatarType::class);
         $avatarForm->handleRequest($request);
 
@@ -79,10 +81,36 @@ class ProfileController extends AbstractController
             return $this->redirectToRoute('account_profile');
         }
 
+        // ===== Recently viewed products for this session =====
+        $session = $request->getSession();
+        $ids = $session->get('recent_products', []);
+        $recentProducts = [];
+
+        if ($ids) {
+            $recentProducts = $productRepo->createQueryBuilder('p')
+                ->where('p.id IN (:ids)')
+                ->setParameter('ids', $ids)
+                ->getQuery()
+                ->getResult();
+
+            $map = [];
+            foreach ($recentProducts as $prod) {
+                $map[$prod->getId()] = $prod;
+            }
+            $ordered = [];
+            foreach ($ids as $id) {
+                if (isset($map[$id])) {
+                    $ordered[] = $map[$id];
+                }
+            }
+            $recentProducts = $ordered;
+        }
+
         return $this->render('account/profile/index.html.twig', [
-            'profile_form' => $profileForm->createView(),
-            'avatar_form'  => $avatarForm->createView(),
-            'user'         => $user,
+            'profile_form'    => $profileForm->createView(),
+            'avatar_form'     => $avatarForm->createView(),
+            'user'            => $user,
+            'recentProducts'  => $recentProducts,
         ]);
     }
 

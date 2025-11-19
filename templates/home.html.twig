@@ -6,9 +6,8 @@
 
 {# ===== HERO: responsive carousel ===== #}
 <section class="relative">
-  <div class="carousel w-full">
-
-    <div id="slide1" class="carousel-item relative w-full h-[220px] sm:h-[320px] lg:h-[450px]">
+  <div class="carousel w-full overflow-x-scroll snap-x snap-mandatory scroll-smooth">
+    <div id="slide1" class="carousel-item relative w-full h-[220px] sm:h-[320px] lg:h-[450px] snap-start flex-shrink-0">
       <img src="{{ asset('hero/mkeyboard.jpg') }}" class="w-full h-full object-cover" alt="Hero 1"/>
       <div class="absolute left-3 right-3 top-1/2 flex -translate-y-1/2 transform justify-between">
         <a href="#slide4" class="btn btn-circle btn-sm sm:btn-md">❮</a>
@@ -16,7 +15,7 @@
       </div>
     </div>
 
-    <div id="slide2" class="carousel-item relative w-full h-[220px] sm:h-[320px] lg:h-[450px]">
+    <div id="slide2" class="carousel-item relative w-full h-[220px] sm:h-[320px] lg:h-[450px] snap-start flex-shrink-0">
       <img src="{{ asset('hero/LargeHero_Xbox_PeripheralsWrapper_Banner.jpg') }}" class="w-full h-full object-cover" alt="Hero 2"/>
       <div class="absolute left-3 right-3 top-1/2 flex -translate-y-1/2 transform justify-between">
         <a href="#slide1" class="btn btn-circle btn-sm sm:btn-md">❮</a>
@@ -24,7 +23,7 @@
       </div>
     </div>
 
-    <div id="slide3" class="carousel-item relative w-full h-[220px] sm:h-[320px] lg:h-[450px]">
+    <div id="slide3" class="carousel-item relative w-full h-[220px] sm:h-[320px] lg:h-[450px] snap-start flex-shrink-0">
       <img src="{{ asset('hero/banner.jpg') }}" class="w-full h-full object-cover" alt="Hero 3"/>
       <div class="absolute left-3 right-3 top-1/2 flex -translate-y-1/2 transform justify-between">
         <a href="#slide2" class="btn btn-circle btn-sm sm:btn-md">❮</a>
@@ -32,14 +31,13 @@
       </div>
     </div>
 
-    <div id="slide4" class="carousel-item relative w-full h-[220px] sm:h-[320px] lg:h-[450px]">
+    <div id="slide4" class="carousel-item relative w-full h-[220px] sm:h-[320px] lg:h-[450px] snap-start flex-shrink-0">
       <img src="{{ asset('hero/keyboard.jpg') }}" class="w-full h-full object-cover" alt="Hero 4"/>
       <div class="absolute left-3 right-3 top-1/2 flex -translate-y-1/2 transform justify-between">
         <a href="#slide3" class="btn btn-circle btn-sm sm:btn-md">❮</a>
         <a href="#slide1" class="btn btn-circle btn-sm sm:btn-md">❯</a>
       </div>
     </div>
-
   </div>
 </section>
 
@@ -68,6 +66,23 @@
   {% endfor %}
 {% endif %}
 
+{# ===== Recently viewed (BOTTOM) ===== #}
+{% if recentProducts is defined and recentProducts|length > 0 %}
+  <section class="bg-base-100 border-t border-base-200">
+    <div class="max-w-7xl mx-auto px-4 lg:px-8 py-6 lg:py-8">
+      <div class="flex items-center justify-between mb-3">
+        <h2 class="text-base md:text-lg font-semibold">Recently viewed</h2>
+      </div>
+
+      <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
+        {% for p in recentProducts %}
+          {% include '_components/product-card.html.twig' with { p: p, specs_count: 2 } %}
+        {% endfor %}
+      </div>
+    </div>
+  </section>
+{% endif %}
+
 {% endblock %}
 
 {# === JS riêng của trang home: đặt ở cuối body đúng block === #}
@@ -89,41 +104,53 @@
       const scrollToSlide = (index) => {
         currentSlideIndex = (index + itemCount) % itemCount;
         const targetSlide = items[currentSlideIndex];
-        targetSlide?.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'start' });
+        if (!targetSlide) return;
+        // chỉ scroll HORIZONTAL bên trong carousel, không scroll cả trang
+        const offsetLeft = targetSlide.offsetLeft;
+        carousel.scrollTo({ left: offsetLeft, behavior: 'smooth' });
       };
 
       const goToNextSlide = () => scrollToSlide(currentSlideIndex + 1);
 
       const startAutoplay = () => {
         if (autoPlayInterval === null) {
-          autoPlayInterval = setInterval(goToNextSlide, 3000);
+          autoPlayInterval = setInterval(goToNextSlide, 4000);
         }
       };
-      const stopAutoplay = () => { clearInterval(autoPlayInterval); autoPlayInterval = null; };
+      const stopAutoplay = () => {
+        if (autoPlayInterval !== null) {
+          clearInterval(autoPlayInterval);
+          autoPlayInterval = null;
+        }
+      };
 
-      // Nút điều hướng
+      // Nút điều hướng (❮ ❯)
       carousel.querySelectorAll('.carousel-item a.btn-circle').forEach(btn => {
         btn.addEventListener('click', (e) => {
           e.preventDefault();
-          stopAutoplay();
           const href = btn.getAttribute('href');
           const target = href ? document.getElementById(href.substring(1)) : null;
           const idx = target ? Array.from(items).indexOf(target) : -1;
-          if (idx !== -1) scrollToSlide(idx);
-          startAutoplay();
+          if (idx !== -1) {
+            stopAutoplay();
+            scrollToSlide(idx);
+            startAutoplay();
+          }
         });
       });
 
-      // Chỉ chạy autoplay khi carousel đang trong viewport
+      // Chỉ chạy autoplay khi hero đang trong viewport
       const observer = new IntersectionObserver((entries) => {
         const entry = entries[0];
-        entry.isIntersecting ? startAutoplay() : stopAutoplay();
-      }, { threshold: 0.1 });
+        if (entry.isIntersecting) startAutoplay();
+        else stopAutoplay();
+      }, { threshold: 0.4 });
+
       observer.observe(carousel);
 
-      // Hover behavior
+      // Hover pause
       carousel.addEventListener('mouseenter', stopAutoplay);
-      carousel.addEventListener('mouseleave', () => startAutoplay());
+      carousel.addEventListener('mouseleave', startAutoplay);
     });
   </script>
 {% endblock %}

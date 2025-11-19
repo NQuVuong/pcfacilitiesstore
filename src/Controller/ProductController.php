@@ -5,9 +5,9 @@ namespace App\Controller;
 use App\Entity\Price;
 use App\Entity\Product;
 use App\Entity\ProductImage;
-use App\Entity\PageView;
 use App\Form\ProductType;
 use App\Repository\ProductRepository;
+use App\Repository\ProductReviewRepository;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\File\Exception\FileException;
@@ -28,7 +28,7 @@ class ProductController extends AbstractController
         private EntityManagerInterface $em
     ) {}
 
-    /** Danh sách sản phẩm (quản trị) */
+    /** Admin product list */
     #[Route('/', name: 'app_product_index')]
     #[IsGranted('ROLE_STAFF')]
     public function index(): Response
@@ -38,7 +38,7 @@ class ProductController extends AbstractController
         ]);
     }
 
-    /** Tạo mới — STAFF/ADMIN */
+    /** Create — STAFF/ADMIN */
     #[Route('/add', name: 'product_create')]
     #[IsGranted('ROLE_STAFF')]
     public function createAction(Request $req, SluggerInterface $slugger): Response
@@ -52,11 +52,13 @@ class ProductController extends AbstractController
                 $p->setCreated(new \DateTime());
             }
 
+            // SLUG
             if (!$p->getSlug()) {
                 $base = $slugger->slug((string) $p->getName())->lower();
                 $p->setSlug($this->uniqueSlug((string)$base));
             }
 
+            // MAIN IMAGE
             /** @var UploadedFile|null $imgFile */
             $imgFile = $form->get('file')->getData();
             if ($imgFile instanceof UploadedFile) {
@@ -65,6 +67,7 @@ class ProductController extends AbstractController
                 $p->setImage($form->get('image')->getData());
             }
 
+            // GALLERY
             /** @var UploadedFile[] $galleryFiles */
             $galleryFiles = $form->get('galleryFiles')->getData() ?? [];
             foreach ($galleryFiles as $gf) {
@@ -74,6 +77,7 @@ class ProductController extends AbstractController
                 $this->em->persist($gi);
             }
 
+            // DESC IMAGES
             $descImgs = $form->has('descImages') ? ($form->get('descImages')->getData() ?? []) : [];
             if ($descImgs) {
                 $html = $p->getDescription() ?? '';
@@ -85,6 +89,9 @@ class ProductController extends AbstractController
                 $p->setDescription($html);
             }
 
+            $this->repo->add($p, true);
+
+            // IMPORT PRICE row (optional)
             if ($form->has('importPrice')) {
                 $ip = $form->get('importPrice')->getData();
                 if ($ip !== null && $ip !== '') {
@@ -97,8 +104,6 @@ class ProductController extends AbstractController
                 }
             }
 
-            $this->repo->add($p, true);
-
             $this->addFlash('admin.success', 'Product created.');
             return $this->redirectToRoute('app_product_index', [], Response::HTTP_SEE_OTHER);
         }
@@ -108,7 +113,7 @@ class ProductController extends AbstractController
         ]);
     }
 
-    /** Chỉnh sửa — STAFF/ADMIN */
+    /** Edit — STAFF/ADMIN */
     #[Route('/edit/{id}', name: 'product_edit', requirements: ['id' => '\d+'])]
     #[IsGranted('ROLE_STAFF')]
     public function editAction(Request $req, Product $p, SluggerInterface $slugger): Response
@@ -122,11 +127,13 @@ class ProductController extends AbstractController
                 $p->setCreated(new \DateTime());
             }
 
+            // SLUG (update if name changes)
             if (!$p->getSlug() || $p->getName() !== $oldName) {
                 $base = $slugger->slug((string) $p->getName())->lower();
                 $p->setSlug($this->uniqueSlug((string)$base, $p->getId()));
             }
 
+            // MAIN IMAGE
             /** @var UploadedFile|null $imgFile */
             $imgFile = $form->get('file')->getData();
             if ($imgFile instanceof UploadedFile) {
@@ -137,6 +144,7 @@ class ProductController extends AbstractController
                 }
             }
 
+            // GALLERY APPEND
             /** @var UploadedFile[] $galleryFiles */
             $galleryFiles = $form->get('galleryFiles')->getData() ?? [];
             foreach ($galleryFiles as $gf) {
@@ -146,6 +154,7 @@ class ProductController extends AbstractController
                 $this->em->persist($gi);
             }
 
+            // DESC IMAGES
             $descImgs = $form->has('descImages') ? ($form->get('descImages')->getData() ?? []) : [];
             if ($descImgs) {
                 $html = $p->getDescription() ?? '';
@@ -157,6 +166,7 @@ class ProductController extends AbstractController
                 $p->setDescription($html);
             }
 
+            // IMPORT PRICE on edit
             if ($form->has('importPrice')) {
                 $ip = $form->get('importPrice')->getData();
                 if ($ip !== null && $ip !== '') {
@@ -178,16 +188,16 @@ class ProductController extends AbstractController
         ]);
     }
 
-    /** Xoá — STAFF/ADMIN */
+    /** Delete — STAFF/ADMIN */
     #[Route('/delete/{id}', name: 'product_delete', requirements: ['id' => '\d+'], methods: ['POST'])]
     #[IsGranted('ROLE_STAFF')]
     public function deleteAction(Request $request, Product $p): Response
     {
         if ($this->isCsrfTokenValid('delete_product_'.$p->getId(), $request->request->get('_token'))) {
             $this->repo->remove($p, true);
-            $this->addFlash('admin.success', 'Đã xóa product thành công.');
+            $this->addFlash('admin.success', 'Product deleted.');
         } else {
-            $this->addFlash('admin.error', 'Token không hợp lệ. Không thể xóa.');
+            $this->addFlash('admin.error', 'Invalid token. Cannot delete.');
         }
         return $this->redirectToRoute('app_product_index', [], Response::HTTP_SEE_OTHER);
     }
@@ -200,25 +210,52 @@ class ProductController extends AbstractController
         return $this->createAction($request, $slugger);
     }
 
-    /** Trang chi tiết — PUBLIC — dùng slug. */
-    #[Route(
-        '/{slug}',
-        name: 'product_detail',
-        requirements: ['slug' => '(?!add$|edit$|delete$|new$|editor-upload$).*'],
-        methods: ['GET']
-    )]
-    public function show(Request $request, #[MapEntity(mapping: ['slug' => 'slug'])] Product $p): Response
-    {
-        // Track page view
-        $visit = new PageView();
-        $visit->setPath($request->getPathInfo());
-        $visit->setProduct($p);
-        $visit->setBrowser($this->detectBrowser($request->headers->get('User-Agent', '')));
+    /** Public detail page — slug */
+    #[Route('/{slug}', name:'product_detail',
+        requirements:['slug'=>'(?!add$|edit$|delete$|new$|editor-upload$).*'], methods:['GET'])]
+    public function show(
+        Request $request,
+        #[MapEntity(mapping: ['slug' => 'slug'])] Product $p,
+        ProductReviewRepository $reviewRepo
+    ): Response {
+        // === Recently viewed tracking (giữ ngắn gọn) ===
+        $session = $request->getSession();
+        $ids = $session->get('recent_products', []);
+        $currentId = $p->getId();
 
-        $this->em->persist($visit);
-        $this->em->flush();
+        $ids = array_filter(array_map('intval', (array)$ids), fn($v) => $v > 0 && $v !== $currentId);
+        array_unshift($ids, $currentId);
+        $ids = array_slice(array_unique($ids), 0, 10);
+        $session->set('recent_products', $ids);
 
-        return $this->render('detail.html.twig', ['p' => $p]);
+        // === Related products (same category, exclude current) ===
+        $relatedProducts = [];
+        if ($p->getCategory()) {
+            $all = $this->repo->findTopByCategory($p->getCategory(), 12);
+            foreach ($all as $rp) {
+                if ($rp->getId() !== $p->getId()) {
+                    $relatedProducts[] = $rp;
+                }
+            }
+        }
+
+        // === Reviews & average rating ===
+        $reviews = $reviewRepo->findBy(['product' => $p], ['createdAt' => 'DESC']);
+        $averageRating = null;
+        if ($reviews) {
+            $sum = 0;
+            foreach ($reviews as $r) {
+                $sum += $r->getRating();
+            }
+            $averageRating = round($sum / count($reviews), 1);
+        }
+
+        return $this->render('detail.html.twig', [
+            'p'              => $p,
+            'relatedProducts'=> $relatedProducts,
+            'reviews'        => $reviews,
+            'averageRating'  => $averageRating,
+        ]);
     }
 
     // ================= helpers =================
@@ -237,7 +274,7 @@ class ProductController extends AbstractController
         return $newFilename;
     }
 
-    /** Tạo slug duy nhất, tránh trùng với sản phẩm khác */
+    /** Unique slug */
     private function uniqueSlug(string $base, ?int $ignoreId = null): string
     {
         $slug = $base;
@@ -249,32 +286,6 @@ class ProductController extends AbstractController
             }
             $slug = $base.'-'.$i++;
         }
-    }
-
-    private function detectBrowser(?string $ua): string
-    {
-        $ua = strtolower($ua ?? '');
-
-        if (str_contains($ua, 'edg')) {
-            return 'Edge';
-        }
-        if (str_contains($ua, 'chrome')) {
-            return 'Chrome';
-        }
-        if (str_contains($ua, 'firefox')) {
-            return 'Firefox';
-        }
-        if (str_contains($ua, 'safari')) {
-            return 'Safari';
-        }
-        if (str_contains($ua, 'opera') || str_contains($ua, 'opr/')) {
-            return 'Opera';
-        }
-        if (str_contains($ua, 'msie') || str_contains($ua, 'trident')) {
-            return 'IE';
-        }
-
-        return 'Other';
     }
 
     #[Route('/editor-upload', name: 'editor_image_upload', methods: ['POST'])]

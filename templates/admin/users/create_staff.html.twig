@@ -1,24 +1,47 @@
+{# templates/admin/users/create_staff.html.twig #}
 {% extends 'admin.html.twig' %}
-{% block title %}Create Staff{% endblock %}
+
+{% block title %}Add staff{% endblock %}
 
 {% block body %}
-<div class="max-w-md mx-auto bg-white rounded-lg shadow p-6">
-  <h1 class="text-lg font-semibold mb-4">Create Staff Account</h1>
+<div class="max-w-lg mx-auto bg-base-100 rounded-xl shadow p-6">
+  <h1 class="text-xl font-semibold mb-4">Add staff</h1>
 
   {{ form_start(form) }}
-    <div class="mb-4">
-      <label class="block mb-1 text-sm font-medium">Email</label>
-      {{ form_widget(form.email, {attr:{class:'input input-bordered w-full'}}) }}
-      <div class="text-sm text-rose-600 mt-1">{{ form_errors(form.email) }}</div>
+
+    <div class="form-control mb-4">
+      <label class="label">
+        <span class="label-text">Email</span>
+      </label>
+      {{ form_widget(form.email, {
+        attr: { class: 'input input-bordered w-full' }
+      }) }}
+      <p class="text-xs text-error mt-1">
+        {{ form_errors(form.email) }}
+      </p>
     </div>
 
-    <div class="mb-5">
-      <label class="block mb-1 text-sm font-medium">Password</label>
-      {{ form_widget(form.plainPassword, {attr:{class:'input input-bordered w-full'}}) }}
-      <div class="text-sm text-rose-600 mt-1">{{ form_errors(form.plainPassword) }}</div>
+    <div class="form-control mb-4">
+      <label class="label">
+        <span class="label-text">Password</span>
+      </label>
+      {{ form_widget(form.plainPassword, {
+        attr: { class: 'input input-bordered w-full' }
+      }) }}
+      <p class="text-xs text-error mt-1">
+        {{ form_errors(form.plainPassword) }}
+      </p>
     </div>
 
-    {{ form_widget(form.save, {attr:{class:'btn btn-primary'}}) }}
+    <div class="mt-4 flex justify-end gap-2">
+      <a href="{{ path('admin_user_index') }}" class="btn btn-ghost">
+        Cancel
+      </a>
+      <button type="submit" class="btn btn-primary">
+        Create staff
+      </button>
+    </div>
+
   {{ form_end(form) }}
 </div>
 {% endblock %}

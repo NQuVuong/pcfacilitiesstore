@@ -1,8 +1,7 @@
 <?php
 
 namespace App\Entity;
-use App\Entity\Category;
-use App\Entity\Brand;
+
 use App\Repository\ProductRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
@@ -40,7 +39,7 @@ class Product
     #[ORM\OrderBy(['createdAt' => 'DESC'])]
     private Collection $prices;
 
-    #[ORM\OneToMany(mappedBy: 'product', targetEntity: ProductImage::class, cascade: ['persist','remove'], orphanRemoval: true)]
+    #[ORM\OneToMany(mappedBy: 'product', targetEntity: ProductImage::class, cascade: ['persist', 'remove'], orphanRemoval: true)]
     #[ORM\OrderBy(['position' => 'ASC', 'id' => 'ASC'])]
     private Collection $images;
 
@@ -61,10 +60,16 @@ class Product
     #[ORM\Column(type: 'integer', options: ['default' => 0])]
     private int $views = 0;
 
+    // NEW: reviews
+    /** @var Collection<int, ProductReview> */
+    #[ORM\OneToMany(mappedBy: 'product', targetEntity: ProductReview::class, cascade: ['remove'], orphanRemoval: true)]
+    private Collection $reviews;
+
     public function __construct()
     {
         $this->prices = new ArrayCollection();
         $this->images = new ArrayCollection();
+        $this->reviews = new ArrayCollection();
     }
 
     public function getId(): ?int { return $this->id; }
@@ -155,8 +160,55 @@ class Product
     public function getSpecs(): array { return $this->specs ?? []; }
     public function setSpecs(?array $specs): self { $this->specs = $specs; return $this; }
 
-    // NEW: views getter / setter
+    // views
     public function getViews(): int { return $this->views; }
     public function setViews(int $views): self { $this->views = max(0, $views); return $this; }
     public function increaseViews(): self { $this->views++; return $this; }
+
+    // ===== Reviews helpers =====
+
+    /** @return Collection<int, ProductReview> */
+    public function getReviews(): Collection
+    {
+        return $this->reviews;
+    }
+
+    public function addReview(ProductReview $review): self
+    {
+        if (!$this->reviews->contains($review)) {
+            $this->reviews->add($review);
+            $review->setProduct($this);
+        }
+        return $this;
+    }
+
+    public function removeReview(ProductReview $review): self
+    {
+        if ($this->reviews->removeElement($review)) {
+            if ($review->getProduct() === $this) {
+                $review->setProduct(null);
+            }
+        }
+        return $this;
+    }
+
+    public function getReviewCount(): int
+    {
+        return $this->reviews?->count() ?? 0;
+    }
+
+    public function getAverageRating(): float
+    {
+        $count = $this->getReviewCount();
+        if ($count === 0) {
+            return 0.0;
+        }
+
+        $sum = 0;
+        foreach ($this->reviews as $r) {
+            $sum += $r->getRating();
+        }
+
+        return round($sum / $count, 1);
+    }
 }

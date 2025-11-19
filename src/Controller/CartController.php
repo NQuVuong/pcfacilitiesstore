@@ -51,28 +51,29 @@ class CartController extends AbstractController
     {
         $qty = max(1, (int)$req->request->get('qty', 1));
         $p = $products->find($id);
+
         if (!$p) {
-            $this->addFlash('shop.error', 'Sản phẩm không tồn tại.');
+            $this->addFlash('shop.error', 'Product does not exist.');
             return $this->redirectToRoute('app_homepage');
         }
 
         $allowed = max(0, $p->getQuantity() - 1);
         if ($allowed <= 0) {
-            $this->addFlash('shop.error', sprintf('"%s" đang đạt giới hạn. Chưa thể mua lúc này.', $p->getName()));
+            $this->addFlash('shop.error', sprintf('"%s" is currently not available for purchase.', $p->getName()));
             return $this->redirectToRoute('app_homepage');
         }
 
         $current = (int)$this->cart->get($id);
+
         if ($current + $qty > $allowed) {
-            $newQty = $allowed;
-            $this->cart->set($id, $newQty);
+            $this->cart->set($id, $allowed);
             $this->addFlash(
                 'shop.warning',
-                sprintf('"%s" chỉ còn %d suất có thể mua. Đã cập nhật số lượng trong giỏ.', $p->getName(), $allowed)
+                sprintf('Only %d unit(s) of "%s" can be purchased. Cart quantity updated.', $allowed, $p->getName())
             );
         } else {
             $this->cart->add($id, $qty);
-            $this->addFlash('shop.success', 'Đã thêm vào giỏ.');
+            $this->addFlash('shop.success', 'Added to cart.');
         }
 
         return $this->redirectToRoute('app_cart_index');
@@ -83,21 +84,22 @@ class CartController extends AbstractController
     {
         $qty = max(1, (int)$req->request->get('qty', 1));
         $p = $products->find($id);
+
         if (!$p) {
-            $this->addFlash('shop.error', 'Sản phẩm không tồn tại.');
+            $this->addFlash('shop.error', 'Product does not exist.');
             return $this->redirectToRoute('app_cart_index');
         }
 
         $allowed = max(0, $p->getQuantity() - 1);
         if ($allowed <= 0) {
             $this->cart->remove($id);
-            $this->addFlash('shop.error', sprintf('"%s" đã đạt giới hạn, không thể mua.', $p->getName()));
+            $this->addFlash('shop.error', sprintf('"%s" is no longer available.', $p->getName()));
             return $this->redirectToRoute('app_cart_index');
         }
 
         if ($qty > $allowed) {
             $qty = $allowed;
-            $this->addFlash('shop.warning', sprintf('Tối đa mua được %d sản phẩm "%s".', $allowed, $p->getName()));
+            $this->addFlash('shop.warning', sprintf('Maximum %d unit(s) of "%s".', $allowed, $p->getName()));
         }
 
         $this->cart->set($id, $qty);
@@ -118,20 +120,26 @@ class CartController extends AbstractController
         return $this->redirectToRoute('app_cart_index');
     }
 
+    // ------------------------------------------------------
+    // CHECKOUT
+    // ------------------------------------------------------
+
     #[Route('/checkout', name: 'app_cart_checkout_start', methods: ['POST'])]
     #[IsGranted('ROLE_USER')]
     public function checkoutStart(Request $req): Response
     {
         $selected = $req->request->all('selected');
+
         if (empty($selected)) {
-            $this->addFlash('shop.error', 'Bạn chưa chọn sản phẩm để mua.');
+            $this->addFlash('shop.error', 'Please select at least one product to checkout.');
             return $this->redirectToRoute('app_cart_index');
         }
+
         $req->getSession()->set('checkout_selected', array_map('intval', $selected));
         return $this->redirectToRoute('app_cart_checkout_confirm');
     }
 
-    #[Route('/checkout/confirm', name: 'app_cart_checkout_confirm', methods: ['GET','POST'])]
+    #[Route('/checkout/confirm', name: 'app_cart_checkout_confirm', methods: ['GET', 'POST'])]
     #[IsGranted('ROLE_USER')]
     public function checkoutConfirm(
         Request $req,
@@ -140,12 +148,13 @@ class CartController extends AbstractController
         MomoService $momo
     ): Response {
         $selected = $req->getSession()->get('checkout_selected', []);
+
         if (!$selected) {
-            $this->addFlash('shop.error', 'Phiên thanh toán không hợp lệ.');
+            $this->addFlash('shop.error', 'Checkout session is not valid.');
             return $this->redirectToRoute('app_cart_index');
         }
 
-        $raw = $this->cart->raw();
+        $raw   = $this->cart->raw();
         $items = [];
         $total = 0.0;
 
@@ -155,51 +164,58 @@ class CartController extends AbstractController
             $p = $products->find((int)$pid);
             if (!$p) continue;
 
-            $qty = (int)$raw[$pid];
-
+            $qty     = (int)$raw[$pid];
             $allowed = max(0, $p->getQuantity() - 1);
+
             if ($qty <= 0 || $allowed <= 0 || $qty > $allowed) {
                 $this->addFlash(
                     'shop.error',
-                    sprintf('Số lượng khả dụng của "%s" đã thay đổi. Vui lòng cập nhật giỏ hàng.', $p->getName())
+                    sprintf('Available quantity of "%s" has changed. Please update your cart.', $p->getName())
                 );
                 return $this->redirectToRoute('app_cart_index');
             }
 
-            $unit = (float)($p->getCurrentExportPrice() ?? 0);
-            $line = $unit * $qty;
+            $unit  = (float)($p->getCurrentExportPrice() ?? 0);
+            $line  = $unit * $qty;
             $total += $line;
+
             $items[] = ['p' => $p, 'qty' => $qty, 'unit' => $unit, 'line' => $line];
         }
 
         if (!$items) {
-            $this->addFlash('shop.error', 'Không có sản phẩm hợp lệ để đặt hàng.');
+            $this->addFlash('shop.error', 'No valid items to place order.');
             return $this->redirectToRoute('app_cart_index');
         }
 
-        $user = $this->getUser(); // UserInterface|null
+        $user = $this->getUser();
         $defaults = [
-            'customerName'  => $user?->getUserIdentifier(),  // ← thay vì getEmail()
-            'customerEmail' => $user?->getUserIdentifier(),  // ← thay vì getEmail()
+            'customerName'  => $user?->getFullName() ?: $user?->getEmail(),
+            'customerEmail' => $user?->getEmail(),
         ];
 
         $form = $this->createForm(CheckoutType::class, $defaults);
         $form->handleRequest($req);
 
         if ($form->isSubmitted() && $form->isValid()) {
-            $data = $form->getData();
+            $data          = $form->getData();
+            $paymentMethod = $data['paymentMethod'] ?? 'COD';
 
             $order = new Order();
             $order->setUser($user);
-            $order->setCustomerName($data['customerName'] ?? null);
-            $order->setCustomerEmail($data['customerEmail'] ?? null);
-            $order->setCustomerPhone($data['customerPhone'] ?? null);
-            $order->setShippingAddress($data['shippingAddress'] ?? null);
-            $order->setNote($data['note'] ?? null);
-            $order->setPaymentMethod($data['paymentMethod'] ?? 'COD');
-            $order->setStatus('PENDING');
+            $order->setCustomerName($data['customerName']);
+            $order->setCustomerEmail($data['customerEmail']);
+            $order->setCustomerPhone($data['customerPhone']);
+            $order->setShippingAddress($data['shippingAddress']);
+            $order->setNote($data['note']);
+            $order->setPaymentMethod($paymentMethod);
+
+            // Status mapping:
+            // COD → NEW               (shop preparing)
+            // MOMO → PENDING          (waiting MoMo payment)
+            $order->setStatus($paymentMethod === 'MOMO' ? 'PENDING' : 'NEW');
             $order->setTotal(number_format($total, 2, '.', ''));
 
+            // Save order items
             foreach ($items as $it) {
                 $order->addItem(
                     (new OrderItem())
@@ -214,11 +230,15 @@ class CartController extends AbstractController
             $em->persist($order);
             $em->flush();
 
-            if (($data['paymentMethod'] ?? 'COD') === 'MOMO') {
+            // ------------------------
+            // MoMo Payment
+            // ------------------------
+            if ($paymentMethod === 'MOMO') {
                 $returnUrl = $this->generateUrl('momo_return', [], UrlGeneratorInterface::ABSOLUTE_URL);
-                $ipnUrl    = $this->generateUrl('momo_ipn',    [], UrlGeneratorInterface::ABSOLUTE_URL);
+                $ipnUrl    = $this->generateUrl('momo_ipn', [], UrlGeneratorInterface::ABSOLUTE_URL);
 
                 $pay = $momo->createPayment($order, $returnUrl, $ipnUrl);
+
                 if (($pay['resultCode'] ?? -1) === 0 && !empty($pay['payUrl'])) {
                     $req->getSession()->remove('checkout_selected');
                     return $this->redirect($pay['payUrl']);
@@ -228,6 +248,9 @@ class CartController extends AbstractController
                 return $this->redirectToRoute('app_orders_show', ['id' => $order->getId()]);
             }
 
+            // ------------------------
+            // COD (Cash On Delivery)
+            // ------------------------
             foreach ($items as $it) {
                 $p = $it['p'];
                 $p->setQuantity(max(0, $p->getQuantity() - $it['qty']));
@@ -236,10 +259,7 @@ class CartController extends AbstractController
 
             $req->getSession()->remove('checkout_selected');
 
-            $order->setStatus('NEW');
-            $em->flush();
-
-            $this->addFlash('shop.success', 'Đặt hàng thành công.');
+            $this->addFlash('shop.success', 'Order placed. Your package is being prepared.');
             return $this->redirectToRoute('app_orders_show', ['id' => $order->getId()]);
         }
 

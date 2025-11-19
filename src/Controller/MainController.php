@@ -20,7 +20,8 @@ class MainController extends AbstractController
         $q    = trim((string)$request->query->get('q', ''));
         $sort = (string)$request->query->get('sort', 'newest');
         $cat  = $request->query->get('cat');
-        $catId    = is_numeric($cat) ? (int)$cat : null;
+        $catId = is_numeric($cat) ? (int)$cat : null;
+
         $products = $this->repo->findCatalog($q ?: null, $catId, $sort);
 
         // === PRIORITY ORDER ===
@@ -33,7 +34,7 @@ class MainController extends AbstractController
             $pb = array_search($b->getName(), $priorityNames, true);
             $pa = ($pa === false) ? PHP_INT_MAX : $pa;
             $pb = ($pb === false) ? PHP_INT_MAX : $pb;
-            // ưu tiên theo danh sách, phần còn lại giữ alpha
+
             if ($pa === $pb) {
                 return strcasecmp($a->getName(), $b->getName());
             }
@@ -51,6 +52,32 @@ class MainController extends AbstractController
             }
         }
 
+        // ================== RECENTLY VIEWED ==================
+        $session = $request->getSession();
+        $ids = $session->get('recent_products', []);
+        if (!\is_array($ids)) {
+            $ids = [];
+        }
+
+        $recentProducts = [];
+        if ($ids) {
+            // lấy theo id, rồi reorder theo đúng thứ tự đã xem
+            $qb = $this->repo->createQueryBuilder('p')
+                ->where('p.id IN (:ids)')
+                ->setParameter('ids', $ids);
+            $found = $qb->getQuery()->getResult();
+
+            $map = [];
+            foreach ($found as $p) {
+                $map[$p->getId()] = $p;
+            }
+            foreach ($ids as $id) {
+                if (isset($map[$id])) {
+                    $recentProducts[] = $map[$id];
+                }
+            }
+        }
+
         return $this->render('home.html.twig', [
             'products'               => $products,
             'q'                      => $q,
@@ -58,6 +85,7 @@ class MainController extends AbstractController
             'cat'                    => $catId,
             'categories'             => $catRepo->findBy([], ['name' => 'ASC']),
             'categoriesWithProducts' => $categoriesWithProducts,
+            'recentProducts'         => $recentProducts, // >>> dùng ở home.twig
         ]);
     }
 
@@ -75,7 +103,8 @@ class MainController extends AbstractController
             'products' => $products
         ]);
     }
-     #[Route('/catalog', name: 'catalog')]
+
+    #[Route('/catalog', name: 'catalog')]
     public function catalog(Request $request, CategoryRepository $catRepo): Response
     {
         $q    = trim((string) $request->query->get('q', ''));
@@ -93,5 +122,4 @@ class MainController extends AbstractController
             'categories' => $catRepo->findBy([], ['name' => 'ASC']),
         ]);
     }
-
 }

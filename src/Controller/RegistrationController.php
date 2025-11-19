@@ -6,6 +6,7 @@ use App\Entity\User;
 use App\Form\RegistrationFormType;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\Form\FormError;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpFoundation\Session\SessionInterface;
@@ -33,49 +34,64 @@ class RegistrationController extends AbstractController
         $form->handleRequest($request);
 
         if ($form->isSubmitted() && $form->isValid()) {
+            // Chuẩn hoá email
+            $email = strtolower(trim((string) $user->getEmail()));
 
-            // Default role
-            $user->setRoles([User::ROLE_CUSTOMER]);
+            /** @var User|null $existing */
+            $existing = $em->getRepository(User::class)->findOneBy(['email' => $email]);
 
-            // Hash password
-            $plainPassword = (string) $form->get('plainPassword')->getData();
-            $hashedPassword = $passwordHasher->hashPassword($user, $plainPassword);
-            $user->setPassword($hashedPassword);
-
-            // Default avatar
-            if (!$user->getAvatar()) {
-                $user->setAvatar('man.png');
-            }
-
-            // Mark user as unverified
-            $user->setIsVerified(false);
-
-            // Generate OTP
-            $otp = (string) random_int(100000, 999999);
-            $user->setOtpCode($otp);
-            $user->setOtpExpiresAt(new \DateTimeImmutable('+10 minutes'));
-
-            // Save user
-            $em->persist($user);
-            $em->flush();
-
-            // Save user id for verification flow
-            $session->set('register_user_id', $user->getId());
-
-            // Send OTP email
-            $email = (new Email())
-                ->to($user->getEmail())
-                ->subject('PC Store - Your verification code')
-                ->html(
-                    '<p>Your verification code is: 
-                     <strong style="font-size: 18px;">' . $otp . 
-                    '</strong></p><p>This code is valid for 10 minutes.</p>'
+            // 1) ĐÃ CÓ ACCOUNT & ĐÃ VERIFY  -> không cho đăng ký nữa
+            if ($existing && $existing->isVerified()) {
+                $form->get('email')->addError(
+                    new FormError('This email is already registered. Please sign in or reset your password.')
                 );
 
-            $mailer->send($email);
+            } else {
+                // 2) CHƯA CÓ -> tạo mới, 3) ĐÃ CÓ NHƯNG CHƯA VERIFY -> dùng lại record đó
+                $targetUser = $existing ?: new User();
 
-            // Redirect to OTP verification page
-            return $this->redirectToRoute('app_register_verify');
+                $targetUser->setEmail($email);
+                $targetUser->setRoles([User::ROLE_CUSTOMER]);
+
+                // Hash password
+                $plainPassword  = (string) $form->get('plainPassword')->getData();
+                $hashedPassword = $passwordHasher->hashPassword($targetUser, $plainPassword);
+                $targetUser->setPassword($hashedPassword);
+
+                // Default avatar
+                if (!$targetUser->getAvatar()) {
+                    $targetUser->setAvatar('man.png');
+                }
+
+                // Đảm bảo account ở trạng thái chưa verify
+                $targetUser->setIsVerified(false);
+
+                // Generate OTP mới (ghi đè OTP cũ nếu có)
+                $otp = (string) random_int(100000, 999999);
+                $targetUser->setOtpCode($otp);
+                $targetUser->setOtpExpiresAt(new \DateTimeImmutable('+10 minutes'));
+
+                $em->persist($targetUser);
+                $em->flush();
+
+                // Lưu id cho flow verify
+                $session->set('register_user_id', $targetUser->getId());
+
+                // Gửi email OTP
+                $emailMsg = (new Email())
+                    ->to($targetUser->getEmail())
+                    ->subject('PC Store - Your verification code')
+                    ->html(
+                        '<p>Your verification code is: 
+                         <strong style="font-size: 18px;">' . $otp .
+                        '</strong></p><p>This code is valid for 10 minutes.</p>'
+                    );
+
+                $mailer->send($emailMsg);
+
+                // Redirect sang trang nhập OTP
+                return $this->redirectToRoute('app_register_verify');
+            }
         }
 
         return $this->render('registration/register.html.twig', [
@@ -106,17 +122,17 @@ class RegistrationController extends AbstractController
             return $this->redirectToRoute('app_register');
         }
 
-        // Handle OTP submission
+        // Xử lý submit OTP
         if ($request->isMethod('POST')) {
 
-            // Resend OTP request
+            // Nút resend OTP
             if ($request->request->has('resend')) {
                 $otp = (string) random_int(100000, 999999);
                 $user->setOtpCode($otp);
                 $user->setOtpExpiresAt(new \DateTimeImmutable('+10 minutes'));
                 $em->flush();
 
-                $email = (new Email())
+                $emailMsg = (new Email())
                     ->to($user->getEmail())
                     ->subject('PC Store - New verification code')
                     ->html(
@@ -125,22 +141,22 @@ class RegistrationController extends AbstractController
                         '</strong></p><p>This code is valid for 10 minutes.</p>'
                     );
 
-                $mailer->send($email);
+                $mailer->send($emailMsg);
 
                 $this->addFlash('shop.info', 'A new verification code has been sent.');
                 return $this->redirectToRoute('app_register_verify');
             }
 
-            // Normal OTP verification
+            // Kiểm tra mã OTP
             $inputCode = trim((string) $request->request->get('otp', ''));
-            $now = new \DateTimeImmutable();
+            $now       = new \DateTimeImmutable();
 
             if ($inputCode !== $user->getOtpCode()) {
                 $this->addFlash('shop.error', 'Incorrect verification code.');
             } elseif (!$user->getOtpExpiresAt() || $user->getOtpExpiresAt() < $now) {
                 $this->addFlash('shop.error', 'Verification code has expired.');
             } else {
-                // Success: verify account
+                // Success
                 $user->setIsVerified(true);
                 $user->clearOtp();
                 $em->flush();

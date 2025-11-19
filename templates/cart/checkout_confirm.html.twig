@@ -1,0 +1,143 @@
+{% extends 'base.html.twig' %}
+{% block title %}Checkout — PC Store{% endblock %}
+
+{% block body %}
+<section class="bg-base-100">
+  <div class="max-w-6xl mx-auto px-4 lg:px-8 py-8 grid grid-cols-1 lg:grid-cols-12 gap-6">
+
+    {# Left: order summary #}
+    <div class="lg:col-span-7 space-y-4">
+      <a href="{{ path('app_cart_index') }}" class="btn btn-ghost btn-sm">
+        ← Back to cart
+      </a>
+
+      <div class="card bg-base-100 border">
+        <div class="card-body">
+          <h2 class="card-title text-lg mb-2">Order summary</h2>
+
+          <div class="overflow-x-auto">
+            <table class="table w-full text-sm">
+              <thead>
+                <tr>
+                  <th>Product</th>
+                  <th class="text-right">Unit price</th>
+                  <th class="text-center">Qty</th>
+                  <th class="text-right">Subtotal</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for it in items %}
+                  <tr>
+                    <td class="max-w-xs">
+                      <div class="line-clamp-2">{{ it.p.name }}</div>
+                    </td>
+                    <td class="text-right">
+                      {{ it.unit|number_format(0,'.',',') }} ₫
+                    </td>
+                    <td class="text-center">{{ it.qty }}</td>
+                    <td class="text-right font-medium">
+                      {{ it.line|number_format(0,'.',',') }} ₫
+                    </td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+
+          <div class="mt-4 flex items-center justify-between">
+            <span class="text-base-content/70">Total</span>
+            <span class="text-2xl font-semibold text-primary">
+              {{ total|number_format(0,'.',',') }} ₫
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    {# Right: checkout form #}
+    <div class="lg:col-span-5">
+      <div class="card bg-base-100 border">
+        <div class="card-body space-y-4">
+          <h2 class="card-title text-lg">Billing & shipping</h2>
+
+          {{ form_start(form) }}
+          <div class="grid grid-cols-1 gap-4">
+
+            <div>
+              <label class="label">
+                <span class="label-text">{{ form.customerName.vars.label }}</span>
+              </label>
+              {{ form_widget(form.customerName, { attr: { class: 'input input-bordered w-full' } }) }}
+              <p class="text-xs text-error mt-1">{{ form_errors(form.customerName) }}</p>
+            </div>
+
+            <div>
+              <label class="label">
+                <span class="label-text">{{ form.customerEmail.vars.label }}</span>
+              </label>
+              {{ form_widget(form.customerEmail, { attr: { class: 'input input-bordered w-full' } }) }}
+              <p class="text-xs text-error mt-1">{{ form_errors(form.customerEmail) }}</p>
+            </div>
+
+            <div>
+              <label class="label">
+                <span class="label-text">{{ form.customerPhone.vars.label }}</span>
+              </label>
+              {{ form_widget(form.customerPhone, { attr: { class: 'input input-bordered w-full' } }) }}
+              <p class="text-xs text-error mt-1">{{ form_errors(form.customerPhone) }}</p>
+            </div>
+
+            <div>
+              <label class="label">
+                <span class="label-text">{{ form.shippingAddress.vars.label }}</span>
+              </label>
+              {{ form_widget(form.shippingAddress, { attr: { class: 'textarea textarea-bordered w-full' } }) }}
+              <p class="text-xs text-error mt-1">{{ form_errors(form.shippingAddress) }}</p>
+            </div>
+
+            <div>
+              <label class="label">
+                <span class="label-text">{{ form.paymentMethod.vars.label }}</span>
+              </label>
+
+              <div class="grid gap-3">
+                {% for child in form.paymentMethod %}
+                  <label class="flex items-center gap-3 rounded-xl border px-4 py-3 cursor-pointer
+                                hover:border-primary/70 transition
+                                {{ child.vars.checked ? 'border-primary bg-primary/5 ring-1 ring-primary/40' : 'border-base-300' }}">
+                    {{ form_widget(child, { attr: { class: 'radio radio-primary' } }) }}
+                    <span class="text-sm">{{ child.vars.label }}</span>
+                  </label>
+                {% endfor %}
+              </div>
+
+              <p class="text-xs text-error mt-1">{{ form_errors(form.paymentMethod) }}</p>
+            </div>
+
+            <div>
+              <label class="label">
+                <span class="label-text">{{ form.note.vars.label }}</span>
+              </label>
+              {{ form_widget(form.note, { attr: { class: 'textarea textarea-bordered w-full' } }) }}
+              <p class="text-xs text-error mt-1">{{ form_errors(form.note) }}</p>
+            </div>
+
+            <div class="mt-2">
+              {{ form_widget(form.agree) }}
+              <span class="ml-2 text-sm">
+                I agree to the <a href="#" class="link">terms &amp; conditions</a>.
+              </span>
+              <p class="text-xs text-error mt-1">{{ form_errors(form.agree) }}</p>
+            </div>
+
+            <button class="btn btn-primary w-full mt-2">
+              Place order
+            </button>
+          </div>
+          {{ form_end(form) }}
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+{% endblock %}

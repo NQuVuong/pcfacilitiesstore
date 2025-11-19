@@ -36,16 +36,15 @@ class CheckoutType extends AbstractType
                 'constraints' => [new NotBlank()],
             ])
             ->add('paymentMethod', ChoiceType::class, [
-                'label' => 'Payment',
+                'label' => 'Payment method',
                 'choices' => [
-                    'MoMo e-wallet'      => 'MOMO',
-                    'Cash on delivery'    => 'COD',
-                    'Bank transfer'       => 'BANK',
+                    'MoMo e-wallet'     => 'MOMO',
+                    'Cash on delivery'  => 'COD',
                 ],
-                'expanded' => true,
+                'expanded' => true,  // radio buttons
             ])
             ->add('note', TextareaType::class, [
-                'label' => 'Note',
+                'label' => 'Note (optional)',
                 'required' => false,
                 'attr' => ['rows' => 3],
             ])
@@ -58,7 +57,7 @@ class CheckoutType extends AbstractType
 
     public function configureOptions(OptionsResolver $resolver): void
     {
-        // dùng mảng thuần, không map entity
+        // plain array, not mapped to entity
         $resolver->setDefaults(['data_class' => null]);
     }
 }
