@@ -2,68 +2,173 @@
 {% block title %}Checkout{% endblock %}
 
 {% block body %}
-<div class="max-w-6xl mx-auto mt-6 grid grid-cols-1 lg:grid-cols-12 gap-6">
+<div class="max-w-6xl mx-auto px-4 lg:px-0 py-8 space-y-4">
 
-  {# Left: Order summary #}
-  <div class="lg:col-span-7">
-    <div class="bg-white rounded-lg shadow overflow-x-auto">
-      <table class="min-w-full">
-        <thead class="bg-gray-50">
-          <tr class="text-left text-sm text-gray-600">
-            <th class="px-6 py-3">Product</th>
-            <th class="px-6 py-3">Price</th>
-            <th class="px-6 py-3">Qty</th>
-            <th class="px-6 py-3">Subtotal</th>
-          </tr>
-        </thead>
-        <tbody class="divide-y divide-gray-100">
-          {% for it in items %}
-            <tr class="text-sm">
-              <td class="px-6 py-4">{{ it.p.name }}</td>
-              <td class="px-6 py-4">${{ it.unit|number_format(2,'.',',') }}</td>
-              <td class="px-6 py-4">{{ it.qty }}</td>
-              <td class="px-6 py-4 font-medium">${{ it.line|number_format(2,'.',',') }}</td>
-            </tr>
-          {% endfor %}
-        </tbody>
-      </table>
-    </div>
-
-    <div class="mt-4 text-right text-xl">
-      <span class="text-gray-600">Total:</span>
-      <span class="font-semibold">${{ total|number_format(2,'.',',') }}</span>
-    </div>
+  <div>
+    <a href="{{ path('app_cart_index') }}" class="btn btn-ghost btn-sm">
+      ← Back to cart
+    </a>
   </div>
 
-  {# Right: Checkout form #}
-  <div class="lg:col-span-5">
-    <div class="bg-white rounded-lg shadow p-6">
-      <h2 class="text-lg font-semibold mb-4">Billing & Shipping</h2>
+  <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
 
-      {{ form_start(form) }}
-        <div class="grid grid-cols-1 gap-4">
-          {{ form_row(form.customerName, {'row_attr': {'class': 'form-control'}}) }}
-          {{ form_row(form.customerEmail, {'row_attr': {'class': 'form-control'}}) }}
-          {{ form_row(form.customerPhone, {'row_attr': {'class': 'form-control'}}) }}
-          {{ form_row(form.shippingAddress, {'row_attr': {'class': 'form-control'}}) }}
+    {# LEFT: Order summary #}
+    <section class="lg:col-span-7 space-y-4">
+      <div class="card bg-base-100 shadow-sm border">
+        <div class="card-body">
+          <h1 class="text-xl font-semibold mb-3">Order summary</h1>
 
-          <div>
-            <label class="block text-sm font-medium mb-1">Payment</label>
-            {{ form_widget(form.paymentMethod) }}
-            {{ form_errors(form.paymentMethod) }}
+          <div class="overflow-x-auto -mx-4 sm:mx-0">
+            <table class="table min-w-full">
+              <thead>
+                <tr class="text-xs sm:text-sm text-base-content/60">
+                  <th>Product</th>
+                  <th class="text-right">Price</th>
+                  <th class="text-center">Qty</th>
+                  <th class="text-right">Subtotal</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for it in items %}
+                  <tr class="text-sm">
+                    <td class="align-top">
+                      <div class="font-medium">{{ it.p.name }}</div>
+                    </td>
+                    <td class="text-right align-top">
+                      {{ it.unit|number_format(0, '.', ',') }} ₫
+                    </td>
+                    <td class="text-center align-top">
+                      {{ it.qty }}
+                    </td>
+                    <td class="text-right font-medium align-top">
+                      {{ it.line|number_format(0, '.', ',') }} ₫
+                    </td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
           </div>
 
-          {{ form_row(form.note) }}
-          <div class="mt-2">
-            {{ form_row(form.agree) }}
+          <div class="mt-4 flex items-center justify-between text-sm">
+            <span class="text-base-content/70">Total</span>
+            <span class="text-lg font-semibold">
+              {{ total|number_format(0, '.', ',') }} ₫
+            </span>
           </div>
-
-          <button class="btn btn-primary w-full mt-2">Place order</button>
         </div>
-      {{ form_end(form) }}
+      </div>
 
-      <a href="{{ path('app_cart_index') }}" class="btn btn-ghost w-full mt-3">Back to cart</a>
-    </div>
+      <div class="alert alert-info text-sm">
+        <span>
+          For MoMo payment you will be redirected to MoMo gateway after placing the order.
+          For Cash on delivery you will pay when you receive the package.
+        </span>
+      </div>
+    </section>
+
+    {# RIGHT: Checkout form #}
+    <section class="lg:col-span-5">
+      <div class="card bg-base-100 shadow-sm border">
+        <div class="card-body space-y-4">
+          <h2 class="text-lg font-semibold">Billing & shipping</h2>
+
+          {{ form_start(form) }}
+
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div class="form-control">
+              <label class="label">
+                <span class="label-text text-sm font-medium">Full name</span>
+              </label>
+              {{ form_widget(form.customerName, {
+                attr: { class: 'input input-bordered w-full' }
+              }) }}
+              <p class="text-xs text-error mt-1">
+                {{ form_errors(form.customerName) }}
+              </p>
+            </div>
+
+            <div class="form-control">
+              <label class="label">
+                <span class="label-text text-sm font-medium">Email</span>
+              </label>
+              {{ form_widget(form.customerEmail, {
+                attr: { class: 'input input-bordered w-full' }
+              }) }}
+              <p class="text-xs text-error mt-1">
+                {{ form_errors(form.customerEmail) }}
+              </p>
+            </div>
+
+            <div class="form-control md:col-span-2">
+              <label class="label">
+                <span class="label-text text-sm font-medium">Phone</span>
+              </label>
+              {{ form_widget(form.customerPhone, {
+                attr: { class: 'input input-bordered w-full' }
+              }) }}
+              <p class="text-xs text-error mt-1">
+                {{ form_errors(form.customerPhone) }}
+              </p>
+            </div>
+
+            <div class="form-control md:col-span-2">
+              <label class="label">
+                <span class="label-text text-sm font-medium">Shipping address</span>
+              </label>
+              {{ form_widget(form.shippingAddress, {
+                attr: { class: 'textarea textarea-bordered w-full' }
+              }) }}
+              <p class="text-xs text-error mt-1">
+                {{ form_errors(form.shippingAddress) }}
+              </p>
+            </div>
+          </div>
+
+          <div class="divider my-3"></div>
+
+          <div class="form-control">
+            <label class="label">
+              <span class="label-text text-sm font-medium">Payment method</span>
+            </label>
+            <div class="space-y-2">
+              {{ form_widget(form.paymentMethod, {
+                attr: { class: 'flex flex-col gap-2' }
+              }) }}
+            </div>
+            <p class="text-xs text-error mt-1">
+              {{ form_errors(form.paymentMethod) }}
+            </p>
+          </div>
+
+          <div class="form-control">
+            <label class="label">
+              <span class="label-text text-sm font-medium">Note for shop (optional)</span>
+            </label>
+            {{ form_widget(form.note, {
+              attr: { class: 'textarea textarea-bordered w-full' }
+            }) }}
+          </div>
+
+          <div class="form-control">
+            <label class="cursor-pointer flex items-center gap-2">
+              {{ form_widget(form.agree) }}
+              <span class="label-text text-sm">
+                I agree to the terms and conditions.
+              </span>
+            </label>
+            <p class="text-xs text-error mt-1">
+              {{ form_errors(form.agree) }}
+            </p>
+          </div>
+
+          <button class="btn btn-primary w-full mt-2">
+            Place order
+          </button>
+
+          {{ form_end(form) }}
+        </div>
+      </div>
+    </section>
   </div>
 </div>
 {% endblock %}

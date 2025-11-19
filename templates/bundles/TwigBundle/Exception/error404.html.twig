@@ -9,14 +9,14 @@
         <path d="M11.99 2a10 10 0 1 0 .02 20a10 10 0 0 0-.02-20Zm1 14h-2v-2h2Zm0-4h-2V7h2Z"/>
       </svg>
     </div>
-    <h1 class="text-3xl md:text-4xl font-bold">Trang bạn tìm không tồn tại</h1>
+    <h1 class="text-3xl md:text-4xl font-bold">Page Not Found</h1>
     <p class="mt-3 text-base-content/70">
-      Có thể đường dẫn đã bị thay đổi hoặc bạn gõ sai URL.
+      The link may have been changed, or you might have mistyped the URL.
     </p>
 
     <div class="mt-8 flex items-center justify-center gap-3">
-      <a href="{{ path('app_homepage') }}" class="btn btn-primary">Về trang chủ</a>
-      <button class="btn" onclick="history.back()">Quay lại</button>
+      <a href="{{ path('app_homepage') }}" class="btn btn-primary">Go to Homepage</a>
+      <button class="btn" onclick="history.back()">Go Back</button>
     </div>
   </div>
 </section>

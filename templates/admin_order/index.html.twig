@@ -1,9 +1,12 @@
+{# templates/admin_order/index.html.twig #}
 {% extends 'admin.html.twig' %}
+
 {% block title %}Manage Orders{% endblock %}
 
 {% block body %}
 <div class="bg-white rounded-lg shadow p-6">
   <h1 class="text-xl font-semibold text-gray-900 mb-6">Manage Orders</h1>
+
   <div class="overflow-x-auto">
     <table class="min-w-full divide-y divide-gray-200">
       <thead class="bg-gray-50">
@@ -37,11 +40,15 @@
             </td>
             <td class="px-6 py-3 text-sm text-gray-900">{{ o.total|number_format(0,'.',',') }} ₫</td>
             <td class="px-6 py-3 text-sm">
-               <a href="{{ path('app_admin_order_show', {id: o.id}) }}" class="btn btn-sm btn-ghost">View</a>
+              <a href="{{ path('app_admin_order_show', {id: o.id}) }}" class="btn btn-sm btn-ghost">
+                View
+              </a>
             </td>
           </tr>
         {% else %}
-          <tr><td class="px-6 py-4" colspan="7">No orders found.</td></tr>
+          <tr>
+            <td class="px-6 py-4 text-sm text-gray-500" colspan="6">No orders found.</td>
+          </tr>
         {% endfor %}
       </tbody>
     </table>

@@ -171,4 +171,9 @@ class Order
 
     public function getLastRefundOrderId(): ?string { return $this->lastRefundOrderId; }
     public function setLastRefundOrderId(?string $v): self { $this->lastRefundOrderId = $v; return $this; }
+
+    public function isCod(): bool
+    {
+        return $this->paymentMethod === 'COD';
+    }
 }

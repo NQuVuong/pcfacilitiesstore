@@ -4,6 +4,7 @@
 {% block body %}
 <div class="max-w-5xl mx-auto p-4 space-y-4">
 
+  {# Flash messages #}
   {% for label, messages in app.flashes(['shop.success', 'shop.error', 'shop.info']) %}
     {% for m in messages %}
       {% set alert_class = 'alert-info' %}
@@ -19,26 +20,57 @@
   {% endfor %}
 
   <div class="card bg-base-100 shadow">
-    <div class="card-body">
-      <div class="flex items-center justify-between">
-        <h1 class="text-xl font-semibold">Order #{{ order.id }}</h1>
-        <div class="text-gray-600">{{ order.createdAt|date('Y-m-d H:i') }}</div>
+    <div class="card-body space-y-3">
+      <div class="flex flex-wrap items-center justify-between gap-2">
+        <div>
+          <h1 class="text-xl font-semibold">Order #{{ order.id }}</h1>
+          <p class="text-sm text-base-content/70">
+            Placed on {{ order.createdAt|date('Y-m-d H:i') }}
+          </p>
+        </div>
+        <div class="text-right">
+          <div class="text-sm text-base-content/70">Status</div>
+          <span class="badge
+            {% if order.status in ['PAID','COMPLETED'] %}badge-success
+            {% elseif order.status in ['NEW','PENDING'] %}badge-warning
+            {% elseif order.status == 'REFUND_REQUESTED' %}badge-info
+            {% elseif order.status == 'REFUND_PROCESSING' %}badge-accent
+            {% elseif order.status == 'REFUNDED' %}badge-success
+            {% elseif order.status in ['CANCELED','REFUND_REJECTED'] %}badge-ghost
+            {% elseif order.status in ['FAILED','REFUND_FAILED'] %}badge-error
+            {% else %}badge-neutral{% endif %}">
+            {{ order.status|replace({'_': ' '})|capitalize }}
+          </span>
+        </div>
       </div>
-      <div class="mt-1 text-gray-600">
-        Status:
-        <span class="badge
-          {% if order.status == 'PAID' %}badge-success
-          {% elseif order.status == 'PENDING' %}badge-warning
-          {% elseif order.status == 'REFUND_REQUESTED' %}badge-info
-          {% elseif order.status == 'REFUND_PROCESSING' %}badge-accent
-          {% elseif order.status == 'REFUNDED' %}badge-success
-          {% elseif order.status in ['CANCELED','REFUND_REJECTED'] %}badge-ghost
-          {% elseif order.status in ['FAILED','REFUND_FAILED'] %}badge-error
-          {% else %}badge-neutral{% endif %}">
-          {{ order.status|replace({'_': ' '})|capitalize }}
-        </span>
+
+      <div class="text-sm text-base-content/80">
+        <div>Total: <b>{{ order.total|number_format(0,'.',',') }} ₫</b></div>
+        {% if order.paymentMethod %}
+          <div>Payment: <b>{{ order.paymentMethod == 'MOMO' ? 'MoMo e-wallet' : 'Cash on delivery' }}</b></div>
+        {% endif %}
       </div>
-      <div class="mt-1 text-gray-600">Total: <b>{{ order.total|number_format(0,'.',',') }} ₫</b></div>
+
+      {# Stepper: placed -> preparing -> on the way -> delivered #}
+      {% set step = 1 %}
+      {% if order.status in ['NEW','PENDING'] %}
+        {% set step = 1 %}
+      {% elseif order.status in ['PAID'] %}
+        {% set step = 2 %}
+      {% elseif order.status in ['SHIPPING'] %}
+        {% set step = 3 %}
+      {% elseif order.status in ['DELIVERED','COMPLETED','REFUND_REQUESTED','REFUNDED'] %}
+        {% set step = 4 %}
+      {% endif %}
+
+      <div class="mt-2">
+        <ul class="steps w-full text-xs sm:text-sm">
+          <li class="step {{ step >= 1 ? 'step-primary' : '' }}">Placed</li>
+          <li class="step {{ step >= 2 ? 'step-primary' : '' }}">Preparing</li>
+          <li class="step {{ step >= 3 ? 'step-primary' : '' }}">On the way</li>
+          <li class="step {{ step >= 4 ? 'step-primary' : '' }}">Delivered</li>
+        </ul>
+      </div>
     </div>
   </div>
 
@@ -55,7 +87,9 @@
       <tbody class="divide-y divide-gray-100">
         {% for it in order.items %}
           <tr class="text-sm">
-            <td class="px-6 py-4">{{ it.productName }}</td>
+            <td class="px-6 py-4">
+              {{ it.productName }}
+            </td>
             <td class="px-6 py-4">{{ it.unitPrice|number_format(0,'.',',') }} ₫</td>
             <td class="px-6 py-4">{{ it.quantity }}</td>
             <td class="px-6 py-4 font-medium">{{ it.lineTotal|number_format(0,'.',',') }} ₫</td>
@@ -65,31 +99,45 @@
     </table>
   </div>
 
-  <div class="flex items-center gap-2">
+  <div class="flex flex-wrap items-center gap-2">
     <a href="{{ path('app_orders_index') }}" class="btn btn-ghost">← Back to orders</a>
 
-    {% if order.status in ['NEW','PENDING'] %}
+    {% if order.status in ['NEW','PENDING'] and order.paymentMethod == 'MOMO' %}
       <a href="{{ path('app_orders_resume', {id: order.id}) }}" class="btn btn-primary">
-        Tiếp tục thanh toán
+        Continue payment with MoMo
       </a>
       <form method="post" action="{{ path('app_orders_cancel', {id: order.id}) }}"
-            onsubmit="return confirm('Huỷ đơn #{{ order.id }}?');">
+            onsubmit="return confirm('Cancel order #{{ order.id }}?');">
         <input type="hidden" name="_token" value="{{ csrf_token('cancel_order_' ~ order.id) }}">
-        <button class="btn btn-outline" type="submit">Huỷ</button>
+        <button class="btn btn-outline" type="submit">Cancel</button>
+      </form>
+    {% endif %}
+    {% if order.paymentMethod == 'COD' and order.status == 'SHIPPING' %}
+    <form method="post" action="{{ path('app_orders_confirm_delivered', {id: order.id}) }}"
+          onsubmit="return confirm('Confirm you have received the package?');">
+        <input type="hidden" name="_token" value="{{ csrf_token('confirm_delivered_' ~ order.id) }}">
+        <button class="btn btn-primary mt-2">I have received the order</button>
+    </form>
+    {% endif %}
+    {# COD: customer confirms delivered #}
+    {% if order.paymentMethod == 'COD' and order.status in ['NEW','PENDING','SHIPPING','DELIVERED'] %}
+      <form method="post"
+            action="{{ path('app_orders_confirm_delivered', {id: order.id}) }}"
+            onsubmit="return confirm('Confirm you have received and paid for this order?');">
+        <input type="hidden" name="_token" value="{{ csrf_token('confirm_delivered_' ~ order.id) }}">
+        <button type="submit" class="btn btn-success">
+          I received the order
+        </button>
       </form>
     {% endif %}
 
-    {% if order.status == 'PAID' %}
+    {% if order.status in ['PAID','COMPLETED'] and order.paymentMethod == 'MOMO' %}
       <form method="post" class="inline"
             action="{{ path('app_orders_request_refund', {id: order.id}) }}"
-            onsubmit="return confirm('Gửi yêu cầu hoàn tiền cho đơn #{{ order.id }}?');">
+            onsubmit="return confirm('Send refund request for order #{{ order.id }}?');">
         <input type="hidden" name="_token" value="{{ csrf_token('request_refund_' ~ order.id) }}">
-        <button type="submit" class="btn btn-error">Yêu cầu hoàn tiền</button>
+        <button type="submit" class="btn btn-error btn-outline">Request refund</button>
       </form>
-    {% endif %}
-
-    {% if order.status == 'REFUND_REQUESTED' %}
-        <span class="italic text-info">Đơn hàng đang chờ xử lý hoàn tiền.</span>
     {% endif %}
   </div>
 

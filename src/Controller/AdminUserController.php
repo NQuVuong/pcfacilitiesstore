@@ -1,9 +1,11 @@
 <?php
+// src/Controller/AdminUserController.php
 
 namespace App\Controller;
 
 use App\Entity\User;
 use App\Form\CreateStaffType;
+use App\Repository\UserRepository;
 use Doctrine\DBAL\Exception\UniqueConstraintViolationException;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -18,54 +20,63 @@ use Symfony\Component\Security\Http\Attribute\IsGranted;
 class AdminUserController extends AbstractController
 {
     #[Route('', name: 'admin_user_index', methods: ['GET'])]
-    public function index(EntityManagerInterface $em): Response
+    public function index(UserRepository $repo): Response
     {
-        $users = $em->getRepository(User::class)->findBy([], ['id' => 'DESC']);
+        // Lấy entity từ DB
+        $entities = $repo->findBy([], ['id' => 'DESC']);
+
+        // Chuyển sang mảng đơn giản để tránh vòng lặp quan hệ
+        $users = [];
+        foreach ($entities as $u) {
+            $users[] = [
+                'id'       => $u->getId(),
+                'email'    => $u->getEmail(),
+                'fullName' => $u->getFullName(),
+                'roles'    => $u->getRoles(),   // mảng string đơn giản
+            ];
+        }
 
         return $this->render('admin/users/index.html.twig', [
             'users' => $users,
         ]);
     }
 
-    #[Route('/create-staff', name: 'admin_user_create_staff', methods: ['GET','POST'])]
+    #[Route('/create-staff', name: 'admin_user_create_staff', methods: ['GET', 'POST'])]
     public function createStaff(
         Request $request,
         UserPasswordHasherInterface $hasher,
         EntityManagerInterface $em
     ): Response {
         $user = new User();
+
         $form = $this->createForm(CreateStaffType::class, $user);
         $form->handleRequest($request);
 
-        if ($form->isSubmitted()) {
-            if (!$form->isValid()) {
-                $this->addFlash('admin_error', 'Vui lòng kiểm tra lại các trường bị lỗi.');
-            } else {
-                try {
-                    // Normalize email
-                    $user->setEmail(mb_strtolower((string) $user->getEmail()));
+        if ($form->isSubmitted() && $form->isValid()) {
+            $user->setRoles([User::ROLE_STAFF]);
 
-                    // Password
-                    $plain = (string) $form->get('plainPassword')->getData();
-                    $user->setPassword($hasher->hashPassword($user, $plain));
+            $plain = (string) $form->get('plainPassword')->getData();
+            $hashed = $hasher->hashPassword($user, $plain);
+            $user->setPassword($hashed);
 
-                    // Default role: staff
-                    $user->setRoles(['ROLE_STAFF']);
+            if (!$user->getAvatar()) {
+                $user->setAvatar('man.png');
+            }
 
-                    // Staff accounts created by admin are trusted -> mark as verified
-                    $user->setIsVerified(true);
+            $user->setIsVerified(true);
 
-                    $em->persist($user);
-                    $em->flush();
+            try {
+                $em->persist($user);
+                $em->flush();
 
-                    $this->addFlash('admin_success', 'Đã tạo tài khoản Staff: ' . $user->getEmail());
+                $this->addFlash(
+                    'admin.success',
+                    sprintf('Staff account "%s" has been created.', $user->getEmail())
+                );
 
-                    return $this->redirectToRoute('admin_user_index');
-                } catch (UniqueConstraintViolationException $e) {
-                    $this->addFlash('admin_error', 'Email đã tồn tại.');
-                } catch (\Throwable $e) {
-                    $this->addFlash('admin_error', 'Không thể tạo tài khoản: ' . $e->getMessage());
-                }
+                return $this->redirectToRoute('admin_user_index');
+            } catch (UniqueConstraintViolationException $e) {
+                $this->addFlash('admin.error', 'This email already exists.');
             }
         }
 

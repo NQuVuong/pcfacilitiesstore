@@ -4,14 +4,14 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     <title>{% block title %}PC Store{% endblock %}</title>
 
-    {# CSS từ Webpack Encore #}
     {% block stylesheets %}
       {{ encore_entry_link_tags('app') }}
     {% endblock %}
 
-    {# JS đầu trang #}
     {% block javascripts %}
       {{ encore_entry_script_tags('app') }}
     {% endblock %}
@@ -25,7 +25,7 @@
       </div>
 
       <div class="flex items-center gap-1">
-        {# Nút mở Search modal #}
+        {# Search modal button #}
         <button id="btnOpenSearch" type="button" class="btn btn-ghost btn-circle" aria-label="Search">
           <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 24 24" fill="none"
                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -67,7 +67,7 @@
             </div>
             <ul tabindex="0" class="menu menu-sm dropdown-content bg-base-100 rounded-box z-[60] mt-3 w-56 p-2 shadow">
               <li class="menu-title px-4 truncate">{{ app.user.userIdentifier }}</li>
-              <li><a href="{{ path('app_orders_index') }}">My Orders</a></li>
+              <li><a href="{{ path('app_orders_index') }}">My orders</a></li>
               <li><a href="{{ path('account_profile') }}">Profile</a></li>
               {% if is_granted('ROLE_STAFF') or is_granted('ROLE_ADMIN') %}
                 <li><a href="{{ path('app_admin_dashboard') }}">Dashboard</a></li>
@@ -114,7 +114,6 @@
 
     {# ===== Search Modal ===== #}
     <dialog id="searchModal" class="modal modal-top sm:modal-middle">
-      {# BỎ overflow-hidden ở modal-box #}
       <div class="modal-box w-[92vw] sm:w-[95vw] max-w-lg sm:max-w-3xl p-0 border rounded-2xl">
         <div class="p-5 sm:p-8">
           <div class="flex justify-center">
@@ -122,7 +121,6 @@
           </div>
 
           <form id="globalSearchForm" action="{{ path('catalog') }}" method="get" class="mt-4 sm:mt-6">
-            {# BỎ overflow-hidden ở wrapper, dùng ring thay thế để nhìn như bo nhóm #}
             <div
               class="flex flex-col sm:flex-row gap-2 sm:gap-0 sm:ring-1 sm:ring-base-300 sm:rounded-full sm:items-stretch">
 
@@ -205,13 +203,18 @@
         const closeBtn = document.getElementById('btnCloseSearch');
         const form = document.getElementById('globalSearchForm');
         const q = document.getElementById('globalSearchQuery');
+        const advBtn = document.getElementById('btnAdvancedSearch');
 
         const openModal = () => {
+          if (!modal) return;
           if (typeof modal.showModal === 'function') modal.showModal();
           else modal.setAttribute('open','');
           setTimeout(() => q?.focus(), 50);
         };
-        const closeModal = () => { try { modal.close(); } catch(_) { modal.removeAttribute('open'); } };
+        const closeModal = () => {
+          if (!modal) return;
+          try { modal.close(); } catch(_) { modal.removeAttribute('open'); }
+        };
 
         openBtn?.addEventListener('click', (e) => { e.preventDefault(); openModal(); });
         closeBtn?.addEventListener('click', (e) => { e.preventDefault(); closeModal(); });
@@ -221,7 +224,7 @@
         });
         document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeModal(); });
 
-        // Quick tags
+        // Quick tags -> submit to catalog
         modal?.querySelectorAll('[data-fill-q]').forEach(el => {
           el.addEventListener('click', (ev) => {
             ev.preventDefault();
@@ -229,10 +232,19 @@
             form?.submit();
           });
         });
+
+        // Advanced search -> chuyển sang trang catalog với toàn bộ param
+        advBtn?.addEventListener('click', (e) => {
+          e.preventDefault();
+          if (form) {
+            form.submit();
+          }
+          closeModal();
+        });
       });
       </script>
 
-      {# Toast thông báo #}
+      {# Toasts for shop.* flashes #}
       {% set shopStyle = {
         'shop.success': 'border-green-300 bg-green-50 text-green-800',
         'shop.error':   'border-rose-300  bg-rose-50  text-rose-800',
@@ -267,15 +279,15 @@
           })();
         </script>
       {% endif %}
+
       {# Lucide icons #}
       <script src="https://unpkg.com/lucide@latest"></script>
       <script>
-        // render icons
         document.addEventListener('DOMContentLoaded', () => {
           if (window.lucide) lucide.createIcons();
         });
 
-        // toggle show/hide password cho tất cả button [data-eye]
+        // generic show/hide password
         document.addEventListener('click', (e) => {
           const btn = e.target.closest('[data-eye]');
           if (!btn) return;

@@ -16,59 +16,46 @@ class ProfileFormType extends AbstractType
     public function buildForm(FormBuilderInterface $builder, array $options): void
     {
         $builder
-            // Họ tên (luôn đứng đầu)
             ->add('fullName', TextType::class, [
-                'label' => 'Họ tên',
+                'label' => 'Full name',
                 'required' => false,
                 'attr' => [
                     'class' => 'input input-bordered w-full',
-                    'placeholder' => 'Nhập họ tên',
+                    'placeholder' => 'Enter your full name',
                 ],
             ])
-
-            // Ngày sinh: single_text để hiện một ô input (tránh extension date picker can thiệp)
             ->add('birthday', DateType::class, [
-                'label' => 'Ngày sinh',
+                'label' => 'Birthday',
                 'required' => false,
                 'widget' => 'single_text',
-                'html5' => true, // để trình duyệt render date picker native
-                // Nếu muốn tránh extension nắm bắt: có thể đổi type text + định dạng ở server
+                'html5' => true,
                 'attr' => [
                     'class' => 'input input-bordered w-full',
                     'placeholder' => 'YYYY-MM-DD',
                 ],
             ])
-
-            // Giới tính: radio (expanded)
             ->add('gender', ChoiceType::class, [
-                'label' => 'Giới tính',
+                'label' => 'Gender',
                 'required' => false,
                 'expanded' => true,
                 'multiple' => false,
                 'choices' => [
-                    'None'  => '',        // để trống -> không xác định
-                    'Nam'   => 'male',
-                    'Nữ'    => 'female',
+                    'Not set' => '',
+                    'Male'    => 'male',
+                    'Female'  => 'female',
                 ],
-                // thêm class cho từng radio nếu muốn
-                'choice_attr' => function () {
-                    return ['class' => 'radio radio-sm'];
-                },
+                'choice_attr' => static fn () => ['class' => 'radio radio-sm'],
             ])
-
-            // Số điện thoại
             ->add('phone', TextType::class, [
-                'label' => 'Số điện thoại',
+                'label' => 'Phone number',
                 'required' => false,
                 'attr' => [
                     'class' => 'input input-bordered w-full',
-                    'placeholder' => 'Nhập số điện thoại',
+                    'placeholder' => 'Enter phone number',
                 ],
             ])
-
-            // Email chỉ hiển thị, không cho sửa
             ->add('email', EmailType::class, [
-                'label' => 'Email',
+                'label' => 'Email address',
                 'disabled' => true,
                 'attr' => [
                     'class' => 'input input-bordered w-full',
