@@ -15,7 +15,7 @@ class SetExportPriceType extends AbstractType
         $builder
             ->add('exportPrice', NumberType::class, [
                 'required' => true,
-                'label'    => 'Giá bán (VND)',
+                'label'    => 'Export Price (VND)',
                 'scale'    => 0,      // VND nguyên
                 'html5'    => true,
                 'attr'     => [
@@ -27,7 +27,7 @@ class SetExportPriceType extends AbstractType
                 'constraints' => [
                     new Range([
                         'min' => 2000,
-                        'notInRangeMessage' => 'Giá bán tối thiểu là 2.000 VND.',
+                        'notInRangeMessage' => 'Minimum selling price is 2,000 VND',
                     ]),
                 ],
             ])

@@ -20,24 +20,24 @@ use Symfony\Component\Security\Http\Attribute\IsGranted;
 class AdminUserController extends AbstractController
 {
     #[Route('', name: 'admin_user_index', methods: ['GET'])]
-    public function index(UserRepository $repo): Response
+    public function index(UserRepository $repo, Request $request): Response
     {
-        // Lấy entity từ DB
-        $entities = $repo->findBy([], ['id' => 'DESC']);
+        $page    = max(1, (int) $request->query->get('page', 1));
+        $perPage = 10;
 
-        // Chuyển sang mảng đơn giản để tránh vòng lặp quan hệ
-        $users = [];
-        foreach ($entities as $u) {
-            $users[] = [
-                'id'       => $u->getId(),
-                'email'    => $u->getEmail(),
-                'fullName' => $u->getFullName(),
-                'roles'    => $u->getRoles(),   // mảng string đơn giản
-            ];
-        }
+        $allUsers = $repo->findBy([], ['id' => 'DESC']);
+        $total    = \count($allUsers);
+        $pageCount = (int) ceil($total / $perPage);
+        $page      = min($page, max(1, $pageCount));
+
+        $offset = ($page - 1) * $perPage;
+        $users  = \array_slice($allUsers, $offset, $perPage);
 
         return $this->render('admin/users/index.html.twig', [
-            'users' => $users,
+            'users'      => $users,
+            'page'       => $page,
+            'pageCount'  => $pageCount,
+            'totalUsers' => $total,
         ]);
     }
 
@@ -48,7 +48,6 @@ class AdminUserController extends AbstractController
         EntityManagerInterface $em
     ): Response {
         $user = new User();
-
         $form = $this->createForm(CreateStaffType::class, $user);
         $form->handleRequest($request);
 
@@ -81,6 +80,50 @@ class AdminUserController extends AbstractController
         }
 
         return $this->render('admin/users/create_staff.html.twig', [
+            'form' => $form->createView(),
+        ]);
+    }
+
+    #[Route('/create-admin', name: 'admin_user_create_admin', methods: ['GET', 'POST'])]
+    public function createAdmin(
+        Request $request,
+        UserPasswordHasherInterface $hasher,
+        EntityManagerInterface $em
+    ): Response {
+        $user = new User();
+        // dùng lại form CreateStaffType (email + password)
+        $form = $this->createForm(CreateStaffType::class, $user);
+        $form->handleRequest($request);
+
+        if ($form->isSubmitted() && $form->isValid()) {
+            $user->setRoles([User::ROLE_ADMIN]);
+
+            $plain = (string) $form->get('plainPassword')->getData();
+            $hashed = $hasher->hashPassword($user, $plain);
+            $user->setPassword($hashed);
+
+            if (!$user->getAvatar()) {
+                $user->setAvatar('man.png');
+            }
+
+            $user->setIsVerified(true);
+
+            try {
+                $em->persist($user);
+                $em->flush();
+
+                $this->addFlash(
+                    'admin.success',
+                    sprintf('Admin account "%s" has been created.', $user->getEmail())
+                );
+
+                return $this->redirectToRoute('admin_user_index');
+            } catch (UniqueConstraintViolationException $e) {
+                $this->addFlash('admin.error', 'This email already exists.');
+            }
+        }
+
+        return $this->render('admin/users/create_admin.html.twig', [
             'form' => $form->createView(),
         ]);
     }

@@ -1,0 +1,47 @@
+{# templates/admin/users/create_admin.html.twig #}
+{% extends 'admin.html.twig' %}
+
+{% block title %}Add admin{% endblock %}
+
+{% block body %}
+<div class="max-w-lg mx-auto bg-base-100 rounded-xl shadow p-6">
+  <h1 class="text-xl font-semibold mb-4">Add admin</h1>
+
+  {{ form_start(form) }}
+
+    <div class="form-control mb-4">
+      <label class="label">
+        <span class="label-text">Email</span>
+      </label>
+      {{ form_widget(form.email, {
+        attr: { class: 'input input-bordered w-full' }
+      }) }}
+      <p class="text-xs text-error mt-1">
+        {{ form_errors(form.email) }}
+      </p>
+    </div>
+
+    <div class="form-control mb-4">
+      <label class="label">
+        <span class="label-text">Password</span>
+      </label>
+      {{ form_widget(form.plainPassword, {
+        attr: { class: 'input input-bordered w-full' }
+      }) }}
+      <p class="text-xs text-error mt-1">
+        {{ form_errors(form.plainPassword) }}
+      </p>
+    </div>
+
+    <div class="mt-4 flex justify-end gap-2">
+      <a href="{{ path('admin_user_index') }}" class="btn btn-ghost">
+        Cancel
+      </a>
+      <button type="submit" class="btn btn-secondary">
+        Create admin
+      </button>
+    </div>
+
+  {{ form_end(form) }}
+</div>
+{% endblock %}

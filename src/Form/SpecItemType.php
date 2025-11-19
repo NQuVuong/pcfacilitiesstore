@@ -15,7 +15,7 @@ class SpecItemType extends AbstractType
             ->add('key', TextType::class, [
                 'label' => false,
                 'attr'  => [
-                    'placeholder' => 'Ví dụ: CPU',
+                    'placeholder' => 'Example: Resolution',
                     'class'       => 'input input-bordered w-full'
                 ],
             ])
@@ -24,7 +24,7 @@ class SpecItemType extends AbstractType
                 'required' => false,
                 'attr'     => [
                     'rows'        => 1,
-                    'placeholder' => 'Ví dụ: Intel Core i5-12400F',
+                    'placeholder' => 'Example: 1920 x 1.080 pixels',
                     'class'       => 'textarea textarea-bordered w-full'
                 ],
             ]);
