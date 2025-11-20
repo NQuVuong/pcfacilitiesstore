@@ -6,7 +6,6 @@
   <div class="bg-white rounded-lg shadow p-6">
     <h2 class="text-lg font-semibold text-gray-900 mb-4">{{ title|default('Category') }}</h2>
 
-    {# KHÔNG set action thủ công -> để Symfony tự quyết (tạo/sửa đều OK) #}
     {{ form_start(form, {'method': 'POST'}) }}
 
       <div class="mb-5">

@@ -17,10 +17,25 @@ use Symfony\Component\Security\Http\Attribute\IsGranted;
 class CategoryRequestController extends AbstractController
 {
     #[Route('', name: 'app_catreq_index')]
-    public function index(CategoryRequestRepository $repo): Response
+    public function index(CategoryRequestRepository $repo, Request $request): Response
     {
+        $q = trim((string) $request->query->get('q', ''));
+
+        $items = $repo->findBy(
+            ['requestedBy' => $this->getUser()],
+            ['createdAt' => 'DESC']
+        );
+
+        if ($q !== '') {
+            $items = \array_values(\array_filter(
+                $items,
+                fn (CategoryRequest $cr) => stripos($cr->getName(), $q) !== false
+            ));
+        }
+
         return $this->render('catreq/index.html.twig', [
-            'items' => $repo->findBy(['requestedBy' => $this->getUser()], ['createdAt' => 'DESC'])
+            'items' => $items,
+            'q'     => $q,
         ]);
     }
 

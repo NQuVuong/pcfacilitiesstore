@@ -1,3 +1,4 @@
+{# templates/orders/index.html.twig #}
 {% extends 'base.html.twig' %}
 {% block title %}My orders{% endblock %}
 
@@ -7,6 +8,7 @@
     <div class="card-body">
       <h1 class="text-2xl font-semibold mb-4">My orders</h1>
 
+      {# Flash messages #}
       {% for label, messages in app.flashes(['shop.success', 'shop.error', 'shop.info']) %}
         {% for m in messages %}
           {% set alert_class = 'alert-info' %}
@@ -46,10 +48,9 @@
                 <td>{{ o.createdAt|date('Y-m-d H:i') }}</td>
                 <td>
                   <span class="badge
-                    {% if o.status in ['PAID','DELIVERED'] %}badge-success
+                    {% if o.status in ['PAID','PAID_CONFIRMED','DELIVERED','COMPLETED','REFUNDED'] %}badge-success
                     {% elseif o.status in ['NEW','PREPARING','SHIPPING','PENDING'] %}badge-warning
                     {% elseif o.status in ['REFUND_REQUESTED','REFUND_PROCESSING'] %}badge-info
-                    {% elseif o.status in ['REFUNDED'] %}badge-success
                     {% elseif o.status in ['CANCELED','REFUND_REJECTED'] %}badge-ghost
                     {% elseif o.status in ['FAILED','REFUND_FAILED'] %}badge-error
                     {% else %}badge-neutral{% endif %}">
@@ -62,19 +63,16 @@
 
                 <td class="text-right">
                   <div class="inline-flex items-center justify-end gap-2">
-                    <a href="{{ path('app_orders_show', {id: o.id}) }}" class="link">View</a>
+                    <a href="{{ path('app_orders_show', {id: o.id}) }}" class="btn btn-sm btn-outline">
+                      View
+                    </a>
 
-                    {# chỉ cho MoMo tiếp tục thanh toán #}
+                    {# MoMo: tiếp tục thanh toán khi chưa thanh toán xong #}
                     {% if o.paymentMethod == 'MOMO' and o.status in ['NEW','PENDING'] %}
                       <a href="{{ path('app_orders_resume', {id: o.id}) }}"
-                         class="btn btn-sm btn-primary">Continue payment</a>
-
-                      <form method="post" class="inline"
-                            action="{{ path('app_orders_cancel', {id: o.id}) }}"
-                            onsubmit="return confirm('Cancel order #{{ o.id }}?');">
-                        <input type="hidden" name="_token" value="{{ csrf_token('cancel_order_' ~ o.id) }}">
-                        <button type="submit" class="btn btn-sm btn-outline">Cancel</button>
-                      </form>
+                         class="btn btn-sm btn-primary">
+                        Continue payment
+                      </a>
                     {% endif %}
                   </div>
                 </td>
@@ -89,6 +87,26 @@
           </tbody>
         </table>
       </div>
+
+      {# Pagination #}
+      {% set page = page|default(1) %}
+      {% if pageCount is defined and pageCount > 1 %}
+        <div class="mt-4 flex items-center justify-between text-sm text-base-content/80">
+          <div>Page {{ page }} of {{ pageCount }}</div>
+          <div class="join">
+            {% set route = app.request.attributes.get('_route') %}
+            {% set query = app.request.query.all %}
+            <a class="btn btn-sm join-item {{ page <= 1 ? 'btn-disabled' : '' }}"
+               href="{{ page <= 1 ? '#' : path(route, query|merge({'page': page - 1})) }}">
+              « Prev
+            </a>
+            <a class="btn btn-sm join-item {{ page >= pageCount ? 'btn-disabled' : '' }}"
+               href="{{ page >= pageCount ? '#' : path(route, query|merge({'page': page + 1})) }}">
+              Next »
+            </a>
+          </div>
+        </div>
+      {% endif %}
     </div>
   </div>
 </div>

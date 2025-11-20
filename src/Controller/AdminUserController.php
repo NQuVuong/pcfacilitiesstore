@@ -22,12 +22,24 @@ class AdminUserController extends AbstractController
     #[Route('', name: 'admin_user_index', methods: ['GET'])]
     public function index(UserRepository $repo, Request $request): Response
     {
+        $q = trim((string) $request->query->get('q', ''));
         $page    = max(1, (int) $request->query->get('page', 1));
         $perPage = 10;
 
         $allUsers = $repo->findBy([], ['id' => 'DESC']);
-        $total    = \count($allUsers);
-        $pageCount = (int) ceil($total / $perPage);
+
+        if ($q !== '') {
+            $needle = mb_strtolower($q);
+            $allUsers = \array_values(\array_filter(
+                $allUsers,
+                function (User $u) use ($needle) {
+                    return mb_stripos($u->getEmail() ?? '', $needle) !== false;
+                }
+            ));
+        }
+
+        $total     = \count($allUsers);
+        $pageCount = (int) \ceil(max(1, $total) / $perPage);
         $page      = min($page, max(1, $pageCount));
 
         $offset = ($page - 1) * $perPage;
@@ -35,6 +47,7 @@ class AdminUserController extends AbstractController
 
         return $this->render('admin/users/index.html.twig', [
             'users'      => $users,
+            'q'          => $q,
             'page'       => $page,
             'pageCount'  => $pageCount,
             'totalUsers' => $total,
@@ -91,7 +104,7 @@ class AdminUserController extends AbstractController
         EntityManagerInterface $em
     ): Response {
         $user = new User();
-        // dùng lại form CreateStaffType (email + password)
+        // reuse CreateStaffType (email + password)
         $form = $this->createForm(CreateStaffType::class, $user);
         $form->handleRequest($request);
 

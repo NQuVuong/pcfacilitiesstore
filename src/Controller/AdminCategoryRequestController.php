@@ -7,6 +7,7 @@ use App\Entity\CategoryRequest;
 use App\Repository\CategoryRequestRepository;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
@@ -16,10 +17,22 @@ use Symfony\Component\Security\Http\Attribute\IsGranted;
 class AdminCategoryRequestController extends AbstractController
 {
     #[Route('', name: 'app_admin_catreq_index')]
-    public function index(CategoryRequestRepository $repo): Response
+    public function index(CategoryRequestRepository $repo, Request $request): Response
     {
+        $q = trim((string) $request->query->get('q', ''));
+
+        $items = $repo->findBy([], ['createdAt' => 'DESC']);
+
+        if ($q !== '') {
+            $items = \array_values(\array_filter(
+                $items,
+                fn (CategoryRequest $cr) => stripos($cr->getName(), $q) !== false
+            ));
+        }
+
         return $this->render('admin/catreq/index.html.twig', [
-            'items' => $repo->findBy([], ['createdAt' => 'DESC'])
+            'items' => $items,
+            'q'     => $q,
         ]);
     }
 

@@ -28,7 +28,7 @@ class MomoService
 
         $order->setMomoOrderId($orderId);
 
-        $orderInfo = $this->ascii('Thanh toan don hang #'.$order->getId());
+        $orderInfo = $this->ascii('Order payment #'.$order->getId());
         $requestType = 'captureWallet';
         $extraData = base64_encode(json_encode([
             'internalOrderId' => $order->getId(),
@@ -104,13 +104,13 @@ class MomoService
     public function createRefund(
         Order $order,
         int $amount,
-        string $description = 'Hoan tien don hang',
+        string $description = 'Order refund',
         ?string $forcedRequestId = null,
         ?string $forcedRefundOrderId = null
     ): array {
         $momoTransId = $order->getPaymentTxnId();
         if (empty($momoTransId)) {
-            return ['resultCode' => -1, 'message' => 'Lỗi: Đơn hàng thiếu MoMo TransactionID'];
+            return ['resultCode' => -1, 'message' => 'Error: Order missing MoMo transaction ID'];
         }
 
         $newRefundOrderId = $forcedRefundOrderId ?: ($order->getLastRefundOrderId() ?: sprintf('REFUND-%d-%s', $order->getId(), (string) microtime(true)));
@@ -132,7 +132,7 @@ class MomoService
             'orderId'     => $newRefundOrderId,
             'amount'      => (string) $amount,
             'transId'     => (int) $momoTransId,
-            'lang'        => 'vi',
+            'lang'        => 'en',
             'description' => $description,
             'signature'   => $signature,
         ];

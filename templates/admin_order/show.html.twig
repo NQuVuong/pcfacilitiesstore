@@ -1,3 +1,4 @@
+{# templates/admin_order/show.html.twig #}
 {% extends 'admin.html.twig' %}
 {% block title %}Order #{{ order.id }} (Admin){% endblock %}
 
@@ -15,7 +16,7 @@
   <div class="card bg-base-100 shadow">
     <div class="card-body">
       <h1 class="card-title">Order #{{ order.id }}</h1>
-      <p><strong>User:</strong> {{ order.user.email }}</p>
+      <p><strong>User:</strong> {{ order.user ? order.user.email : (order.customerEmail ?: 'Guest') }}</p>
       <p><strong>Status:</strong>
         <span class="badge">{{ order.status|replace({'_': ' '})|capitalize }}</span>
       </p>
@@ -28,21 +29,56 @@
     </div>
   </div>
 
-  {% if order.paymentMethod == 'MOMO' and order.status == 'REFUND_REQUESTED' %}
-    <div class="card bg-base-100 shadow border-error border">
+  {# ====== ADMIN: UPDATE STATUS (NEW/PAID -> PREPARING -> SHIPPING -> DELIVERED) ====== #}
+  {% set next = null %}
+  {% if order.status in ['NEW','PAID'] %}
+    {% set next = 'PREPARING' %}
+  {% elseif order.status == 'PREPARING' %}
+    {% set next = 'SHIPPING' %}
+  {% elseif order.status == 'SHIPPING' %}
+    {% set next = 'DELIVERED' %}
+  {% endif %}
+
+  {% if next is not null %}
+    <div class="card bg-base-100 shadow">
       <div class="card-body">
-        <h2 class="card-title text-error">Confirm Refund</h2>
-        <p>Refund <strong>{{ order.refundableRemaining|default(0)|number_format(0,'.',',') }} ₫</strong>.</p>
-        <form method="POST"
-              action="{{ path('app_admin_order_refund', {id: order.id}) }}"
-              onsubmit="return confirm('Refund order #{{ order.id }}?');">
-          <input type="hidden" name="_token" value="{{ csrf_token('refund-order-' ~ order.id) }}">
-          <button type="submit" class="btn btn-error">Confirm & Send to MoMo</button>
-        </form>
+        <h2 class="card-title">Update status</h2>
+        <p class="text-sm text-base-content/70 mb-2">
+          Current: <b>{{ order.status|replace({'_':' '})|capitalize }}</b> →
+          Next: <b>{{ next|replace({'_':' '})|capitalize }}</b>
+        </p>
+
+        <button type="button"
+                class="btn btn-primary btn-sm"
+                onclick="document.getElementById('update-status-modal').showModal()">
+          Set to {{ next|replace({'_':' '})|capitalize }}
+        </button>
+
+        <dialog id="update-status-modal" class="modal">
+          <div class="modal-box">
+            <h3 class="font-bold text-lg mb-2">Confirm status change</h3>
+            <p>Update order #{{ order.id }} status to <b>{{ next|replace({'_':' '})|capitalize }}</b>?</p>
+            <div class="modal-action">
+              <form method="POST"
+                    action="{{ path('app_admin_order_update_status', {id: order.id}) }}">
+                <input type="hidden" name="_token" value="{{ csrf_token('update_status_' ~ order.id) }}">
+                <input type="hidden" name="next_status" value="{{ next }}">
+                <button type="submit" class="btn btn-primary">OK</button>
+              </form>
+              <form method="dialog">
+                <button class="btn">Cancel</button>
+              </form>
+            </div>
+          </div>
+          <form method="dialog" class="modal-backdrop">
+            <button>close</button>
+          </form>
+        </dialog>
       </div>
     </div>
   {% endif %}
 
+  {# ====== ITEMS ====== #}
   <div class="card bg-base-100 shadow">
     <div class="card-body">
       <h2 class="card-title">Items</h2>

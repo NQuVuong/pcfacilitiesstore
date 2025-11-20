@@ -1,41 +1,101 @@
 {% extends 'admin.html.twig' %}
-{% block title %}Set Export Prices{% endblock %}
+
+{% block title %}Set Prices{% endblock %}
+
 {% block body %}
-<div class="px-4 sm:px-6 lg:px-8">
-  <h1 class="text-xl font-semibold mb-4">Set/Edit Export Price</h1>
-  <table class="min-w-full divide-y divide-gray-300 bg-white rounded-lg overflow-hidden">
-    <thead class="bg-gray-50">
-      <tr>
-        <th class="px-4 py-3 text-left text-sm font-semibold text-gray-900">ID</th>
-        <th class="px-4 py-3 text-left text-sm font-semibold text-gray-900">Name</th>
-        <th class="px-4 py-3 text-left text-sm font-semibold text-gray-900">Import (Principal, VND)</th>
-        <th class="px-4 py-3 text-left text-sm font-semibold text-gray-900">Export (Now, VND)</th>
-        <th class="px-4 py-3 text-left text-sm font-semibold text-gray-900">Action</th>
-      </tr>
-    </thead>
-    <tbody class="divide-y divide-gray-200">
-      {% for p in products %}
-      <tr class="hover:bg-gray-50">
-        <td class="px-4 py-3 text-sm text-gray-500">{{ p.id }}</td>
-        <td class="px-4 py-3 text-sm text-gray-900">{{ p.name }}</td>
+<div class="bg-white rounded-lg shadow p-6">
+  <div class="flex flex-wrap items-center justify-between gap-3 mb-6">
+    <div>
+      <h1 class="text-xl font-semibold text-gray-900">Set Prices</h1>
+      <p class="text-sm text-gray-500">
+        Update export prices for {{ total }} product{{ total == 1 ? '' : 's' }}.
+      </p>
+    </div>
 
-        <td class="px-4 py-3 text-sm text-gray-900">
-          {% set imp = p.originalImportPrice %}
-          {{ imp is not null ? (imp|number_format(0, '.', ',') ~ ' ₫') : '—' }}
-        </td>
+    <form method="get" class="flex items-center gap-2">
+      <input
+        type="text"
+        name="q"
+        value="{{ q }}"
+        placeholder="Search by product name"
+        class="input input-bordered input-sm w-48 md:w-64"
+      >
+      <button class="btn btn-sm btn-primary" type="submit">Search</button>
+      {% if q %}
+        <a href="{{ path('price_index') }}" class="btn btn-sm btn-ghost">Clear</a>
+      {% endif %}
+    </form>
+  </div>
 
-        <td class="px-4 py-3 text-sm text-gray-900">
-          {% set exp = p.currentExportPrice %}
-          {{ exp is not null ? (exp|number_format(0, '.', ',') ~ ' ₫') : 'Not priced' }}
-        </td>
+  <div class="overflow-x-auto">
+    <table class="min-w-full divide-y divide-gray-200">
+      <thead class="bg-gray-50">
+        <tr>
+          <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase">ID</th>
+          <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Name</th>
+          <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Category</th>
+          <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Brand</th>
+          <th class="px-6 py-3 text-right text-xs font-semibold text-gray-500 uppercase">Import Price</th>
+          <th class="px-6 py-3 text-right text-xs font-semibold text-gray-500 uppercase">Current Export</th>
+          <th class="px-6 py-3 text-right text-xs font-semibold text-gray-500 uppercase">Action</th>
+        </tr>
+      </thead>
+      <tbody class="bg-white divide-y divide-gray-100">
+        {% for p in products %}
+          <tr class="hover:bg-gray-50">
+            <td class="px-6 py-4 text-sm text-gray-500">{{ p.id }}</td>
+            <td class="px-6 py-4 text-sm text-gray-900">{{ p.name }}</td>
+            <td class="px-6 py-4 text-sm text-gray-900">
+              {{ p.category ? p.category.name : '—' }}
+            </td>
+            <td class="px-6 py-4 text-sm text-gray-900">
+              {{ p.brand ? p.brand.name : '—' }}
+            </td>
+            <td class="px-6 py-4 text-sm text-right text-gray-900">
+              {% if p.originalImportPrice is not null %}
+                {{ p.originalImportPrice|number_format(0, '.', ',') }} ₫
+              {% else %}
+                —
+              {% endif %}
+            </td>
+            <td class="px-6 py-4 text-sm text-right text-gray-900">
+              {% if p.currentExportPrice is not null %}
+                {{ p.currentExportPrice|number_format(0, '.', ',') }} ₫
+              {% else %}
+                Not set
+              {% endif %}
+            </td>
+            <td class="px-6 py-4 text-sm text-right">
+              <a href="{{ path('price_set', {id: p.id}) }}" class="btn btn-sm btn-outline">
+                Set price
+              </a>
+            </td>
+          </tr>
+        {% else %}
+          <tr>
+            <td colspan="7" class="px-6 py-4 text-sm text-gray-500">No products.</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
 
-        <td class="px-4 py-3 text-sm">
-          <a class="text-indigo-600 hover:text-indigo-800"
-             href="{{ path('price_set', {'id': p.id}) }}">Set / Update</a>
-        </td>
-      </tr>
-      {% endfor %}
-    </tbody>
-  </table>
+  {% if pageCount > 1 %}
+    {% set route = app.request.attributes.get('_route') %}
+    {% set query = app.request.query.all %}
+    <div class="mt-4 flex items-center justify-between text-sm text-gray-700">
+      <div>Page {{ page }} / {{ pageCount }} ({{ total }} products)</div>
+      <div class="join">
+        <a class="btn btn-sm join-item {{ page <= 1 ? 'btn-disabled' }}"
+           href="{{ page <= 1 ? '#' : path(route, query|merge({'page': page - 1})) }}">
+          « Prev
+        </a>
+        <a class="btn btn-sm join-item {{ page >= pageCount ? 'btn-disabled' }}"
+           href="{{ page >= pageCount ? '#' : path(route, query|merge({'page': page + 1})) }}">
+          Next »
+        </a>
+      </div>
+    </div>
+  {% endif %}
 </div>
 {% endblock %}

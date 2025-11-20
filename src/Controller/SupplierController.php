@@ -17,10 +17,40 @@ use Symfony\Component\Security\Http\Attribute\IsGranted;
 class SupplierController extends AbstractController
 {
     #[Route('', name: 'app_supplier_index')]
-    public function index(SupplierRepository $repo): Response
+    public function index(SupplierRepository $repo, Request $request): Response
     {
+        $q = trim((string) $request->query->get('q', ''));
+        $page    = max(1, (int) $request->query->get('page', 1));
+        $perPage = 10;
+
+        $all = $repo->findBy([], ['createdAt' => 'DESC']);
+
+        if ($q !== '') {
+            $needle = mb_strtolower($q);
+            $all = \array_values(\array_filter(
+                $all,
+                function (Supplier $s) use ($needle) {
+                    $name  = $s->getName() ?? '';
+                    $email = $s->getEmail() ?? '';
+                    return mb_stripos($name, $needle) !== false
+                        || mb_stripos($email, $needle) !== false;
+                }
+            ));
+        }
+
+        $total     = \count($all);
+        $pageCount = (int) \ceil(max(1, $total) / $perPage);
+        $page      = min($page, max(1, $pageCount));
+
+        $offset    = ($page - 1) * $perPage;
+        $suppliers = \array_slice($all, $offset, $perPage);
+
         return $this->render('supplier/index.html.twig', [
-            'suppliers' => $repo->findBy([], ['createdAt' => 'DESC'])
+            'suppliers' => $suppliers,
+            'q'         => $q,
+            'page'      => $page,
+            'pageCount' => $pageCount,
+            'total'     => $total,
         ]);
     }
 
@@ -31,7 +61,8 @@ class SupplierController extends AbstractController
         $form = $this->createForm(SupplierType::class, $s);
         $form->handleRequest($req);
         if ($form->isSubmitted() && $form->isValid()) {
-            $em->persist($s); $em->flush();
+            $em->persist($s);
+            $em->flush();
             $this->addFlash('admin.success', 'Supplier created.');
             return $this->redirectToRoute('app_supplier_index');
         }
@@ -55,7 +86,8 @@ class SupplierController extends AbstractController
     public function delete(Supplier $s, EntityManagerInterface $em, Request $req): Response
     {
         if ($this->isCsrfTokenValid('del_sup_' . $s->getId(), $req->request->get('_token'))) {
-            $em->remove($s); $em->flush();
+            $em->remove($s);
+            $em->flush();
             $this->addFlash('admin.success', 'Supplier deleted.');
         } else {
             $this->addFlash('admin.error', 'Invalid token.');

@@ -2,111 +2,89 @@
 {% block title %}Categories{% endblock %}
 
 {% block body %}
-<div class="bg-white rounded-lg shadow p-6">
-  <div class="flex justify-between items-center mb-6">
-    <h1 class="text-xl font-semibold text-gray-900">Categories</h1>
-    <a href="{{ path('category_new') }}"
-       class="inline-flex items-center px-4 py-2 rounded-lg bg-indigo-600 text-white hover:bg-indigo-700">
-      Add Category
-    </a>
-  </div>
+  <div class="bg-white rounded-lg shadow p-6">
+    <div class="flex flex-wrap items-center justify-between gap-3 mb-6">
+      <div>
+        <h1 class="text-xl font-semibold text-gray-900">Categories</h1>
+        <p class="text-sm text-gray-500">
+          {{ total }} categor{{ total == 1 ? 'y' : 'ies' }} in system.
+        </p>
+      </div>
 
-  <div class="overflow-x-auto">
-    <table class="min-w-full divide-y divide-gray-200">
-      <thead class="bg-gray-50">
+      <div class="flex flex-wrap items-center gap-3">
+        <form method="get" class="flex items-center gap-2">
+          <input
+            type="text"
+            name="q"
+            value="{{ q }}"
+            placeholder="Search by category name"
+            class="input input-bordered input-sm w-48 md:w-64"
+          >
+          <button class="btn btn-sm btn-primary" type="submit">Search</button>
+          {% if q %}
+            <a href="{{ path('category_index') }}" class="btn btn-sm btn-ghost">Clear</a>
+          {% endif %}
+        </form>
+
+        <a href="{{ path('category_new') }}" class="btn btn-primary btn-sm">
+          Add Category
+        </a>
+      </div>
+    </div>
+
+    <div class="overflow-x-auto">
+      <table class="min-w-full divide-y divide-gray-200">
+        <thead class="bg-gray-50">
         <tr>
           <th class="px-6 py-3 text-left text-sm font-semibold text-gray-900">ID</th>
           <th class="px-6 py-3 text-left text-sm font-semibold text-gray-900">Name</th>
           <th class="px-6 py-3 text-left text-sm font-semibold text-gray-900">Actions</th>
         </tr>
-      </thead>
-
-      <tbody class="bg-white divide-y divide-gray-200">
+        </thead>
+        <tbody class="bg-white divide-y divide-gray-200">
         {% for c in categories %}
           <tr class="hover:bg-gray-50">
-            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ c.id }}</td>
-            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ c.name }}</td>
-            <td class="px-6 py-4 whitespace-nowrap text-sm">
-              <div class="flex items-center gap-4">
-                <a href="{{ path('category_edit', {'id': c.id}) }}"
-                   class="text-indigo-600 hover:text-indigo-900">Edit</a>
-
-                <button type="button"
-                        class="text-red-600 hover:text-red-800"
-                        onclick="openConfirmModal(
-                          '{{ path('category_delete', {'id': c.id}) }}',
-                          '{{ c.name|e('js') }}',
-                          '{{ csrf_token('delete_cat_' ~ c.id) }}'
-                        )">
-                  Delete
-                </button>
+            <td class="px-6 py-3 text-sm text-gray-500">{{ c.id }}</td>
+            <td class="px-6 py-3 text-sm text-gray-900">{{ c.name }}</td>
+            <td class="px-6 py-3 text-sm">
+              <div class="flex items-center gap-2">
+                <a href="{{ path('category_edit', {id: c.id}) }}" class="btn btn-xs btn-outline">
+                  Edit
+                </a>
+                <form method="post" action="{{ path('category_delete', {id: c.id}) }}">
+                  <input type="hidden" name="_token" value="{{ csrf_token('delete_cat_' ~ c.id) }}">
+                  <button type="submit" class="btn btn-xs btn-error text-white">
+                    Delete
+                  </button>
+                </form>
               </div>
             </td>
           </tr>
         {% else %}
           <tr>
-            <td class="px-6 py-4 text-sm text-gray-500" colspan="3">No categories.</td>
+            <td colspan="3" class="px-6 py-4 text-sm text-gray-500">No categories.</td>
           </tr>
         {% endfor %}
-      </tbody>
-    </table>
-  </div>
-</div>
-
-{# Modal xác nhận xóa #}
-<div id="confirm-modal"
-     class="fixed inset-0 z-50 hidden items-center justify-center">
-  <div class="absolute inset-0 bg-black/40"></div>
-  <div class="relative w-full max-w-md rounded-xl bg-white shadow-xl">
-    <div class="p-6">
-      <h3 class="text-lg font-semibold text-gray-900">Confirm delete</h3>
-      <p class="mt-3 text-sm text-gray-700">
-        Do you want to delete it? <span id="del-name" class="font-semibold"></span> No?
-      </p>
-      <div class="mt-6 flex justify-end gap-3">
-        <button type="button" id="btn-cancel"
-                class="px-4 py-2 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-100">
-          Cancel
-        </button>
-        <form id="del-form" method="post">
-          <input type="hidden" name="_token" id="del-token" value="">
-          <button type="submit"
-                  class="px-4 py-2 rounded-lg bg-red-600 text-white hover:bg-red-700">
-            Delete
-          </button>
-        </form>
-      </div>
+        </tbody>
+      </table>
     </div>
+
+    {% if pageCount > 1 %}
+      {% set route = app.request.attributes.get('_route') %}
+      {% set query = app.request.query.all %}
+      <div class="mt-4 flex items-center justify-between text-sm text-gray-700">
+        <div>Page {{ page }} / {{ pageCount }}</div>
+        <div class="join">
+          <a class="btn btn-sm join-item {{ page <= 1 ? 'btn-disabled' : '' }}"
+             href="{{ page <= 1 ? '#' : path(route, query|merge({'page': page - 1})) }}">
+            « Prev
+          </a>
+          <a class="btn btn-sm join-item {{ page >= pageCount ? 'btn-disabled' : '' }}"
+             href="{{ page >= pageCount ? '#' : path(route, query|merge({'page': page + 1})) }}">
+            Next »
+          </a>
+        </div>
+      </div>
+    {% endif %}
   </div>
-</div>
-{% endblock %}
-
-{% block javascripts %}
-  {{ parent() }}
-  <script>
-    function openConfirmModal(action, name, token) {
-      const modal   = document.getElementById('confirm-modal');
-      const delName = document.getElementById('del-name');
-      const delForm = document.getElementById('del-form');
-      const delTok  = document.getElementById('del-token');
-
-      delName.textContent = name;
-      delForm.action = action;
-      delTok.value = token;
-
-      modal.classList.remove('hidden');
-      modal.classList.add('flex');
-    }
-    (function bindCloseHandlers() {
-      const modal  = document.getElementById('confirm-modal');
-      const cancel = document.getElementById('btn-cancel');
-      function close() {
-        modal.classList.add('hidden');
-        modal.classList.remove('flex');
-      }
-      cancel.addEventListener('click', close);
-      modal.addEventListener('click', (e) => { if (e.target === modal) close(); });
-      document.addEventListener('keydown', (e) => { if (e.key === 'Escape') close(); });
-    })();
-  </script>
 {% endblock %}

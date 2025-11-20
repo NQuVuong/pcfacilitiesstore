@@ -23,13 +23,13 @@
                 <input type="checkbox" name="selected[]" value="{{ r.p.id }}" class="checkbox">
               </td>
               <td class="px-6 py-4">{{ r.p.name }}</td>
-              <td class="px-6 py-4">${{ r.unit|number_format(2,'.',',') }}</td>
+              <td class="px-6 py-4">{{ r.unit|number_format(2,'.',',') }} ₫</td>
               <td class="px-6 py-4">
                 <form action="{{ path('app_cart_update', {id: r.p.id}) }}" method="post">
                   <input type="number" name="qty" value="{{ r.qty }}" min="1" class="input input-bordered w-20">
                 </form>
               </td>
-              <td class="px-6 py-4 font-medium">${{ r.line|number_format(2,'.',',') }}</td>
+              <td class="px-6 py-4 font-medium">{{ r.line|number_format(2,'.',',') }} ₫</td>
               <td class="px-6 py-4">
                 <form action="{{ path('app_cart_remove', {id: r.p.id}) }}" method="post">
                   <button class="btn btn-ghost btn-sm">Remove</button>
@@ -43,7 +43,7 @@
 
     <div class="mt-4 flex items-center justify-between">
       <div class="text-xl">
-        Total: <b>${{ total|number_format(2,'.',',') }}</b>
+        Total: <b>{{ total|number_format(2,'.',',') }} ₫</b>
       </div>
       <div class="flex gap-2">
         <form action="{{ path('app_cart_clear') }}" method="post">

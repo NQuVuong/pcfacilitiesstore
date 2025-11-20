@@ -5,7 +5,7 @@ namespace App\Controller\Admin;
 use App\Entity\Order;
 use App\Entity\OrderItem;
 use App\Entity\Product;
-use App\Entity\PageView;
+use App\Entity\Visit; // ← dùng Visit, không dùng PageView
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Response;
@@ -26,7 +26,7 @@ class DashboardController extends AbstractController
         $weekStart  = $todayStart->modify('-6 days');
         $monthStart = $todayStart->modify('first day of this month');
 
-        // helper doanh thu
+        // ===== Doanh thu =====
         $sumBetween = function (\DateTimeImmutable $from, \DateTimeImmutable $to) use ($em, $paidStatuses): float {
             return (float) $em->createQuery(
                 'SELECT COALESCE(SUM(o.total), 0)
@@ -41,9 +41,9 @@ class DashboardController extends AbstractController
                 ->getSingleScalarResult();
         };
 
-        $todayRevenue  = $sumBetween($todayStart, $todayStart->modify('+1 day'));
-        $weekRevenue   = $sumBetween($weekStart, $todayStart->modify('+1 day'));
-        $monthRevenue  = $sumBetween($monthStart, $todayStart->modify('+1 day'));
+        $todayRevenue = $sumBetween($todayStart, $todayStart->modify('+1 day'));
+        $weekRevenue  = $sumBetween($weekStart,  $todayStart->modify('+1 day'));
+        $monthRevenue = $sumBetween($monthStart, $todayStart->modify('+1 day'));
 
         $ordersToday = (int) $em->createQuery(
             'SELECT COUNT(o.id)
@@ -61,16 +61,16 @@ class DashboardController extends AbstractController
             'SELECT COUNT(o.id) FROM App\Entity\Order o'
         )->getSingleScalarResult();
 
-        // ===== Visits =====
+        // ===== Visits (dùng Visit) =====
         $totalVisits = (int) $em->createQuery(
-            'SELECT COUNT(v.id) FROM App\Entity\PageView v'
+            'SELECT COUNT(v.id) FROM App\Entity\Visit v'
         )->getSingleScalarResult();
 
         $todayVisits = (int) $em->createQuery(
             'SELECT COUNT(v.id)
-             FROM App\Entity\PageView v
-             WHERE v.createdAt >= :from
-               AND v.createdAt < :to'
+             FROM App\Entity\Visit v
+             WHERE v.visitedAt >= :from
+               AND v.visitedAt < :to'
         )
             ->setParameter('from', $todayStart)
             ->setParameter('to', $todayStart->modify('+1 day'))
@@ -92,8 +92,9 @@ class DashboardController extends AbstractController
             $visitDays[] = $from->format('Y-m-d');
             $visitCounts[] = (int) $em->createQuery(
                 'SELECT COUNT(v.id)
-                 FROM App\Entity\PageView v
-                 WHERE v.createdAt >= :from AND v.createdAt < :to'
+                 FROM App\Entity\Visit v
+                 WHERE v.visitedAt >= :from
+                   AND v.visitedAt < :to'
             )
                 ->setParameter('from', $from)
                 ->setParameter('to', $to)
@@ -150,22 +151,22 @@ class DashboardController extends AbstractController
             ->setMaxResults(5)
             ->getArrayResult();
 
-        // ===== Most visited pages =====
+        // ===== Most visited pages (dùng Visit.path) =====
         $topPages = $em->createQuery(
             'SELECT v.path AS path,
                     COUNT(v.id) AS visits
-             FROM App\Entity\PageView v
+             FROM App\Entity\Visit v
              GROUP BY v.path
              ORDER BY visits DESC'
         )
             ->setMaxResults(5)
             ->getArrayResult();
 
-        // ===== Browsers =====
+        // ===== Browsers (dùng Visit.browser) =====
         $topBrowsers = $em->createQuery(
             'SELECT COALESCE(v.browser, :unknown) AS browser,
                     COUNT(v.id) AS visits
-             FROM App\Entity\PageView v
+             FROM App\Entity\Visit v
              GROUP BY browser
              ORDER BY visits DESC'
         )
@@ -178,6 +179,7 @@ class DashboardController extends AbstractController
             'monthRevenue'   => $monthRevenue,
             'ordersToday'    => $ordersToday,
             'totalOrders'    => $totalOrders,
+
             'totalVisits'    => $totalVisits,
             'todayVisits'    => $todayVisits,
 

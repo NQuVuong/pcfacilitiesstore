@@ -74,33 +74,47 @@
 
             <div class="divider my-3"></div>
 
-            {# Quantity + Add to cart #}
-            <div class="flex flex-col sm:flex-row gap-4 items-stretch sm:items-end">
-              <div>
-                <div class="label">
-                  <span class="label-text text-sm">Quantity</span>
+            {# ============================== #
+               ADD TO CART — ONLY FOR NORMAL USERS
+               STAFF / ADMIN KHÔNG được add cart
+               ============================== #}
+
+            {% if not is_granted('ROLE_STAFF') and not is_granted('ROLE_ADMIN') %}
+              <div class="flex flex-col sm:flex-row gap-4 items-stretch sm:items-end">
+
+                <div>
+                  <div class="label">
+                    <span class="label-text text-sm">Quantity</span>
+                  </div>
+                  <div class="join">
+                    <button type="button" class="btn btn-ghost join-item" id="qtyMinus">-</button>
+                    <input id="qty" type="number" value="1" min="1"
+                           class="input input-bordered join-item w-16 text-center" />
+                    <button type="button" class="btn btn-ghost join-item" id="qtyPlus">+</button>
+                  </div>
                 </div>
-                <div class="join">
-                  <button type="button" class="btn btn-ghost join-item" id="qtyMinus">-</button>
-                  <input id="qty" type="number" value="1" min="1"
-                         class="input input-bordered join-item w-16 text-center" />
-                  <button type="button" class="btn btn-ghost join-item" id="qtyPlus">+</button>
-                </div>
+
+                {% if latest and latest.exportPrice is not null and p.quantity > 0 %}
+                  <form action="{{ path('app_cart_add', {id: p.id}) }}" method="post"
+                        class="flex-1 flex items-end justify-start">
+                    <input type="hidden" name="_token" value="{{ csrf_token('add_to_cart_' ~ p.id) }}">
+                    <input type="hidden" id="qtyField" name="qty" value="1">
+                    <button class="btn btn-primary w-full sm:w-auto h-12 px-8">
+                      Add to cart
+                    </button>
+                  </form>
+                {% else %}
+                  <button class="btn btn-sm md:btn h-12" disabled>Not available</button>
+                {% endif %}
               </div>
 
-              {% if latest and latest.exportPrice is not null and p.quantity > 0 %}
-                <form action="{{ path('app_cart_add', {id: p.id}) }}" method="post"
-                      class="flex-1 flex items-end justify-start">
-                  <input type="hidden" name="_token" value="{{ csrf_token('add_to_cart_' ~ p.id) }}">
-                  <input type="hidden" id="qtyField" name="qty" value="1">
-                  <button class="btn btn-primary w-full sm:w-auto h-12 px-8">
-                    Add to cart
-                  </button>
-                </form>
-              {% else %}
-                <button class="btn btn-sm md:btn h-12" disabled>Not available</button>
-              {% endif %}
-            </div>
+            {% else %}
+              {# STAFF/ADMIN — Không được mua hàng #}
+              <div class="alert alert-warning mt-3 shadow">
+                Staff/Admin accounts cannot purchase products.
+              </div>
+            {% endif %}
+
           </div>
         </div>
       </div>
@@ -160,7 +174,10 @@
       </div>
     </div>
 
-    {# Reviews + related products #}
+    {# ======================== #
+       Reviews — chỉ user bình thường được review
+       ======================== #}
+
     <div class="grid gap-8 lg:grid-cols-12">
       <div class="lg:col-span-7">
         <div class="card bg-base-100 border">
@@ -178,7 +195,7 @@
               {% endif %}
             </div>
 
-            {% if is_granted('ROLE_USER') %}
+            {% if is_granted('ROLE_USER') and not is_granted('ROLE_STAFF') and not is_granted('ROLE_ADMIN') %}
               <form method="post"
                     action="{{ path('product_review_add', { slug: p.slug }) }}"
                     class="space-y-3">
@@ -202,8 +219,7 @@
               </form>
             {% else %}
               <p class="text-sm text-base-content/70">
-                <a href="{{ path('app_login') }}" class="link">Log in</a>
-                to write a review.
+                Only normal customers can write reviews.
               </p>
             {% endif %}
 
@@ -258,13 +274,11 @@
 
 <script>
   (function(){
-    // thumbs -> main image
     const main = document.getElementById('mainImage');
     document.querySelectorAll('[data-main]').forEach(b=>{
       b.addEventListener('click', ()=>{ main.src = b.dataset.main; });
     });
 
-    // qty + hidden field sync
     const qtyInput = document.getElementById('qty');
     const qtyField = document.getElementById('qtyField');
     const minus = document.getElementById('qtyMinus');
@@ -272,7 +286,7 @@
 
     const clamp = (v) => Math.max(1, parseInt(v || '1', 10));
 
-    function sync(fromInput = true) {
+    function sync() {
       const v = clamp(qtyInput.value);
       qtyInput.value = v;
       if (qtyField) qtyField.value = v;
@@ -281,17 +295,16 @@
     if (qtyInput && qtyField) {
       qtyInput.addEventListener('input', sync);
       qtyInput.addEventListener('change', sync);
+      minus?.addEventListener('click', () => {
+        qtyInput.value = clamp(qtyInput.value) - 1;
+        sync();
+      });
+      plus?.addEventListener('click', () => {
+        qtyInput.value = clamp(qtyInput.value) + 1;
+        sync();
+      });
     }
-    minus?.addEventListener('click', () => {
-      qtyInput.value = clamp(qtyInput.value) - 1;
-      sync();
-    });
-    plus?.addEventListener('click', () => {
-      qtyInput.value = clamp(qtyInput.value) + 1;
-      sync();
-    });
 
-    // Toggle description
     const wrap = document.getElementById('descWrap');
     const btn  = document.getElementById('btnToggleDesc');
     if (wrap && btn) {

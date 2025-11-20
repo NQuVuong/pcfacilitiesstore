@@ -33,13 +33,23 @@ class ProductController extends AbstractController
     #[IsGranted('ROLE_STAFF')]
     public function index(Request $request): Response
     {
+        $q       = trim((string) $request->query->get('q', ''));
         $page    = max(1, (int) $request->query->get('page', 1));
         $perPage = 12;
 
         $allProducts = $this->repo->findBy([], ['id' => 'DESC']);
-        $total       = \count($allProducts);
-        $pageCount   = (int) ceil($total / $perPage);
-        $page        = min($page, max(1, $pageCount));
+
+        // Filter theo tên nếu có q
+        if ($q !== '') {
+            $allProducts = \array_values(\array_filter(
+                $allProducts,
+                fn (Product $p) => stripos($p->getName(), $q) !== false
+            ));
+        }
+
+        $total     = \count($allProducts);
+        $pageCount = (int) \ceil(max(1, $total) / $perPage);
+        $page      = min($page, max(1, $pageCount));
 
         $offset   = ($page - 1) * $perPage;
         $products = \array_slice($allProducts, $offset, $perPage);
@@ -49,6 +59,7 @@ class ProductController extends AbstractController
             'page'      => $page,
             'pageCount' => $pageCount,
             'total'     => $total,
+            'q'         => $q,
         ]);
     }
 
