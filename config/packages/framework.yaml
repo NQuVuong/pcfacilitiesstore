@@ -1,17 +1,21 @@
+# config/packages/framework.yaml
 framework:
-  secret: '%env(APP_SECRET)%'
-  trusted_proxies: '%env(TRUSTED_PROXIES)%'
-  trusted_hosts: '%env(TRUSTED_HOSTS)%'
+    secret: '%env(APP_SECRET)%'
 
-  session:
-    handler_id: null
-    cookie_secure: auto
-    cookie_samesite: lax
-    storage_factory_id: session.storage.factory.native
-    cookie_httponly: true
+    trusted_proxies: '%env(TRUSTED_PROXIES)%'
+    trusted_hosts: '%env(TRUSTED_HOSTS)%'
+
+    session:
+        handler_id: session.handler.pdo   # <- dùng handler pdo
+        cookie_secure: auto
+        cookie_samesite: lax
+        cookie_httponly: true
+        storage_factory_id: session.storage.factory.native
 
 services:
-  session.handler.pdo:
-    class: Symfony\Component\HttpFoundation\Session\Storage\Handler\PdoSessionHandler
-    arguments:
-      - '%env(resolve:DATABASE_URL)%'
+    # Handler session lưu trong DB, dùng Doctrine connection
+    session.handler.pdo:
+        class: Symfony\Component\HttpFoundation\Session\Storage\Handler\PdoSessionHandler
+        arguments:
+            - '@doctrine.dbal.default_connection'
+            - { db_table: sessions }
