@@ -82,7 +82,7 @@ class PaymentMomoController extends AbstractController
         $internalId = (int)($extra['internalOrderId'] ?? 0);
         $order = $internalId ? $orders->find($internalId) : null;
         if (!$order) {
-            $this->addFlash('shop.error', 'Không tìm thấy đơn hàng để cập nhật.');
+            $this->addFlash('shop.error', 'Cannot find order to updatet.');
             return $this->redirectToRoute('app_orders_index');
         }
 
@@ -126,21 +126,21 @@ class PaymentMomoController extends AbstractController
                 }
             }
 
-            $this->addFlash('shop.success', 'Thanh toán thành công.');
+            $this->addFlash('shop.success', 'Payment successful.');
         } elseif ($code === 1006 || stripos($msg, 'cancel') !== false) {
             if ($order->getStatus() !== 'PAID') {
                 $order->setStatus('CANCELED');
                 $order->setPaidAt(null);
                 $this->em->flush();
             }
-            $this->addFlash('shop.info', 'Bạn đã hủy thanh toán.');
+            $this->addFlash('shop.info', 'You have canceled the payment.');
         } else {
             if ($order->getStatus() !== 'PAID') {
                 $order->setStatus('FAILED');
                 $order->setPaidAt(null);
                 $this->em->flush();
             }
-            $this->addFlash('shop.error', 'Thanh toán thất bại: '.$msg);
+            $this->addFlash('shop.error', 'Payment failed: '.$msg);
         }
 
         return $this->redirectToRoute('app_orders_show', ['id' => $order->getId()]);

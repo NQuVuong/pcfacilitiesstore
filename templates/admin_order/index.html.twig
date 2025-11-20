@@ -1,57 +1,101 @@
 {# templates/admin_order/index.html.twig #}
 {% extends 'admin.html.twig' %}
 
-{% block title %}Manage Orders{% endblock %}
+{% block title %}Orders (Admin){% endblock %}
 
 {% block body %}
 <div class="bg-white rounded-lg shadow p-6">
-  <h1 class="text-xl font-semibold text-gray-900 mb-6">Manage Orders</h1>
+  <div class="flex flex-wrap items-center justify-between gap-3 mb-6">
+    <div>
+      <h1 class="text-xl font-semibold text-gray-900">Orders (Admin)</h1>
+      <p class="text-sm text-gray-500">All orders in the system.</p>
+    </div>
+
+    <form method="get" class="flex items-center gap-2">
+      <input
+        type="text"
+        name="q"
+        value="{{ q }}"
+        placeholder="Search by customer email"
+        class="input input-bordered input-sm w-48 md:w-64"
+      >
+      <button class="btn btn-sm btn-primary" type="submit">Search</button>
+      {% if q %}
+        <a href="{{ path('app_admin_order_index') }}" class="btn btn-sm btn-ghost">Clear</a>
+      {% endif %}
+    </form>
+  </div>
 
   <div class="overflow-x-auto">
     <table class="min-w-full divide-y divide-gray-200">
       <thead class="bg-gray-50">
         <tr>
-          <th class="px-6 py-3 text-left text-sm font-semibold text-gray-900">ID</th>
-          <th class="px-6 py-3 text-left text-sm font-semibold text-gray-900">User</th>
-          <th class="px-6 py-3 text-left text-sm font-semibold text-gray-900">Date</th>
-          <th class="px-6 py-3 text-left text-sm font-semibold text-gray-900">Status</th>
-          <th class="px-6 py-3 text-left text-sm font-semibold text-gray-900">Total</th>
-          <th class="px-6 py-3 text-left text-sm font-semibold text-gray-900">Actions</th>
+          <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase">ID</th>
+          <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Customer</th>
+          <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Status</th>
+          <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Payment</th>
+          <th class="px-6 py-3 text-right text-xs font-semibold text-gray-500 uppercase">Total</th>
+          <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Created</th>
+          <th class="px-6 py-3 text-right text-xs font-semibold text-gray-500 uppercase">Actions</th>
         </tr>
       </thead>
-      <tbody class="bg-white divide-y divide-gray-200">
+      <tbody class="bg-white divide-y divide-gray-100">
         {% for o in orders %}
           <tr class="hover:bg-gray-50">
-            <td class="px-6 py-3 text-sm text-gray-500">#{{ o.id }}</td>
-            <td class="px-6 py-3 text-sm text-gray-700">{{ o.user.email }}</td>
-            <td class="px-6 py-3 text-sm text-gray-500">{{ o.createdAt|date('Y-m-d H:i') }}</td>
-            <td class="px-6 py-3 text-sm">
-              <span class="badge
-                {% if o.status == 'PAID' %}badge-success
-                {% elseif o.status == 'PENDING' %}badge-warning
-                {% elseif o.status == 'REFUND_REQUESTED' %}badge-info
-                {% elseif o.status == 'REFUND_PROCESSING' %}badge-accent
-                {% elseif o.status == 'REFUNDED' %}badge-success
+            <td class="px-6 py-4 text-sm text-gray-500">#{{ o.id }}</td>
+            <td class="px-6 py-4 text-sm text-gray-900">
+              {{ o.customerEmail ?: (o.user ? o.user.email : 'Guest') }}
+            </td>
+            <td class="px-6 py-4 text-sm">
+              <span class="badge badge-sm
+                {% if o.status in ['PAID','PAID_CONFIRMED','DELIVERED','COMPLETED','REFUNDED'] %}badge-success
+                {% elseif o.status in ['NEW','PREPARING','SHIPPING','PENDING'] %}badge-warning
+                {% elseif o.status in ['REFUND_REQUESTED','REFUND_PROCESSING'] %}badge-info
                 {% elseif o.status in ['CANCELED','REFUND_REJECTED'] %}badge-ghost
                 {% elseif o.status in ['FAILED','REFUND_FAILED'] %}badge-error
-                {% else %}badge-neutral{% endif %}">
+                {% else %}badge-neutral{% endif %}
+              ">
                 {{ o.status|replace({'_': ' '})|capitalize }}
               </span>
             </td>
-            <td class="px-6 py-3 text-sm text-gray-900">{{ o.total|number_format(0,'.',',') }} ₫</td>
-            <td class="px-6 py-3 text-sm">
-              <a href="{{ path('app_admin_order_show', {id: o.id}) }}" class="btn btn-sm btn-ghost">
-                View
+            <td class="px-6 py-4 text-sm text-gray-900">{{ o.paymentMethod }}</td>
+            <td class="px-6 py-4 text-sm text-right text-gray-900">
+              {{ o.total|number_format(0, '.', ',') }} ₫
+            </td>
+            <td class="px-6 py-4 text-sm text-gray-500">
+              {{ o.createdAt|date('Y-m-d H:i') }}
+            </td>
+            <td class="px-6 py-4 text-sm text-right">
+              <a href="{{ path('app_admin_order_show', {id: o.id}) }}" class="btn btn-sm btn-outline">
+                View / Manage
               </a>
             </td>
           </tr>
         {% else %}
           <tr>
-            <td class="px-6 py-4 text-sm text-gray-500" colspan="6">No orders found.</td>
+            <td colspan="7" class="px-6 py-4 text-sm text-gray-500">No orders.</td>
           </tr>
         {% endfor %}
       </tbody>
     </table>
   </div>
+
+  {% if pageCount > 1 %}
+    {% set route = app.request.attributes.get('_route') %}
+    {% set query = app.request.query.all %}
+    <div class="mt-4 flex items-center justify-between text-sm text-gray-700">
+      <div>Page {{ page }} / {{ pageCount }} ({{ total }} orders)</div>
+      <div class="join">
+        <a class="btn btn-sm join-item {{ page <= 1 ? 'btn-disabled' }}"
+           href="{{ page <= 1 ? '#' : path(route, query|merge({'page': page - 1})) }}">
+          « Prev
+        </a>
+        <a class="btn btn-sm join-item {{ page >= pageCount ? 'btn-disabled' }}"
+           href="{{ page >= pageCount ? '#' : path(route, query|merge({'page': page + 1})) }}">
+          Next »
+        </a>
+      </div>
+    </div>
+  {% endif %}
 </div>
 {% endblock %}

@@ -1,58 +1,94 @@
 {% extends 'admin.html.twig' %}
+
 {% block title %}Suppliers{% endblock %}
 
 {% block body %}
 <div class="bg-white rounded-lg shadow p-6">
-  <div class="flex justify-between items-center mb-6">
-    <h1 class="text-xl font-semibold text-gray-900">Suppliers</h1>
-    <a href="{{ path('app_supplier_new') }}"
-       class="inline-flex items-center px-4 py-2 rounded-lg bg-indigo-600 text-white hover:bg-indigo-700">
-      Add Supplier
-    </a>
+  <div class="flex flex-wrap items-center justify-between gap-3 mb-6">
+    <div>
+      <h1 class="text-xl font-semibold text-gray-900">Suppliers</h1>
+      <p class="text-sm text-gray-500">
+        {{ total }} supplier{{ total == 1 ? '' : 's' }} in system.
+      </p>
+    </div>
+
+    <div class="flex flex-wrap items-center gap-3">
+      <form method="get" class="flex items-center gap-2">
+        <input
+          type="text"
+          name="q"
+          value="{{ q }}"
+          placeholder="Search by name or email"
+          class="input input-bordered input-sm w-48 md:w-64"
+        >
+        <button class="btn btn-sm btn-primary" type="submit">Search</button>
+        {% if q %}
+          <a href="{{ path('app_supplier_index') }}" class="btn btn-sm btn-ghost">Clear</a>
+        {% endif %}
+      </form>
+
+      <a href="{{ path('app_supplier_new') }}" class="btn btn-primary btn-sm">Add Supplier</a>
+    </div>
   </div>
 
   <div class="overflow-x-auto">
     <table class="min-w-full divide-y divide-gray-200">
       <thead class="bg-gray-50">
         <tr>
-          <th class="px-6 py-3 text-left text-sm font-semibold text-gray-900">ID</th>
-          <th class="px-6 py-3 text-left text-sm font-semibold text-gray-900">Name</th>
-          <th class="px-6 py-3 text-left text-sm font-semibold text-gray-900">Contact</th>
-          <th class="px-6 py-3 text-left text-sm font-semibold text-gray-900">Created</th>
-          <th class="px-6 py-3 text-left text-sm font-semibold text-gray-900">Actions</th>
+          <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase">ID</th>
+          <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Name</th>
+          <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Email</th>
+          <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Phone</th>
+          <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Created</th>
+          <th class="px-6 py-3 text-right text-xs font-semibold text-gray-500 uppercase">Actions</th>
         </tr>
       </thead>
-      <tbody class="bg-white divide-y divide-gray-200">
+      <tbody class="bg-white divide-y divide-gray-100">
         {% for s in suppliers %}
           <tr class="hover:bg-gray-50">
-            <td class="px-6 py-3 text-sm text-gray-500">{{ s.id }}</td>
-            <td class="px-6 py-3 text-sm text-gray-900">{{ s.name }}</td>
-            <td class="px-6 py-3 text-sm text-gray-700">
-              {{ s.email ?? '-' }}{% if s.phone is defined and s.phone %} • {{ s.phone }}{% endif %}
+            <td class="px-6 py-4 text-sm text-gray-500">{{ s.id }}</td>
+            <td class="px-6 py-4 text-sm text-gray-900">{{ s.name }}</td>
+            <td class="px-6 py-4 text-sm text-gray-900">{{ s.email ?? '—' }}</td>
+            <td class="px-6 py-4 text-sm text-gray-900">{{ s.phone ?? '—' }}</td>
+            <td class="px-6 py-4 text-sm text-gray-500">
+              {{ s.createdAt ? s.createdAt|date('m/d/Y') : '—' }}
             </td>
-            <td class="px-6 py-3 text-sm text-gray-500">
-              {% if s.createdAt is defined and s.createdAt %}{{ s.createdAt|date('Y-m-d H:i') }}{% else %}-{% endif %}
-            </td>
-            <td class="px-6 py-3 text-sm">
-              <div class="flex items-center gap-4">
-                <a href="{{ path('app_supplier_edit', {'id': s.id}) }}"
-                   class="text-indigo-600 hover:text-indigo-900">Edit</a>
-
-                <form method="post" action="{{ path('app_supplier_delete', {'id': s.id}) }}"
+            <td class="px-6 py-4 text-sm text-right">
+              <div class="inline-flex gap-2">
+                <a href="{{ path('app_supplier_edit', {id: s.id}) }}" class="btn btn-sm btn-outline">Edit</a>
+                <form method="post" action="{{ path('app_supplier_delete', {id: s.id}) }}"
                       onsubmit="return confirm('Delete this supplier?');">
                   <input type="hidden" name="_token" value="{{ csrf_token('del_sup_' ~ s.id) }}">
-                  <button class="text-red-600 hover:text-red-800" type="submit">Delete</button>
+                  <button type="submit" class="btn btn-sm btn-error btn-outline">Delete</button>
                 </form>
               </div>
             </td>
           </tr>
         {% else %}
           <tr>
-            <td class="px-6 py-4 text-sm text-gray-500" colspan="5">No suppliers.</td>
+            <td colspan="6" class="px-6 py-4 text-sm text-gray-500">No suppliers.</td>
           </tr>
         {% endfor %}
       </tbody>
     </table>
   </div>
+
+  {% if pageCount > 1 %}
+    {% set route = app.request.attributes.get('_route') %}
+    {% set query = app.request.query.all %}
+    <div class="mt-4 flex items-center justify-between text-sm text-gray-700">
+      <div>Page {{ page }} / {{ pageCount }} ({{ total }} suppliers)</div>
+      <div class="join">
+        <a class="btn btn-sm join-item {{ page <= 1 ? 'btn-disabled' }}"
+           href="{{ page <= 1 ? '#' : path(route, query|merge({'page': page - 1})) }}">
+          « Prev
+        </a>
+        <a class="btn btn-sm join-item {{ page >= pageCount ? 'btn-disabled' }}"
+           href="{{ page >= pageCount ? '#' : path(route, query|merge({'page': page + 1})) }}">
+          Next »
+        </a>
+      </div>
+    </div>
+  {% endif %}
 </div>
 {% endblock %}

@@ -3,15 +3,39 @@
 {% block title %}Product Management{% endblock %}
 
 {% block body %}
-<div class="bg-white rounded-lg shadow p-6">
-  <div class="flex justify-between items-center mb-6">
-    <h1 class="text-xl font-semibold text-gray-900">Products</h1>
-    <a href="{{ path('product_new') }}" class="btn btn-primary">Add Product</a>
-  </div>
+  <div class="bg-white rounded-lg shadow p-6">
+    <div class="flex flex-wrap items-center justify-between gap-3 mb-6">
+      <div>
+        <h1 class="text-xl font-semibold text-gray-900">Products</h1>
+        <p class="text-sm text-gray-500">
+          {{ total }} product{{ total == 1 ? '' : 's' }} in store.
+        </p>
+      </div>
 
-  <div class="overflow-x-auto">
-    <table class="min-w-full divide-y divide-gray-200">
-      <thead class="bg-gray-50">
+      <div class="flex flex-wrap items-center gap-3">
+        <form method="get" class="flex items-center gap-2">
+          <input
+            type="text"
+            name="q"
+            value="{{ q }}"
+            placeholder="Search by product name"
+            class="input input-bordered input-sm w-48 md:w-64"
+          >
+          <button class="btn btn-sm btn-primary" type="submit">Search</button>
+          {% if q %}
+            <a href="{{ path('app_product_index') }}" class="btn btn-sm btn-ghost">Clear</a>
+          {% endif %}
+        </form>
+
+        <a href="{{ path('product_new') }}" class="btn btn-primary btn-sm">
+          Add Product
+        </a>
+      </div>
+    </div>
+
+    <div class="overflow-x-auto">
+      <table class="min-w-full divide-y divide-gray-200">
+        <thead class="bg-gray-50">
         <tr>
           <th class="px-6 py-3 text-left text-sm font-semibold text-gray-900">ID</th>
           <th class="px-6 py-3 text-left text-sm font-semibold text-gray-900">Name</th>
@@ -24,8 +48,8 @@
           <th class="px-6 py-3 text-left text-sm font-semibold text-gray-900">Quantity</th>
           <th class="px-6 py-3 text-left text-sm font-semibold text-gray-900">Actions</th>
         </tr>
-      </thead>
-      <tbody class="bg-white divide-y divide-gray-200">
+        </thead>
+        <tbody class="bg-white divide-y divide-gray-200">
         {% for product in products %}
           <tr class="hover:bg-gray-50">
             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ product.id }}</td>
@@ -47,18 +71,18 @@
               {{ exp is not null ? '$' ~ exp : 'Not set' }}
             </td>
             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-              {{ product.created ? product.created|date('m/d/Y') : '' }}
+              {{ product.created ? product.created|date("m/d/Y") : '' }}
             </td>
             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ product.quantity }}</td>
             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
               <div class="flex space-x-3">
                 <a href="{{ path('product_edit', {'id': product.id}) }}"
-                   class="text-indigo-600 hover:text-indigo-900">
-                  ✏️
+                   class="btn btn-sm btn-outline">
+                  Edit
                 </a>
 
                 <label for="delete-modal-{{ product.id }}"
-                       class="text-red-600 hover:text-red-900 cursor-pointer">
+                       class="btn btn-sm btn-error btn-outline cursor-pointer">
                   Delete
                 </label>
 
@@ -67,46 +91,49 @@
                   <div class="modal-box">
                     <h3 class="font-bold text-lg">Confirm delete</h3>
                     <p class="py-4">
-                      Bạn có chắc muốn xóa <strong>{{ product.name }}</strong>?
+                      Are you sure you want to delete
+                      <strong>{{ product.name }}</strong>?
                     </p>
                     <div class="modal-action">
                       <form method="post" action="{{ path('product_delete', {'id': product.id}) }}">
                         <input type="hidden" name="_token"
                                value="{{ csrf_token('delete_product_' ~ product.id) }}">
-                        <button type="submit" class="btn btn-error text-white">Xóa</button>
+                        <button type="submit" class="btn btn-error text-white">Delete</button>
                       </form>
-                      <label for="delete-modal-{{ product.id }}" class="btn">Hủy</label>
+                      <label for="delete-modal-{{ product.id }}" class="btn">Cancel</label>
                     </div>
                   </div>
-                  <label class="modal-backdrop"
-                         for="delete-modal-{{ product.id }}"></label>
+                  <label class="modal-backdrop" for="delete-modal-{{ product.id }}"></label>
                 </div>
               </div>
             </td>
           </tr>
+        {% else %}
+          <tr>
+            <td class="px-6 py-4 text-sm text-gray-500" colspan="10">No products.</td>
+          </tr>
         {% endfor %}
-      </tbody>
-    </table>
+        </tbody>
+      </table>
+    </div>
 
+    {# Pagination #}
     {% if pageCount is defined and pageCount > 1 %}
       {% set route = app.request.attributes.get('_route') %}
       {% set query = app.request.query.all %}
-      <div class="mt-4 flex justify-center">
+      <div class="mt-4 flex items-center justify-between text-sm text-gray-700">
+        <div>Page {{ page }} / {{ pageCount }}</div>
         <div class="join">
-          <a class="join-item btn btn-sm {{ page <= 1 ? 'btn-disabled' }}"
-             href="{{ page <= 1 ? '#' : path(route, query|merge({'page': page-1})) }}">
+          <a class="btn btn-sm join-item {{ page <= 1 ? 'btn-disabled' : '' }}"
+             href="{{ page <= 1 ? '#' : path(route, query|merge({'page': page - 1})) }}">
             « Prev
           </a>
-          <span class="join-item btn btn-sm btn-ghost no-pointer-events">
-            Page {{ page }} / {{ pageCount }}
-          </span>
-          <a class="join-item btn btn-sm {{ page >= pageCount ? 'btn-disabled' }}"
-             href="{{ page >= pageCount ? '#' : path(route, query|merge({'page': page+1})) }}">
+          <a class="btn btn-sm join-item {{ page >= pageCount ? 'btn-disabled' : '' }}"
+             href="{{ page >= pageCount ? '#' : path(route, query|merge({'page': page + 1})) }}">
             Next »
           </a>
         </div>
       </div>
     {% endif %}
   </div>
-</div>
 {% endblock %}

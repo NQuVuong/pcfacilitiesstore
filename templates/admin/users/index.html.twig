@@ -1,97 +1,96 @@
-{# templates/admin/users/index.html.twig #}
 {% extends 'admin.html.twig' %}
 
-{% block title %}Manage Users{% endblock %}
+{% block title %}User Management{% endblock %}
 
 {% block body %}
-<div class="flex items-center justify-between mb-4">
-  <h1 class="text-2xl font-semibold">Manage Users</h1>
+<div class="bg-white rounded-lg shadow p-6">
+  <div class="flex flex-wrap items-center justify-between gap-3 mb-6">
+    <div>
+      <h1 class="text-xl font-semibold text-gray-900">Users</h1>
+      <p class="text-sm text-gray-500">
+        Manage administrator and staff accounts ({{ totalUsers }} users).
+      </p>
+    </div>
 
-  <div class="flex items-center gap-2">
-    <a href="{{ path('admin_user_create_staff') }}"
-       class="btn btn-sm md:btn-md btn-primary">
-      + Add staff
-    </a>
-    <a href="{{ path('admin_user_create_admin') }}"
-       class="btn btn-sm md:btn-md btn-secondary">
-      + Add admin
-    </a>
-  </div>
-</div>
+    <div class="flex flex-wrap items-center gap-3">
+      <form method="get" class="flex items-center gap-2">
+        <input
+          type="text"
+          name="q"
+          value="{{ q }}"
+          placeholder="Search by email"
+          class="input input-bordered input-sm w-48 md:w-64"
+        >
+        <button class="btn btn-sm btn-primary" type="submit">Search</button>
+        {% if q %}
+          <a href="{{ path('admin_user_index') }}" class="btn btn-sm btn-ghost">Clear</a>
+        {% endif %}
+      </form>
 
-<div class="overflow-x-auto bg-base-100 rounded-xl shadow">
-  <table class="table table-zebra w-full">
-    <thead>
-      <tr>
-        <th class="w-16">ID</th>
-        <th>Email</th>
-        <th>Name</th>
-        <th class="w-64">Roles</th>
-      </tr>
-    </thead>
-    <tbody>
-    {% for u in users %}
-      <tr>
-        <td>#{{ u.id }}</td>
-        <td>{{ u.email }}</td>
-        <td>{{ u.fullName ?? '—' }}</td>
-        <td>
-          <div class="flex flex-wrap gap-1">
-            {% set labels = {
-              'ROLE_ADMIN':    'Admin',
-              'ROLE_STAFF':    'Staff',
-              'ROLE_CUSTOMER': 'Customer'
-            } %}
-
-            {% for r in u.roles %}
-              {% if r != 'ROLE_USER' %}
-                {% set label = labels[r] ?? r %}
-
-                {% set colorClass = 'badge-ghost' %}
-                {% if r == 'ROLE_ADMIN' %}
-                  {% set colorClass = 'badge-secondary' %}
-                {% elseif r == 'ROLE_STAFF' %}
-                  {% set colorClass = 'badge-info' %}
-                {% elseif r == 'ROLE_CUSTOMER' %}
-                  {% set colorClass = 'badge-success' %}
-                {% endif %}
-
-                <span class="badge {{ colorClass }} badge-sm px-3">
-                  {{ label }}
-                </span>
-              {% endif %}
-            {% endfor %}
-          </div>
-        </td>
-      </tr>
-    {% else %}
-      <tr>
-        <td colspan="4" class="text-center text-sm py-6 text-base-content/70">
-          No users found.
-        </td>
-      </tr>
-    {% endfor %}
-    </tbody>
-  </table>
-</div>
-
-{% if pageCount is defined and pageCount > 1 %}
-  {% set route = app.request.attributes.get('_route') %}
-  {% set query = app.request.query.all %}
-  <div class="mt-4 flex justify-center">
-    <div class="join">
-      <a class="join-item btn btn-sm {{ page <= 1 ? 'btn-disabled' }}"
-         href="{{ page <= 1 ? '#' : path(route, query|merge({'page': page-1})) }}">
-        « Prev
-      </a>
-      <span class="join-item btn btn-sm btn-ghost no-pointer-events">
-        Page {{ page }} / {{ pageCount }}
-      </span>
-      <a class="join-item btn btn-sm {{ page >= pageCount ? 'btn-disabled' }}"
-         href="{{ page >= pageCount ? '#' : path(route, query|merge({'page': page+1})) }}">
-        Next »
-      </a>
+      <div class="flex gap-2">
+        <a href="{{ path('admin_user_create_staff') }}" class="btn btn-outline btn-sm">Add Staff</a>
+        <a href="{{ path('admin_user_create_admin') }}" class="btn btn-primary btn-sm">Add Admin</a>
+      </div>
     </div>
   </div>
-{% endif %}
+
+  <div class="overflow-x-auto">
+    <table class="min-w-full divide-y divide-gray-200">
+      <thead class="bg-gray-50">
+        <tr>
+          <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase">ID</th>
+          <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Email</th>
+          <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Full name</th>
+          <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Roles</th>
+          <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Verified</th>
+        </tr>
+      </thead>
+      <tbody class="bg-white divide-y divide-gray-100">
+        {% for u in users %}
+          <tr class="hover:bg-gray-50">
+            <td class="px-6 py-4 text-sm text-gray-500">{{ u.id }}</td>
+            <td class="px-6 py-4 text-sm text-gray-900">{{ u.email }}</td>
+            <td class="px-6 py-4 text-sm text-gray-900">
+              {{ u.fullName ?: '—' }}
+            </td>
+            <td class="px-6 py-4 text-sm text-gray-900">
+              {% for r in u.roles %}
+                <span class="badge badge-sm mr-1">{{ r }}</span>
+              {% endfor %}
+            </td>
+            <td class="px-6 py-4 text-sm">
+              {% if u.isVerified %}
+                <span class="badge badge-success badge-sm">Yes</span>
+              {% else %}
+                <span class="badge badge-ghost badge-sm">No</span>
+              {% endif %}
+            </td>
+          </tr>
+        {% else %}
+          <tr>
+            <td colspan="5" class="px-6 py-4 text-sm text-gray-500">No users.</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  {% if pageCount > 1 %}
+    {% set route = app.request.attributes.get('_route') %}
+    {% set query = app.request.query.all %}
+    <div class="mt-4 flex items-center justify-between text-sm text-gray-700">
+      <div>Page {{ page }} / {{ pageCount }} ({{ totalUsers }} users)</div>
+      <div class="join">
+        <a class="btn btn-sm join-item {{ page <= 1 ? 'btn-disabled' }}"
+           href="{{ page <= 1 ? '#' : path(route, query|merge({'page': page - 1})) }}">
+          « Prev
+        </a>
+        <a class="btn btn-sm join-item {{ page >= pageCount ? 'btn-disabled' }}"
+           href="{{ page >= pageCount ? '#' : path(route, query|merge({'page': page + 1})) }}">
+          Next »
+        </a>
+      </div>
+    </div>
+  {% endif %}
+</div>
 {% endblock %}

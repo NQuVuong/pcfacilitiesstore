@@ -1,6 +1,6 @@
 security:
   role_hierarchy:
-    ROLE_ADMIN: [ROLE_STAFF]   # Admin tự động có quyền Staff
+    ROLE_ADMIN: [ROLE_STAFF]
     ROLE_STAFF: [ROLE_USER]
 
   password_hashers:
@@ -37,44 +37,45 @@ security:
         secret: '%kernel.secret%'
         lifetime: 604800
         path: /
-        remember_me_parameter: _remember_me
 
       logout:
         path: app_logout
         target: app_homepage
 
   access_control:
+
     # ===== PUBLIC =====
     - { path: '^/payment/momo/ipn$', roles: PUBLIC_ACCESS }
-    - { path: '^/login$',            roles: PUBLIC_ACCESS }
-    - { path: '^/register$',         roles: PUBLIC_ACCESS }
-    - { path: ^/verify-email,        roles: PUBLIC_ACCESS }
-    - { path: ^/resend-verification, roles: PUBLIC_ACCESS }
-    - { path: ^/forgot-password,     roles: PUBLIC_ACCESS }
-    - { path: ^/reset-password,      roles: PUBLIC_ACCESS }
+    - { path: '^/login$', roles: PUBLIC_ACCESS }
+    - { path: '^/register$', roles: PUBLIC_ACCESS }
+    - { path: '^/verify-email', roles: PUBLIC_ACCESS }
+    - { path: '^/resend-verification', roles: PUBLIC_ACCESS }
+    - { path: '^/forgot-password', roles: PUBLIC_ACCESS }
+    - { path: '^/reset-password', roles: PUBLIC_ACCESS }
 
-    # Product detail: public GET
+    # ===== CUSTOMER SHOPPING ONLY (NO STAFF / ADMIN) =====
+    - { path: '^/cart', allow_if: "is_granted('ROLE_USER') and not is_granted('ROLE_STAFF')" }
+    - { path: '^/checkout', allow_if: "is_granted('ROLE_USER') and not is_granted('ROLE_STAFF')" }
+    - { path: '^/orders', allow_if: "is_granted('ROLE_USER') and not is_granted('ROLE_STAFF')" }
+
+    # ===== PRODUCT DETAIL — luôn mở =====
     - { path: '^/product/(?!add$|new$|edit$|delete$|editor-upload$)[^/]+$', methods: ['GET'], roles: PUBLIC_ACCESS }
 
-    # ===== STAFF-ONLY (ADMIN KHÔNG DÙNG CÁC MÀN NÀY) =====
-    - { path: '^/admin/brands',             allow_if: "is_granted('ROLE_STAFF') and not is_granted('ROLE_ADMIN')" }
-    - { path: '^/admin/price',              allow_if: "is_granted('ROLE_STAFF') and not is_granted('ROLE_ADMIN')" }
-    - { path: '^/supplier',                 allow_if: "is_granted('ROLE_STAFF') and not is_granted('ROLE_ADMIN')" }
-    - { path: '^/staff/category-requests',  allow_if: "is_granted('ROLE_STAFF') and not is_granted('ROLE_ADMIN')" }
-    - { path: '^/product$',                 allow_if: "is_granted('ROLE_STAFF') and not is_granted('ROLE_ADMIN')" }
-    - { path: '^/product/(add|new|edit|delete|editor-upload)', allow_if: "is_granted('ROLE_STAFF') and not is_granted('ROLE_ADMIN')" }
+    # ===== STAFF-ONLY =====
+    - { path: '^/admin/brands', allow_if: "is_granted('ROLE_STAFF')" }
+    - { path: '^/admin/price', allow_if: "is_granted('ROLE_STAFF')" }
+    - { path: '^/supplier', allow_if: "is_granted('ROLE_STAFF')" }
+    - { path: '^/staff', roles: 'ROLE_STAFF' }
 
     # ===== ADMIN-ONLY =====
-    - { path: '^/admin/users',             roles: 'ROLE_ADMIN' }
-    - { path: '^/admin/order',             roles: 'ROLE_ADMIN' }
-    - { path: '^/admin/categories',        roles: 'ROLE_ADMIN' }
-    - { path: '^/admin/category-requests', roles: 'ROLE_ADMIN' }
+    - { path: '^/admin/users', roles: 'ROLE_ADMIN' }
+    - { path: '^/admin/refunds', roles: 'ROLE_ADMIN' }
 
-    # Dashboard & phần còn lại trong /admin: Staff + Admin đều vào
+    # ===== ADMIN + STAFF =====
     - { path: '^/admin$', roles: ['ROLE_STAFF', 'ROLE_ADMIN'] }
     - { path: '^/admin/', roles: ['ROLE_STAFF', 'ROLE_ADMIN'] }
 
-    # ===== Accounts =====
+    # ===== ACCOUNT =====
     - { path: '^/account', roles: 'IS_AUTHENTICATED_FULLY' }
 
 when@test:

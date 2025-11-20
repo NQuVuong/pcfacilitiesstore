@@ -1,0 +1,51 @@
+{% extends 'admin.html.twig' %}
+{% block title %}Refund Approvals (Admin){% endblock %}
+
+{% block body %}
+<div class="bg-white rounded-lg shadow p-6">
+
+  <h1 class="text-xl font-semibold mb-4">Refunds Pending Admin Approval</h1>
+
+  <div class="overflow-x-auto">
+    <table class="table w-full">
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Customer</th>
+          <th>Total</th>
+          <th>Staff Note</th>
+          <th class="text-right">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for o in orders %}
+          <tr>
+            <td>#{{ o.id }}</td>
+            <td>{{ o.customerEmail }}</td>
+            <td>{{ o.total|number_format(0,'.',',') }} ₫</td>
+            <td>{{ o.note|default('No note') }}</td>
+            <td class="text-right">
+
+              <a href="{{ path('admin_refund_approve', {id: o.id}) }}"
+                 class="btn btn-sm btn-success">
+                Approve
+              </a>
+
+              <a href="{{ path('admin_refund_reject', {id: o.id}) }}"
+                 class="btn btn-sm btn-error">
+                Reject
+              </a>
+
+            </td>
+          </tr>
+        {% else %}
+          <tr>
+            <td colspan="5" class="text-center text-gray-500 py-4">No requests pending.</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+</div>
+{% endblock %}

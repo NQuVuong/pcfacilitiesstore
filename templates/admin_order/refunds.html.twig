@@ -1,0 +1,165 @@
+{# templates/admin_order/refunds.html.twig #}
+{% extends 'admin.html.twig' %}
+
+{% block title %}Refund Approvals (Admin){% endblock %}
+
+{% block body %}
+<div class="bg-white rounded-lg shadow p-6">
+  <div class="flex items-center justify-between mb-4">
+    <div>
+      <h1 class="text-xl font-semibold text-gray-900">Refund approvals</h1>
+      <p class="text-sm text-gray-500">
+        Customer refund/return requests waiting for admin decision.
+      </p>
+    </div>
+  </div>
+
+  {% for type, messages in app.flashes(['admin.success','admin.error','admin.info']) %}
+    {% for m in messages %}
+      <div class="alert {{ type matches '/error/' ? 'alert-error' : (type matches '/success/' ? 'alert-success' : 'alert-info') }} mb-3">
+        <span>{{ m }}</span>
+      </div>
+    {% endfor %}
+  {% endfor %}
+
+  <div class="overflow-x-auto">
+    <table class="table w-full">
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Customer</th>
+          <th>Total</th>
+          <th>Payment</th>
+          <th>Staff/Admin note</th>
+          <th class="text-right">Admin action</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for o in orders %}
+          <tr>
+            <td>#{{ o.id }}</td>
+            <td>{{ o.customerEmail ?: (o.user ? o.user.email : 'Guest') }}</td>
+            <td>{{ o.total|number_format(0,'.',',') }} ₫</td>
+            <td>{{ o.paymentMethod }}</td>
+            <td class="max-w-xs text-sm">
+              {{ o.refundStaffNote ?: o.refundAdminNote ?: '-' }}
+            </td>
+            <td class="text-right">
+              <div class="flex flex-col items-end gap-1">
+                <a href="{{ path('app_admin_order_show', {id: o.id}) }}"
+                   class="btn btn-xs btn-outline">
+                  View order
+                </a>
+
+                {# APPROVE (MoMo / COD) – dùng modal #}
+                {% if o.paymentMethod == 'MOMO' %}
+                  <button class="btn btn-xs btn-success"
+                          type="button"
+                          onclick="document.getElementById('approve-momo-{{ o.id }}').showModal()">
+                    Approve &amp; MoMo refund
+                  </button>
+
+                  <dialog id="approve-momo-{{ o.id }}" class="modal">
+                    <div class="modal-box">
+                      <h3 class="font-bold text-lg mb-2">Approve MoMo refund</h3>
+                      <p>Refund order #{{ o.id }} ({{ o.total|number_format(0,'.',',') }} ₫)?</p>
+                      <form method="post"
+                            action="{{ path('app_admin_order_refund', {id: o.id}) }}"
+                            class="mt-3 space-y-3">
+                        <input type="hidden" name="_token" value="{{ csrf_token('refund-order-' ~ o.id) }}">
+                        <input type="text"
+                               name="admin_note"
+                               class="input input-sm w-full"
+                               placeholder="Admin note (optional)">
+                        <div class="modal-action">
+                          <button type="submit" class="btn btn-success btn-sm">Confirm refund</button>
+                          <form method="dialog">
+                            <button class="btn btn-sm">Cancel</button>
+                          </form>
+                        </div>
+                      </form>
+                    </div>
+                    <form method="dialog" class="modal-backdrop">
+                      <button>close</button>
+                    </form>
+                  </dialog>
+
+                {% elseif o.paymentMethod == 'COD' %}
+                  <button class="btn btn-xs btn-success"
+                          type="button"
+                          onclick="document.getElementById('approve-cod-{{ o.id }}').showModal()">
+                    Approve COD refund
+                  </button>
+
+                  <dialog id="approve-cod-{{ o.id }}" class="modal">
+                    <div class="modal-box">
+                      <h3 class="font-bold text-lg mb-2">Approve COD refund</h3>
+                      <p>Mark refund completed for order #{{ o.id }}?</p>
+                      <form method="post"
+                            action="{{ path('app_admin_order_cod_refund', {id: o.id}) }}"
+                            class="mt-3 space-y-3">
+                        <input type="hidden" name="_token" value="{{ csrf_token('cod-refund-order-' ~ o.id) }}">
+                        <input type="text"
+                               name="admin_note"
+                               class="input input-sm w-full"
+                               placeholder="Admin note (optional)">
+                        <div class="modal-action">
+                          <button type="submit" class="btn btn-success btn-sm">Confirm refund</button>
+                          <form method="dialog">
+                            <button class="btn btn-sm">Cancel</button>
+                          </form>
+                        </div>
+                      </form>
+                    </div>
+                    <form method="dialog" class="modal-backdrop">
+                      <button>close</button>
+                    </form>
+                  </dialog>
+                {% endif %}
+
+                {# REJECT #}
+                <button class="btn btn-xs btn-error btn-outline"
+                        type="button"
+                        onclick="document.getElementById('reject-refund-{{ o.id }}').showModal()">
+                  Reject refund
+                </button>
+
+                <dialog id="reject-refund-{{ o.id }}" class="modal">
+                  <div class="modal-box">
+                    <h3 class="font-bold text-lg mb-2">Reject refund</h3>
+                    <p>Reject refund request for order #{{ o.id }}?</p>
+                    <form method="post"
+                          action="{{ path('app_admin_order_refund_reject', {id: o.id}) }}"
+                          class="mt-3 space-y-3">
+                      <input type="hidden" name="_token" value="{{ csrf_token('admin-refund-reject-' ~ o.id) }}">
+                      <input type="text"
+                             name="admin_note"
+                             class="input input-sm w-full"
+                             placeholder="Reject reason (optional)">
+                      <div class="modal-action">
+                        <button type="submit" class="btn btn-error btn-sm">Reject</button>
+                        <form method="dialog">
+                          <button class="btn btn-sm">Cancel</button>
+                        </form>
+                      </div>
+                    </form>
+                  </div>
+                  <form method="dialog" class="modal-backdrop">
+                    <button>close</button>
+                  </form>
+                </dialog>
+              </div>
+            </td>
+          </tr>
+        {% else %}
+          <tr>
+            <td colspan="6" class="text-center text-sm text-gray-500 py-4">
+              No refund requests waiting for admin.
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

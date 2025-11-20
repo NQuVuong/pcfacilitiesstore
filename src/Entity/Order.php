@@ -80,6 +80,12 @@ class Order
     #[ORM\Column(length: 64, nullable: true)]
     private ?string $lastRefundOrderId = null;
 
+    #[ORM\Column(type: 'text', nullable: true)]
+    private ?string $refundStaffNote = null;
+
+    #[ORM\Column(type: 'text', nullable: true)]
+    private ?string $refundAdminNote = null;
+
     public function __construct()
     {
         $this->createdAt = new \DateTimeImmutable();
@@ -175,5 +181,25 @@ class Order
     public function isCod(): bool
     {
         return $this->paymentMethod === 'COD';
+    }
+
+     public function getRefundStaffNote(): ?string
+    {
+        return $this->refundStaffNote;
+    }
+    public function setRefundStaffNote(?string $note): self
+    {
+        $this->refundStaffNote = $note;
+        return $this;
+    }
+
+    public function getRefundAdminNote(): ?string
+    {
+        return $this->refundAdminNote;
+    }
+    public function setRefundAdminNote(?string $note): self
+    {
+        $this->refundAdminNote = $note;
+        return $this;
     }
 }

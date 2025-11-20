@@ -17,10 +17,37 @@ use Symfony\Component\Security\Http\Attribute\IsGranted;
 class BrandController extends AbstractController
 {
     #[Route('/', name: 'brand_index')]
-    public function index(BrandRepository $repo): Response
+    public function index(BrandRepository $repo, Request $request): Response
     {
+        $q = trim((string) $request->query->get('q', ''));
+        $page    = max(1, (int) $request->query->get('page', 1));
+        $perPage = 10;
+
+        $all = $repo->findBy([], ['name' => 'ASC']);
+
+        if ($q !== '') {
+            $needle = mb_strtolower($q);
+            $all = \array_values(\array_filter(
+                $all,
+                function (Brand $b) use ($needle) {
+                    return mb_stripos($b->getName() ?? '', $needle) !== false;
+                }
+            ));
+        }
+
+        $total     = \count($all);
+        $pageCount = (int) \ceil(max(1, $total) / $perPage);
+        $page      = min($page, max(1, $pageCount));
+
+        $offset = ($page - 1) * $perPage;
+        $brands = \array_slice($all, $offset, $perPage);
+
         return $this->render('brand/index.html.twig', [
-            'brands' => $repo->findBy([], ['name' => 'ASC']),
+            'brands'    => $brands,
+            'q'         => $q,
+            'page'      => $page,
+            'pageCount' => $pageCount,
+            'total'     => $total,
         ]);
     }
 

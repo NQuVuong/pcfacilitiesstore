@@ -3,8 +3,27 @@
 
 {% block body %}
 <div class="bg-white rounded-lg shadow p-6">
-  <div class="flex justify-between items-center mb-6">
-    <h1 class="text-xl font-semibold text-gray-900">Category Requests (Admin)</h1>
+  <div class="flex flex-wrap justify-between items-center mb-6 gap-3">
+    <div>
+      <h1 class="text-xl font-semibold text-gray-900">Category Requests (Admin)</h1>
+      <p class="text-sm text-gray-500">
+        Review and approve or reject new category requests from staff.
+      </p>
+    </div>
+
+    <form method="get" class="flex items-center gap-2">
+      <input
+        type="text"
+        name="q"
+        value="{{ q }}"
+        placeholder="Search by requested name"
+        class="input input-bordered input-sm w-48 md:w-64"
+      >
+      <button class="btn btn-sm btn-primary" type="submit">Search</button>
+      {% if q %}
+        <a href="{{ path('app_admin_catreq_index') }}" class="btn btn-sm btn-ghost">Clear</a>
+      {% endif %}
+    </form>
   </div>
 
   <div class="overflow-x-auto">

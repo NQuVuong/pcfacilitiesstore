@@ -23,40 +23,88 @@
     </div>
     <ul class="menu p-3 w-full">
 
-       {# ===== Overview (Dashboard + Revenue) – Staff & Admin đều thấy ===== #}
+      {# ===== Overview (Dashboard + Revenue) – Staff & Admin ===== #}
       {% if is_granted('ROLE_STAFF') or is_granted('ROLE_ADMIN') %}
         <li class="menu-title">Overview</li>
         <li>
           <a class="{{ _r == 'app_admin_dashboard' ? 'active' }}"
-            href="{{ path('app_admin_dashboard') }}">
+             href="{{ path('app_admin_dashboard') }}">
             Dashboard
           </a>
         </li>
         <li>
           <a class="{{ _r == 'app_admin_revenue' ? 'active' }}"
-            href="{{ path('app_admin_revenue') }}">
+             href="{{ path('app_admin_revenue') }}">
             Revenue
           </a>
         </li>
       {% endif %}
 
-      {# Staff menu (Store) #}
-      {% if is_granted('ROLE_STAFF') or is_granted('ROLE_ADMIN') %}
+      {# ===== STORE: CHỈ STAFF, ADMIN KHÔNG THẤY ===== #}
+      {% if is_granted('ROLE_STAFF') and not is_granted('ROLE_ADMIN') %}
         <li class="menu-title mt-2">Store</li>
-        <li><a class="{{ _r starts with 'app_product_' ? 'active' }}" href="{{ path('app_product_index') }}">Products</a></li>
-        <li><a class="{{ _r starts with 'brand_' ? 'active' }}" href="{{ path('brand_index') }}">Brands</a></li>
-        <li><a class="{{ _r starts with 'price_' ? 'active' }}" href="{{ path('price_index') }}">Set Prices</a></li>
-        <li><a class="{{ _r starts with 'app_supplier_' ? 'active' }}" href="{{ path('app_supplier_index') }}">Suppliers</a></li>
-        <li><a class="{{ _r starts with 'app_catreq_' ? 'active' }}" href="{{ path('app_catreq_index') }}">Request New Category</a></li>
+        <li>
+          <a class="{{ _r starts with 'app_product_' ? 'active' }}"
+             href="{{ path('app_product_index') }}">
+            Products
+          </a>
+        </li>
+        <li>
+          <a class="{{ _r starts with 'brand_' ? 'active' }}"
+             href="{{ path('brand_index') }}">
+            Brands
+          </a>
+        </li>
+        <li>
+          <a class="{{ _r starts with 'price_' ? 'active' }}"
+             href="{{ path('price_index') }}">
+            Set Prices
+          </a>
+        </li>
+        <li>
+          <a class="{{ _r starts with 'app_supplier_' ? 'active' }}"
+             href="{{ path('app_supplier_index') }}">
+            Suppliers
+          </a>
+        </li>
+        <li>
+          <a class="{{ _r starts with 'app_catreq_' ? 'active' }}"
+             href="{{ path('app_catreq_index') }}">
+            Request New Category
+          </a>
+        </li>
       {% endif %}
 
-      {# Admin-only #}
+      {# ===== ADMIN-ONLY: Orders (Admin), Categories, Category Requests, Users ===== #}
       {% if is_granted('ROLE_ADMIN') %}
         <li class="menu-title mt-2">Administration</li>
-        <li><a class="{{ _r starts with 'app_admin_order_' ? 'active' }}" href="{{ path('app_admin_order_index') }}">Orders</a></li>
-        <li><a class="{{ _r starts with 'category_' ? 'active' }}" href="{{ path('category_index') }}">Categories</a></li>
-        <li><a class="{{ _r starts with 'app_admin_catreq_' ? 'active' }}" href="{{ path('app_admin_catreq_index') }}">Category Requests</a></li>
-        <li><a class="{{ _r == 'admin_user_index' ? 'active' }}" href="{{ path('admin_user_index') }}">Users</a></li>
+
+        {# Trang dành cho Admin duyệt hoàn tiền, quản lý đơn #}
+        <li>
+          <a class="{{ _r starts with 'app_admin_order_' ? 'active' }}"
+             href="{{ path('app_admin_order_index') }}">
+            Orders (Admin)
+          </a>
+        </li>
+
+        <li>
+          <a class="{{ _r starts with 'category_' ? 'active' }}"
+             href="{{ path('category_index') }}">
+            Categories
+          </a>
+        </li>
+        <li>
+          <a class="{{ _r starts with 'app_admin_catreq_' ? 'active' }}"
+             href="{{ path('app_admin_catreq_index') }}">
+            Category Requests
+          </a>
+        </li>
+        <li>
+          <a class="{{ _r == 'admin_user_index' ? 'active' }}"
+             href="{{ path('admin_user_index') }}">
+            Users
+          </a>
+        </li>
       {% endif %}
     </ul>
   </aside>
@@ -67,9 +115,19 @@
   {# ===== Main ===== #}
   <div class="flex-1 flex flex-col">
     <header class="bg-base-100 border-b px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-      <div class="flex items-center gap-2">
+      <div class="flex items-center gap-3">
+        {# nút mở/đóng sidebar (mobile), desktop giữ sidebar luôn mở để không bị trống #}
         <button id="btnOpenAside" class="btn btn-ghost btn-sm md:hidden" aria-label="Menu">☰</button>
+
+        {# nút Back to shop/home #}
+        <a href="{{ path('app_homepage') }}"
+           class="inline-flex items-center gap-1 text-sm text-base-content/80 hover:text-base-content">
+          <span class="text-lg">←</span>
+          <span class="hidden sm:inline">Back to shop</span>
+          <span class="sm:hidden">Shop</span>
+        </a>
       </div>
+
       <div class="flex items-center gap-2">
         {% if app.user %}
           {% set _rawAvatar = app.user.avatar ?? '' %}
@@ -79,14 +137,19 @@
               ? _finalName : asset('uploads/avatars/' ~ _finalName) %}
 
           {% if is_granted('ROLE_ADMIN') %}
-            <a href="{{ path('admin_user_create_staff') }}" class="btn btn-primary btn-sm hidden sm:inline-flex">+ New Staff</a>
+            <a href="{{ path('admin_user_create_staff') }}"
+               class="btn btn-primary btn-sm hidden sm:inline-flex">
+              + New Staff
+            </a>
           {% endif %}
           <div class="avatar">
             <div class="w-9 md:w-10 rounded-full ring ring-primary ring-offset-base-100 ring-offset-2">
               <img src="{{ _avatarUrl }}" alt="{{ app.user.userIdentifier }}" loading="lazy">
             </div>
           </div>
-          <span class="truncate max-w-[160px] md:max-w-[220px] text-sm font-medium">{{ app.user.userIdentifier }}</span>
+          <span class="truncate max-w-[160px] md:max-w-[220px] text-sm font-medium">
+            {{ app.user.userIdentifier }}
+          </span>
         {% else %}
           <a href="{{ path('app_login') }}" class="btn btn-primary btn-sm">Login</a>
         {% endif %}
@@ -94,7 +157,9 @@
     </header>
 
     <main class="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8">
-      <div class="container mx-auto">{% block body %}{% endblock %}</div>
+      <div class="container mx-auto">
+        {% block body %}{% endblock %}
+      </div>
     </main>
 
     <footer class="bg-base-100 text-center text-xs md:text-sm text-base-content/60 p-3 md:p-4">
@@ -134,15 +199,19 @@
           const t = setTimeout(() => close(el), 3500 + idx * 120);
           el.querySelector('button')?.addEventListener('click', () => { clearTimeout(t); close(el); });
         });
-        function close(el){ el.style.opacity = '0'; el.style.transform = 'translateY(-8px)'; setTimeout(() => el.remove(), 200); }
+        function close(el){
+          el.style.opacity = '0';
+          el.style.transform = 'translateY(-8px)';
+          setTimeout(() => el.remove(), 200);
+        }
       })();
     </script>
   {% endif %}
 
-  {# JS từ Encore #}
-  {% block javascripts %}{{ encore_entry_script_tags('app') }}{% endblock %}
+  {% block javascripts %}
+    {{ encore_entry_script_tags('app') }}
+  {% endblock %}
 
-  {# TinyMCE init giữ nguyên #}
   <style>
     .tox.tox-tinymce { width: 100% !important; }
     .tox .tox-edit-area__iframe { min-height: 420px !important; }
@@ -194,7 +263,12 @@
       function close(){ aside.classList.add('-translate-x-full'); backdrop.classList.add('hidden'); }
       openBtn?.addEventListener('click', open);
       backdrop?.addEventListener('click', close);
-      window.addEventListener('resize', () => { if (window.innerWidth >= 768) close(); });
+      window.addEventListener('resize', () => {
+        if (window.innerWidth >= 768) {
+          aside.classList.remove('-translate-x-full');
+          backdrop.classList.add('hidden');
+        }
+      });
     })();
   </script>
 </body>
